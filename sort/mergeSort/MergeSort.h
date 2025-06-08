@@ -6,8 +6,6 @@
 #define MERGESORT_H
 #include <vector>
 
-#include "../util/Util.h"
-
 class ListNode;
 namespace MergeSort {
     void solution();
