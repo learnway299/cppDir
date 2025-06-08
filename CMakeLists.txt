@@ -8,4 +8,6 @@ add_executable(project1 main.cpp
         sort/util/Util.cpp
         sort/util/Util.h
         sort/quickSort/QuickSort.cpp
-        sort/quickSort/QuickSort.h)
+        sort/quickSort/QuickSort.h
+        sort/mergeSort/MergeSort.cpp
+        sort/mergeSort/MergeSort.h)
