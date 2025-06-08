@@ -8,6 +8,12 @@
 
 namespace MergeSort {
     void solution();
+    /**
+     * 合并两个有序数组，其中一个已预分配内存
+     * 要求时间复杂度O(n + m),空间复杂度O(1)
+     * @param vecM 有序数组
+     * @param vecN 有序数组，预分配内存
+     */
     void mergeSortedVectors(std::vector<int>& vecM, std::vector<int>& vecN);
 } // MergeSort
 
