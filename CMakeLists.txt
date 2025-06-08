@@ -1,0 +1,11 @@
+#Created by learyuan on 25-6-8.
+cmake_minimum_required(VERSION 3.31)
+project(project1)
+
+set(CMAKE_CXX_STANDARD 20)
+
+add_executable(project1 main.cpp
+        sort/util/Util.cpp
+        sort/util/Util.h
+        sort/quickSort/QuickSort.cpp
+        sort/quickSort/QuickSort.h)
