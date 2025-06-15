@@ -12,4 +12,6 @@ add_executable(project1 main.cpp
         sort/mergeSort/MergeSort.cpp
         sort/mergeSort/MergeSort.h
         sort/other/StrCountSort.cpp
-        sort/other/StrCountSort.h)
+        sort/other/StrCountSort.h
+        stack/IncrementalSequence.cpp
+        stack/IncrementalSequence.h)
