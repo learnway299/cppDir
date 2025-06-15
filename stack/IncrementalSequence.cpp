@@ -1,5 +1,5 @@
 //
-// Created by asus on 25-6-15.
+// Created by learyuan on 25-6-15.
 //
 
 #include "IncrementalSequence.h"
