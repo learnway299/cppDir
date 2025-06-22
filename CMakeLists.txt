@@ -14,4 +14,8 @@ add_executable(project1 main.cpp
         sort/other/StrCountSort.cpp
         sort/other/StrCountSort.h
         stack/IncrementalSequence.cpp
-        stack/IncrementalSequence.h)
+        stack/IncrementalSequence.h
+        stack/Subsequence.cpp
+        stack/Subsequence.h
+        stack/SubSet.cpp
+        stack/SubSet.h)
