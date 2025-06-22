@@ -18,4 +18,6 @@ add_executable(project1 main.cpp
         stack/Subsequence.cpp
         stack/Subsequence.h
         stack/SubSet.cpp
-        stack/SubSet.h)
+        stack/SubSet.h
+        stack/TreeNodeTraversal.cpp
+        stack/TreeNodeTraversal.h)

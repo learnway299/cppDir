@@ -4,6 +4,7 @@
 #include "stack/IncrementalSequence.h"
 #include "stack/Subsequence.h"
 #include "stack/SubSet.h"
+#include "stack/TreeNodeTraversal.h"
 
 void solution() {
     SubSet::solution();
@@ -12,6 +13,7 @@ void solution() {
     Subsequence::solution();
     StrCountSort::solution();
     IncrementalSequence::solution();
+    TreeNodeTraversal::solution();
 }
 
 int main() {
