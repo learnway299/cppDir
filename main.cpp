@@ -1,11 +1,12 @@
-#include "sort/mergeSort/MergeSort.h"
 #include "sort/other/StrCountSort.h"
 #include "sort/quickSort/QuickSort.h"
-#include "stack/IncrementalSequence.h"
-#include "stack/Subsequence.h"
+#include "sort/mergeSort/MergeSort.h"
 #include "stack/SubSet.h"
+#include "stack/Subsequence.h"
 #include "stack/TreeNodeTraversal.h"
+#include "stack/IncrementalSequence.h"
 #include "thread/MessageQueue.h"
+#include "thread/AlternatePrint.h"
 
 void solution() {
     SubSet::solution();
@@ -13,8 +14,9 @@ void solution() {
     MergeSort::solution();
     Subsequence::solution();
     StrCountSort::solution();
-    IncrementalSequence::solution();
     TreeNodeTraversal::solution();
+    IncrementalSequence::solution();
+    AlternatePrint::solution();
     ProduceCustomer::solution();
 }
 

@@ -22,4 +22,6 @@ add_executable(project1 main.cpp
         stack/TreeNodeTraversal.cpp
         stack/TreeNodeTraversal.h
         thread/MessageQueue.cpp
-        thread/MessageQueue.h)
+        thread/MessageQueue.h
+        thread/AlternatePrint.cpp
+        thread/AlternatePrint.h)
