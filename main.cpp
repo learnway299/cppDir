@@ -5,6 +5,7 @@
 #include "stack/Subsequence.h"
 #include "stack/SubSet.h"
 #include "stack/TreeNodeTraversal.h"
+#include "thread/MessageQueue.h"
 
 void solution() {
     SubSet::solution();
@@ -14,6 +15,7 @@ void solution() {
     StrCountSort::solution();
     IncrementalSequence::solution();
     TreeNodeTraversal::solution();
+    ProduceCustomer::solution();
 }
 
 int main() {
