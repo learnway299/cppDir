@@ -8,6 +8,9 @@
 #include "thread/MessageQueue.h"
 #include "thread/AlternatePrint.h"
 
+// 面试编程题测试
+#include "interview/coding/test_runner.cpp"
+
 void solution() {
     SubSet::solution();
     QuickSort::solution();
@@ -21,6 +24,10 @@ void solution() {
 }
 
 int main() {
-   solution();
+    // solution();
+
+    // 运行面试编程题测试
+    runInterviewTests();
+
     return 0;
 }
