@@ -1,153 +1,183 @@
 /**
  * @file arena_allocator.cpp
- * @brief Arena Allocator 实现 - 面试题
- *
- * Arena（竞技场）分配器：批量分配，整体释放
- * 适用场景：解析器、编译器、请求处理等短生命周期场景
+ * @brief Arena Allocator 实现 - 面试者实现文件
  */
 
-#include <cstddef>
-#include <cstdint>
+#include "arena_allocator.h"
+#include <new>
+#include <utility>
+#include <algorithm>
+#include <type_traits>
+#include <iostream>
 
-/**
- * 题目1：实现基础 Arena Allocator
- *
- * 要求：
- * 1. 线性分配（bump allocator）
- * 2. 不支持单独释放，只能整体重置
- * 3. 支持内存对齐
- */
-class Arena {
-public:
-    // TODO: 实现构造函数
-    explicit Arena(size_t size) {
-    }
+namespace ArenaAllocatorImpl {
 
-    // TODO: 实现析构函数
-    ~Arena() {
-    }
+// ==================== Arena 实现 ====================
 
-    // TODO: 分配内存（带对齐）
-    void* allocate(size_t size, size_t alignment = alignof(std::max_align_t)) {
-        return nullptr;
-    }
-
-    // TODO: 分配并构造对象
-    template <typename T, typename... Args>
-    T* create(Args&&... args) {
-        return nullptr;
-    }
-
-    // TODO: 重置 Arena（释放所有内存但保留缓冲区）
-    void reset() {
-    }
-
-    // TODO: 返回已使用大小
-    size_t used() const {
-        return 0;
-    }
-
-    // TODO: 返回剩余大小
-    size_t remaining() const {
-        return 0;
-    }
-
-private:
-    // TODO: 定义成员变量
-    // 提示：需要存储内存起始地址、当前位置、总大小
-};
-
-/**
- * 题目2：实现可增长的 Arena
- *
- * 要求：
- * 1. 初始分配一块内存
- * 2. 空间不足时分配新块
- * 3. 重置时保留第一块，释放其他块
- */
-class GrowableArena {
-public:
-    // TODO: 实现可增长 Arena
-    explicit GrowableArena(size_t initialSize = 4096) {
-    }
-
-    ~GrowableArena() {
-    }
-
-    void* allocate(size_t size, size_t alignment = alignof(std::max_align_t)) {
-        return nullptr;
-    }
-
-    void reset() {
-    }
-
-private:
-    // TODO: 定义成员变量
-    // 提示：需要管理多个内存块
-};
-
-/**
- * 题目3：实现带析构器的 Arena
- *
- * 要求：
- * 1. 记录需要析构的对象
- * 2. reset 时调用所有析构函数
- */
-class ArenaWithDestructors {
-public:
-    // TODO: 实现带析构器的 Arena
-    explicit ArenaWithDestructors(size_t size) {
-    }
-
-    ~ArenaWithDestructors() {
-    }
-
-    template <typename T, typename... Args>
-    T* create(Args&&... args) {
-        return nullptr;
-    }
-
-    void reset() {
-    }
-
-private:
-    // 析构函数包装器
-    struct Destructor {
-        void (*destroy)(void*);
-        void* ptr;
-    };
-
-    // TODO: 定义成员变量
-};
-
-/**
- * 题目4：实现符合 STL 标准的 Arena Allocator
- *
- * 要求：
- * 1. 实现 allocator 接口
- * 2. 可用于 STL 容器
- */
-template <typename T>
-class ArenaAllocator {
-public:
-    using value_type = T;
-
-    // TODO: 实现 STL allocator 接口
-    explicit ArenaAllocator(Arena& arena) {
-    }
-
-    T* allocate(size_t n) {
-        return nullptr;
-    }
-
-    void deallocate(T* p, size_t n) {
-        // Arena 不支持单独释放
-    }
-
-private:
-    // TODO: 定义成员变量
-};
-
-int main() {
-    return 0;
+Arena::Arena(size_t size)
+    : memory_(nullptr), size_(size), used_(0) {
+    // TODO: 分配内存
 }
+
+Arena::~Arena() {
+    // TODO: 释放内存
+}
+
+void* Arena::allocate(size_t size, size_t alignment) {
+    // TODO: 对齐当前位置，分配内存
+    // 提示：使用 (addr + alignment - 1) & ~(alignment - 1) 对齐
+    return nullptr;
+}
+
+template <typename T, typename... Args>
+T* Arena::create(Args&&... args) {
+    // TODO: 分配内存并使用 placement new 构造对象
+    return nullptr;
+}
+
+void Arena::reset() {
+    // TODO: 重置 used_ 为 0
+}
+
+size_t Arena::used() const {
+    return used_;
+}
+
+size_t Arena::remaining() const {
+    return size_ - used_;
+}
+
+size_t Arena::capacity() const {
+    return size_;
+}
+
+// ==================== GrowableArena 实现 ====================
+
+GrowableArena::GrowableArena(size_t initialSize)
+    : defaultSize_(initialSize) {
+    // TODO: 分配初始块
+}
+
+GrowableArena::~GrowableArena() {
+    // TODO: 释放所有块
+}
+
+void* GrowableArena::allocate(size_t size, size_t alignment) {
+    // TODO: 尝试在当前块分配，不够则创建新块
+    return nullptr;
+}
+
+template <typename T, typename... Args>
+T* GrowableArena::create(Args&&... args) {
+    // TODO: 分配并构造
+    return nullptr;
+}
+
+void GrowableArena::reset() {
+    // TODO: 保留第一块，释放其他块
+}
+
+size_t GrowableArena::totalAllocated() const {
+    size_t total = 0;
+    for (const auto& block : blocks_) {
+        total += block.size;
+    }
+    return total;
+}
+
+void GrowableArena::addBlock(size_t size) {
+    // TODO: 分配新块并加入 blocks_
+}
+
+void* GrowableArena::tryAllocate(size_t size, size_t alignment) {
+    // TODO: 在当前块尝试分配
+    return nullptr;
+}
+
+// ==================== ArenaWithDestructors 实现 ====================
+
+ArenaWithDestructors::ArenaWithDestructors(size_t size)
+    : arena_(size) {
+}
+
+ArenaWithDestructors::~ArenaWithDestructors() {
+    callDestructors();
+}
+
+template <typename T, typename... Args>
+T* ArenaWithDestructors::create(Args&&... args) {
+    // TODO: 分配并构造
+    // TODO: 如果 T 有非平凡析构函数，记录到 destructors_
+    return nullptr;
+}
+
+void ArenaWithDestructors::reset() {
+    callDestructors();
+    arena_.reset();
+}
+
+size_t ArenaWithDestructors::used() const {
+    return arena_.used();
+}
+
+void ArenaWithDestructors::callDestructors() {
+    // TODO: 逆序调用所有析构函数
+    destructors_.clear();
+}
+
+// ==================== ArenaAllocator 实现 ====================
+
+template <typename T>
+ArenaAllocator<T>::ArenaAllocator(Arena& arena) noexcept : arena_(&arena) {
+}
+
+template <typename T>
+template <typename U>
+ArenaAllocator<T>::ArenaAllocator(const ArenaAllocator<U>& other) noexcept
+    : arena_(other.arena_) {
+}
+
+template <typename T>
+T* ArenaAllocator<T>::allocate(size_t n) {
+    // TODO: 从 arena_ 分配内存
+    return nullptr;
+}
+
+template <typename T>
+void ArenaAllocator<T>::deallocate(T*, size_t) noexcept {
+    // Arena 不支持单独释放，空操作
+}
+
+template <typename T>
+template <typename U>
+bool ArenaAllocator<T>::operator==(const ArenaAllocator<U>& other) const noexcept {
+    return arena_ == other.arena_;
+}
+
+template <typename T>
+template <typename U>
+bool ArenaAllocator<T>::operator!=(const ArenaAllocator<U>& other) const noexcept {
+    return arena_ != other.arena_;
+}
+
+// ==================== TestObject 实现 ====================
+
+int TestObject::instanceCount = 0;
+
+TestObject::TestObject(int i, const char* n) : id(i), name(n) {
+    ++instanceCount;
+}
+
+TestObject::~TestObject() {
+    --instanceCount;
+}
+
+// ==================== 测试函数 ====================
+
+void testArenaAllocator() {
+    std::cout << "=== Arena Allocator Tests (User Implementation) ===\n";
+    // TODO: 添加面试者实现的测试
+    std::cout << "  (No tests yet - implement your solutions first)\n";
+}
+
+} // namespace ArenaAllocatorImpl

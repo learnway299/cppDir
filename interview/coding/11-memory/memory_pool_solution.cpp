@@ -1,23 +1,21 @@
 /**
  * @file memory_pool_solution.cpp
- * @brief 内存池实现 - 解答
+ * @brief 内存池实现 - 参考答案
  */
 
-#include <cstddef>
-#include <cstdint>
+#include "memory_pool.h"
 #include <iostream>
-#include <vector>
+#include <cassert>
 #include <new>
 #include <utility>
+#include <algorithm>
 
-/**
- * 题目1：实现固定大小内存池
- *
- * 原理：
- * 1. 预分配连续内存块
- * 2. 空闲块通过链表串联
- * 3. 每个空闲块的前几字节存储下一个空闲块的指针
- */
+namespace MemoryPoolImpl {
+
+namespace Solution {
+
+// ==================== 固定大小内存池 ====================
+
 class FixedSizePool {
 public:
     FixedSizePool(size_t blockSize, size_t blockCount)
@@ -85,19 +83,15 @@ private:
     size_t freeCount_;   // 可用块数
 };
 
-/**
- * 题目2：实现模板化内存池
- *
- * 支持对象构造和析构
- */
+// ==================== 模板化对象池 ====================
+
 template <typename T, size_t BlockCount = 32>
 class ObjectPool {
 public:
     ObjectPool() : pool_(sizeof(T), BlockCount) {}
 
     ~ObjectPool() {
-        // 注意：这里不会自动调用未释放对象的析构函数
-        // 使用者需要确保所有对象都被 destroy
+        // 注意：未释放的对象不会自动调用析构函数
     }
 
     template <typename... Args>
@@ -126,11 +120,8 @@ private:
     FixedSizePool pool_;
 };
 
-/**
- * 题目3：实现可增长内存池
- *
- * 内存不足时自动扩展
- */
+// ==================== 可增长内存池 ====================
+
 class GrowablePool {
 public:
     GrowablePool(size_t blockSize, size_t initialBlocks = 32)
@@ -199,13 +190,10 @@ private:
     char* freeList_;
     size_t totalBlocks_;
     size_t freeCount_;
-    std::vector<char*> chunks_;  // 所有分配的大块
+    std::vector<char*> chunks_;
 };
 
-/**
- * 扩展：线程安全的内存池（使用自旋锁）
- */
-#include <atomic>
+// ==================== 自旋锁 ====================
 
 class SpinLock {
 public:
@@ -222,6 +210,8 @@ public:
 private:
     std::atomic_flag flag_ = ATOMIC_FLAG_INIT;
 };
+
+// ==================== 线程安全的内存池 ====================
 
 class ThreadSafePool {
 public:
@@ -241,93 +231,129 @@ public:
         lock_.unlock();
     }
 
+    size_t available() {
+        lock_.lock();
+        size_t count = pool_.available();
+        lock_.unlock();
+        return count;
+    }
+
 private:
     FixedSizePool pool_;
     SpinLock lock_;
 };
 
-// 测试类
+// ==================== 测试对象 ====================
+
 struct TestObject {
     int id;
     double value;
+    static int instanceCount;
 
     TestObject(int i, double v) : id(i), value(v) {
-        std::cout << "TestObject(" << id << ") constructed\n";
+        ++instanceCount;
     }
 
     ~TestObject() {
-        std::cout << "TestObject(" << id << ") destroyed\n";
+        --instanceCount;
     }
 };
 
-int main() {
-    std::cout << "=== 测试固定大小内存池 ===\n";
+int TestObject::instanceCount = 0;
+
+} // namespace Solution
+
+// ==================== 测试函数 ====================
+
+void testMemoryPoolSolution() {
+    std::cout << "=== Memory Pool Tests (Solution) ===" << std::endl;
+
+    // 测试固定大小内存池
     {
-        FixedSizePool pool(sizeof(int), 5);
-        std::cout << "Initial available: " << pool.available() << "\n";
+        Solution::FixedSizePool pool(sizeof(int), 5);
+        assert(pool.available() == 5);
 
         int* arr[5];
         for (int i = 0; i < 5; ++i) {
             arr[i] = static_cast<int*>(pool.allocate());
             *arr[i] = i * 10;
-            std::cout << "Allocated: " << *arr[i]
-                      << ", available: " << pool.available() << "\n";
         }
+        assert(pool.available() == 0);
 
         // 尝试分配第6个（应失败）
         void* extra = pool.allocate();
-        std::cout << "Extra allocation: " << (extra ? "success" : "failed") << "\n";
+        assert(extra == nullptr);
 
         // 释放一些
         pool.deallocate(arr[2]);
-        std::cout << "After dealloc, available: " << pool.available() << "\n";
+        assert(pool.available() == 1);
 
         // 再次分配
         int* newPtr = static_cast<int*>(pool.allocate());
+        assert(newPtr != nullptr);
         *newPtr = 999;
-        std::cout << "New allocation: " << *newPtr << "\n";
+        assert(*newPtr == 999);
     }
+    std::cout << "  FixedSizePool: PASSED" << std::endl;
 
-    std::cout << "\n=== 测试对象池 ===\n";
+    // 测试对象池
+    Solution::TestObject::instanceCount = 0;
     {
-        ObjectPool<TestObject, 3> pool;
+        Solution::ObjectPool<Solution::TestObject, 3> pool;
 
-        TestObject* obj1 = pool.construct(1, 1.1);
-        TestObject* obj2 = pool.construct(2, 2.2);
-
-        std::cout << "obj1: id=" << obj1->id << ", value=" << obj1->value << "\n";
-        std::cout << "obj2: id=" << obj2->id << ", value=" << obj2->value << "\n";
+        Solution::TestObject* obj1 = pool.construct(1, 1.1);
+        Solution::TestObject* obj2 = pool.construct(2, 2.2);
+        assert(obj1->id == 1);
+        assert(obj2->id == 2);
+        assert(Solution::TestObject::instanceCount == 2);
 
         pool.destroy(obj1);
-        std::cout << "After destroy obj1, available: " << pool.available() << "\n";
+        assert(Solution::TestObject::instanceCount == 1);
+        assert(pool.available() == 2);
 
-        TestObject* obj3 = pool.construct(3, 3.3);
-        std::cout << "obj3: id=" << obj3->id << ", value=" << obj3->value << "\n";
+        Solution::TestObject* obj3 = pool.construct(3, 3.3);
+        assert(obj3->id == 3);
 
         pool.destroy(obj2);
         pool.destroy(obj3);
     }
+    assert(Solution::TestObject::instanceCount == 0);
+    std::cout << "  ObjectPool: PASSED" << std::endl;
 
-    std::cout << "\n=== 测试可增长内存池 ===\n";
+    // 测试可增长内存池
     {
-        GrowablePool pool(sizeof(int), 3);
-        std::cout << "Initial capacity: " << pool.capacity() << "\n";
+        Solution::GrowablePool pool(sizeof(int), 3);
+        assert(pool.capacity() == 3);
 
         std::vector<int*> ptrs;
         for (int i = 0; i < 10; ++i) {
             int* p = static_cast<int*>(pool.allocate());
             *p = i;
             ptrs.push_back(p);
-            std::cout << "Allocated " << i
-                      << ", capacity: " << pool.capacity()
-                      << ", available: " << pool.available() << "\n";
         }
+        assert(pool.capacity() >= 10);
 
         for (int* p : ptrs) {
             pool.deallocate(p);
         }
-        std::cout << "After dealloc all, available: " << pool.available() << "\n";
+        assert(pool.available() == pool.capacity());
     }
+    std::cout << "  GrowablePool: PASSED" << std::endl;
 
-    return 0;
+    // 测试线程安全内存池
+    {
+        Solution::ThreadSafePool pool(sizeof(int), 5);
+        assert(pool.available() == 5);
+
+        int* p1 = static_cast<int*>(pool.allocate());
+        int* p2 = static_cast<int*>(pool.allocate());
+        assert(pool.available() == 3);
+
+        pool.deallocate(p1);
+        pool.deallocate(p2);
+        assert(pool.available() == 5);
+    }
+    std::cout << "  ThreadSafePool: PASSED" << std::endl;
 }
+
+} // namespace MemoryPoolImpl

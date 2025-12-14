@@ -1,88 +1,124 @@
 /**
  * @file read_write_lock_solution.cpp
- * @brief 读写锁 - 解答
+ * @brief 读写锁 - 参考答案
  */
-#include <mutex>
-#include <condition_variable>
+
+#include "read_write_lock.h"
 #include <iostream>
 #include <thread>
 #include <vector>
+#include <cassert>
 
-class ReadWriteLock {
-public:
-    void lock_read() {
-        std::unique_lock<std::mutex> lock(mutex_);
-        cv_.wait(lock, [this] { return !writing_; });
-        ++readers_;
-    }
+namespace ReadWriteLock {
 
-    void unlock_read() {
-        std::lock_guard<std::mutex> lock(mutex_);
-        if (--readers_ == 0) {
-            cv_.notify_all();
-        }
-    }
+// ==================== 参考答案实现 ====================
 
-    void lock_write() {
-        std::unique_lock<std::mutex> lock(mutex_);
-        cv_.wait(lock, [this] { return !writing_ && readers_ == 0; });
-        writing_ = true;
-    }
+ReadWriteLockSolution::ReadWriteLockSolution() : readers_(0), writer_(false) {}
 
-    void unlock_write() {
-        std::lock_guard<std::mutex> lock(mutex_);
-        writing_ = false;
+void ReadWriteLockSolution::lock_read() {
+    std::unique_lock<std::mutex> lock(mutex_);
+    cv_.wait(lock, [this] { return !writer_; });
+    ++readers_;
+}
+
+void ReadWriteLockSolution::unlock_read() {
+    std::lock_guard<std::mutex> lock(mutex_);
+    --readers_;
+    if (readers_ == 0) {
         cv_.notify_all();
     }
-
-private:
-    std::mutex mutex_;
-    std::condition_variable cv_;
-    int readers_ = 0;
-    bool writing_ = false;
-};
-
-// RAII 包装
-class ReadLock {
-public:
-    explicit ReadLock(ReadWriteLock& rwlock) : rwlock_(rwlock) { rwlock_.lock_read(); }
-    ~ReadLock() { rwlock_.unlock_read(); }
-private:
-    ReadWriteLock& rwlock_;
-};
-
-class WriteLock {
-public:
-    explicit WriteLock(ReadWriteLock& rwlock) : rwlock_(rwlock) { rwlock_.lock_write(); }
-    ~WriteLock() { rwlock_.unlock_write(); }
-private:
-    ReadWriteLock& rwlock_;
-};
-
-int main() {
-    ReadWriteLock rwlock;
-    int sharedData = 0;
-    std::vector<std::thread> threads;
-
-    // 多个读者
-    for (int i = 0; i < 5; ++i) {
-        threads.emplace_back([&rwlock, &sharedData, i] {
-            for (int j = 0; j < 3; ++j) {
-                ReadLock lock(rwlock);
-                std::cout << "Reader " << i << " read: " << sharedData << "\n";
-            }
-        });
-    }
-
-    // 写者
-    threads.emplace_back([&rwlock, &sharedData] {
-        for (int j = 0; j < 5; ++j) {
-            WriteLock lock(rwlock);
-            ++sharedData;
-            std::cout << "Writer wrote: " << sharedData << "\n";
-        }
-    });
-
-    for (auto& t : threads) t.join();
-    return 0;
 }
+
+void ReadWriteLockSolution::lock_write() {
+    std::unique_lock<std::mutex> lock(mutex_);
+    cv_.wait(lock, [this] { return !writer_ && readers_ == 0; });
+    writer_ = true;
+}
+
+void ReadWriteLockSolution::unlock_write() {
+    std::lock_guard<std::mutex> lock(mutex_);
+    writer_ = false;
+    cv_.notify_all();
+}
+
+// SharedMutex 封装
+void SharedMutexWrapper::lock_read() {
+    mutex_.lock_shared();
+}
+
+void SharedMutexWrapper::unlock_read() {
+    mutex_.unlock_shared();
+}
+
+void SharedMutexWrapper::lock_write() {
+    mutex_.lock();
+}
+
+void SharedMutexWrapper::unlock_write() {
+    mutex_.unlock();
+}
+
+// ==================== 测试函数 ====================
+
+void runTests() {
+    std::cout << "=== Read Write Lock Tests ===" << std::endl;
+
+    // 测试读写锁
+    {
+        ReadWriteLockSolution rwlock;
+        int sharedData = 0;
+        std::atomic<int> readCount{0};
+
+        // 多个读者
+        std::vector<std::thread> readers;
+        for (int i = 0; i < 5; ++i) {
+            readers.emplace_back([&rwlock, &sharedData, &readCount] {
+                rwlock.lock_read();
+                ++readCount;
+                std::this_thread::sleep_for(std::chrono::milliseconds(10));
+                --readCount;
+                rwlock.unlock_read();
+            });
+        }
+
+        // 一个写者
+        std::thread writer([&rwlock, &sharedData] {
+            std::this_thread::sleep_for(std::chrono::milliseconds(5));
+            rwlock.lock_write();
+            ++sharedData;
+            rwlock.unlock_write();
+        });
+
+        for (auto& r : readers) r.join();
+        writer.join();
+
+        assert(sharedData == 1);
+    }
+    std::cout << "  ReadWriteLock: PASSED" << std::endl;
+
+    // 测试 shared_mutex 封装
+    {
+        SharedMutexWrapper rwlock;
+        int sharedData = 0;
+
+        std::thread reader1([&rwlock, &sharedData] {
+            rwlock.lock_read();
+            int val = sharedData;
+            rwlock.unlock_read();
+        });
+
+        std::thread writer([&rwlock, &sharedData] {
+            rwlock.lock_write();
+            ++sharedData;
+            rwlock.unlock_write();
+        });
+
+        reader1.join();
+        writer.join();
+
+        assert(sharedData == 1);
+    }
+    std::cout << "  SharedMutexWrapper: PASSED" << std::endl;
+}
+
+} // namespace ReadWriteLock

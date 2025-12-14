@@ -1,25 +1,22 @@
 /**
  * @file object_pool_solution.cpp
- * @brief 对象池实现 - 解答
+ * @brief 对象池实现 - 参考答案
  */
 
-#include <cstddef>
-#include <vector>
-#include <memory>
-#include <mutex>
+#include "object_pool.h"
 #include <iostream>
-#include <functional>
+#include <cassert>
 
-/**
- * 题目1：实现简单对象池
- *
- * 对象预创建，获取和归还 O(1)
- */
+namespace ObjectPoolImpl {
+
+namespace Solution {
+
+// ==================== 简单对象池 ====================
+
 template <typename T>
 class SimpleObjectPool {
 public:
     explicit SimpleObjectPool(size_t size) {
-        // 预创建对象
         objects_.reserve(size);
         available_.reserve(size);
 
@@ -54,15 +51,12 @@ public:
     }
 
 private:
-    std::vector<std::unique_ptr<T>> objects_;  // 所有对象
-    std::vector<T*> available_;                 // 可用对象
+    std::vector<std::unique_ptr<T>> objects_;
+    std::vector<T*> available_;
 };
 
-/**
- * 题目2：实现带重置功能的对象池
- *
- * 对象归还时重置状态，确保再次使用时是"干净"的
- */
+// ==================== 带重置功能的对象池 ====================
+
 template <typename T>
 class ResettableObjectPool {
 public:
@@ -92,7 +86,6 @@ public:
 
     void release(T* obj) {
         if (obj) {
-            // 归还前重置对象
             if (resetFunc_) {
                 resetFunc_(*obj);
             }
@@ -108,15 +101,11 @@ private:
     ResetFunc resetFunc_;
 };
 
-/**
- * 题目3：实现 RAII 包装的对象池
- *
- * 使用智能指针自动管理对象生命周期
- */
+// ==================== RAII 包装的对象池 ====================
+
 template <typename T>
 class SmartObjectPool {
 public:
-    // 前向声明，Deleter 需要访问 pool
     class Deleter {
     public:
         explicit Deleter(SmartObjectPool* pool = nullptr) : pool_(pool) {}
@@ -166,9 +155,8 @@ private:
     std::vector<T*> available_;
 };
 
-/**
- * 题目4：实现线程安全的对象池
- */
+// ==================== 线程安全的对象池 ====================
+
 template <typename T>
 class ThreadSafeObjectPool {
 public:
@@ -212,9 +200,8 @@ private:
     mutable std::mutex mutex_;
 };
 
-/**
- * 扩展：可增长的对象池
- */
+// ==================== 可增长的对象池 ====================
+
 template <typename T>
 class GrowableObjectPool {
 public:
@@ -229,7 +216,7 @@ public:
         if (available_.empty()) {
             size_t newSize = std::min(objects_.size(), maxSize_ - objects_.size());
             if (newSize == 0) {
-                return nullptr;  // 达到最大容量
+                return nullptr;
             }
             grow(newSize);
         }
@@ -246,6 +233,11 @@ public:
         }
     }
 
+    size_t capacity() const {
+        std::lock_guard<std::mutex> lock(mutex_);
+        return objects_.size();
+    }
+
 private:
     void grow(size_t count) {
         for (size_t i = 0; i < count; ++i) {
@@ -257,99 +249,144 @@ private:
     std::vector<std::unique_ptr<T>> objects_;
     std::vector<T*> available_;
     size_t maxSize_;
-    std::mutex mutex_;
+    mutable std::mutex mutex_;
 };
 
-// 测试用对象
+// ==================== 测试用对象 ====================
+
 struct Connection {
     int id;
     bool active;
+    static int nextId_;
+    static int instanceCount;
 
     Connection() : id(nextId_++), active(false) {
-        std::cout << "Connection " << id << " created\n";
+        ++instanceCount;
     }
 
     ~Connection() {
-        std::cout << "Connection " << id << " destroyed\n";
+        --instanceCount;
     }
 
     void connect() {
         active = true;
-        std::cout << "Connection " << id << " connected\n";
     }
 
     void disconnect() {
         active = false;
-        std::cout << "Connection " << id << " disconnected\n";
     }
 
     void reset() {
         active = false;
-        std::cout << "Connection " << id << " reset\n";
     }
-
-    static int nextId_;
 };
 
 int Connection::nextId_ = 1;
+int Connection::instanceCount = 0;
 
-int main() {
-    std::cout << "=== 测试简单对象池 ===\n";
+} // namespace Solution
+
+// ==================== 测试函数 ====================
+
+void testObjectPoolSolution() {
+    std::cout << "=== Object Pool Tests (Solution) ===" << std::endl;
+
+    // 测试简单对象池
+    Solution::Connection::nextId_ = 1;
+    Solution::Connection::instanceCount = 0;
     {
-        SimpleObjectPool<Connection> pool(3);
-        std::cout << "Available: " << pool.available() << "\n";
+        Solution::SimpleObjectPool<Solution::Connection> pool(3);
+        assert(pool.available() == 3);
 
-        Connection* c1 = pool.acquire();
+        Solution::Connection* c1 = pool.acquire();
         c1->connect();
+        assert(c1->active == true);
 
-        Connection* c2 = pool.acquire();
+        Solution::Connection* c2 = pool.acquire();
         c2->connect();
-
-        std::cout << "After acquire 2: available = " << pool.available() << "\n";
+        assert(pool.available() == 1);
 
         pool.release(c1);
-        std::cout << "After release 1: available = " << pool.available() << "\n";
+        assert(pool.available() == 2);
 
-        Connection* c3 = pool.acquire();
-        std::cout << "c3 id: " << c3->id << " (should reuse c1)\n";
+        Solution::Connection* c3 = pool.acquire();
+        assert(c3->id == c1->id);  // 重用 c1
     }
+    assert(Solution::Connection::instanceCount == 0);
+    std::cout << "  SimpleObjectPool: PASSED" << std::endl;
 
-    Connection::nextId_ = 1;  // 重置 ID
-
-    std::cout << "\n=== 测试带重置的对象池 ===\n";
+    // 测试带重置的对象池
+    Solution::Connection::nextId_ = 1;
     {
-        ResettableObjectPool<Connection> pool(2, [](Connection& c) {
+        Solution::ResettableObjectPool<Solution::Connection> pool(2, [](Solution::Connection& c) {
             c.reset();
         });
 
-        Connection* c1 = pool.acquire();
+        Solution::Connection* c1 = pool.acquire();
         c1->connect();
-        std::cout << "c1 active: " << (c1->active ? "yes" : "no") << "\n";
+        assert(c1->active == true);
 
         pool.release(c1);  // 会自动调用 reset
 
-        Connection* c2 = pool.acquire();
-        std::cout << "c2 active after reuse: " << (c2->active ? "yes" : "no") << "\n";
+        Solution::Connection* c2 = pool.acquire();
+        assert(c2->active == false);  // 已被重置
     }
+    std::cout << "  ResettableObjectPool: PASSED" << std::endl;
 
-    Connection::nextId_ = 1;
-
-    std::cout << "\n=== 测试智能指针对象池 ===\n";
+    // 测试智能指针对象池
+    Solution::Connection::nextId_ = 1;
     {
-        SmartObjectPool<Connection> pool(2);
+        Solution::SmartObjectPool<Solution::Connection> pool(2);
 
         {
             auto c1 = pool.acquire();
             c1->connect();
-            std::cout << "Inside scope: available = " << pool.available() << "\n";
+            assert(pool.available() == 1);
             // c1 离开作用域时自动归还
         }
 
-        std::cout << "After scope: available = " << pool.available() << "\n";
+        assert(pool.available() == 2);
 
         auto c2 = pool.acquire();
-        std::cout << "c2 id: " << c2->id << " (should reuse)\n";
+        assert(c2->id == 1);  // 重用
     }
+    std::cout << "  SmartObjectPool: PASSED" << std::endl;
 
-    return 0;
+    // 测试线程安全对象池
+    Solution::Connection::nextId_ = 1;
+    {
+        Solution::ThreadSafeObjectPool<Solution::Connection> pool(3);
+        assert(pool.available() == 3);
+
+        Solution::Connection* c1 = pool.acquire();
+        Solution::Connection* c2 = pool.acquire();
+        assert(pool.available() == 1);
+
+        pool.release(c1);
+        pool.release(c2);
+        assert(pool.available() == 3);
+    }
+    std::cout << "  ThreadSafeObjectPool: PASSED" << std::endl;
+
+    // 测试可增长对象池
+    Solution::Connection::nextId_ = 1;
+    {
+        Solution::GrowableObjectPool<Solution::Connection> pool(2, 10);
+        assert(pool.capacity() == 2);
+
+        std::vector<Solution::Connection*> acquired;
+        for (int i = 0; i < 5; ++i) {
+            Solution::Connection* c = pool.acquire();
+            assert(c != nullptr);
+            acquired.push_back(c);
+        }
+        assert(pool.capacity() >= 5);
+
+        for (Solution::Connection* c : acquired) {
+            pool.release(c);
+        }
+    }
+    std::cout << "  GrowableObjectPool: PASSED" << std::endl;
 }
+
+} // namespace ObjectPoolImpl

@@ -1,145 +1,257 @@
 /**
  * @file pimpl.cpp
- * @brief Pimpl 惯用法实现 - 面试题
- *
- * Pointer to Implementation：将实现细节隐藏在独立的类中
- * 优点：编译防火墙、二进制兼容性、隐藏实现
+ * @brief Pimpl 惯用法实现 - 面试者实现文件
  */
 
-#include <memory>
-#include <string>
+#include "pimpl.h"
+#include <stdexcept>
 
-/**
- * 题目1：实现基础 Pimpl
- *
- * 场景：数据库连接类
- * 要求：
- * 1. 头文件不暴露实现细节
- * 2. 使用 unique_ptr 管理实现
- * 3. 正确处理拷贝和移动
- */
+namespace PimplImpl {
 
-// ===== DatabaseConnection.h =====
-class DatabaseConnection {
+// ==================== DatabaseConnection::Impl ====================
+
+class DatabaseConnection::Impl {
 public:
-    DatabaseConnection();
-    ~DatabaseConnection();
+    // TODO: 实现 Impl 类
+    Impl() : connected_(false) {}
 
-    // 移动操作
-    DatabaseConnection(DatabaseConnection&& other) noexcept;
-    DatabaseConnection& operator=(DatabaseConnection&& other) noexcept;
+    void connect(const std::string& connStr) {
+        // TODO
+    }
 
-    // 禁止拷贝（或实现深拷贝）
-    DatabaseConnection(const DatabaseConnection&) = delete;
-    DatabaseConnection& operator=(const DatabaseConnection&) = delete;
+    void disconnect() {
+        // TODO
+    }
 
-    // 公共接口
-    void connect(const std::string& connectionString);
-    void disconnect();
-    bool isConnected() const;
-    void execute(const std::string& sql);
+    bool isConnected() const {
+        return connected_;
+    }
+
+    void execute(const std::string& sql) {
+        // TODO
+    }
 
 private:
-    // 前向声明
-    class Impl;
-    std::unique_ptr<Impl> pImpl_;
+    std::string connectionString_;
+    std::string lastQuery_;
+    bool connected_;
 };
 
-// ===== DatabaseConnection.cpp =====
-// TODO: 实现 Impl 类
-// TODO: 实现 DatabaseConnection 的所有方法
+// ==================== DatabaseConnection 实现 ====================
 
-/**
- * 题目2：实现支持拷贝的 Pimpl
- *
- * 要求：
- * 1. 支持深拷贝
- * 2. Copy-on-Write 优化（可选）
- */
-
-// ===== Widget.h =====
-class Widget {
-public:
-    Widget();
-    ~Widget();
-
-    // 支持拷贝
-    Widget(const Widget& other);
-    Widget& operator=(const Widget& other);
-
-    // 支持移动
-    Widget(Widget&& other) noexcept;
-    Widget& operator=(Widget&& other) noexcept;
-
-    void setData(const std::string& data);
-    std::string getData() const;
-
-private:
-    class Impl;
-    std::unique_ptr<Impl> pImpl_;
-};
-
-/**
- * 题目3：使用 shared_ptr 实现 Copy-on-Write
- *
- * 场景：大型数据结构，拷贝开销大
- */
-
-// ===== Document.h =====
-class Document {
-public:
-    Document();
-    ~Document();
-
-    // 拷贝是浅拷贝（共享 Impl）
-    Document(const Document& other);
-    Document& operator=(const Document& other);
-
-    // 写入时才复制
-    void write(const std::string& content);
-    std::string read() const;
-
-private:
-    class Impl;
-    std::shared_ptr<Impl> pImpl_;
-
-    // 写时复制辅助函数
-    void detach();
-};
-
-/**
- * 题目4：Pimpl 与继承
- *
- * 如何在继承体系中使用 Pimpl
- */
-class Base {
-public:
-    Base();
-    virtual ~Base();
-
-    virtual void doSomething();
-
-protected:
-    class BaseImpl;
-    std::unique_ptr<BaseImpl> pImpl_;
-
-    // 供派生类使用
-    Base(std::unique_ptr<BaseImpl> impl);
-};
-
-class Derived : public Base {
-public:
-    Derived();
-    ~Derived() override;
-
-    void doSomething() override;
-    void doExtra();
-
-private:
-    class DerivedImpl;
-    // 注意：派生类可以有自己的 Impl，也可以扩展基类的 Impl
-};
-
-int main() {
-    return 0;
+DatabaseConnection::DatabaseConnection() : pImpl_(std::make_unique<Impl>()) {
 }
+
+DatabaseConnection::~DatabaseConnection() = default;
+
+DatabaseConnection::DatabaseConnection(DatabaseConnection&& other) noexcept = default;
+DatabaseConnection& DatabaseConnection::operator=(DatabaseConnection&& other) noexcept = default;
+
+void DatabaseConnection::connect(const std::string& connectionString) {
+    // TODO: 委托给 pImpl_
+}
+
+void DatabaseConnection::disconnect() {
+    // TODO: 委托给 pImpl_
+}
+
+bool DatabaseConnection::isConnected() const {
+    return pImpl_->isConnected();
+}
+
+void DatabaseConnection::execute(const std::string& sql) {
+    // TODO: 委托给 pImpl_
+}
+
+// ==================== Widget::Impl ====================
+
+class Widget::Impl {
+public:
+    std::string data;
+    Impl() = default;
+    Impl(const Impl& other) : data(other.data) {}
+};
+
+// ==================== Widget 实现 ====================
+
+Widget::Widget() : pImpl_(std::make_unique<Impl>()) {
+}
+
+Widget::~Widget() = default;
+
+Widget::Widget(const Widget& other)
+    : pImpl_(std::make_unique<Impl>(*other.pImpl_)) {
+    // TODO: 确保深拷贝正确
+}
+
+Widget& Widget::operator=(const Widget& other) {
+    // TODO: 实现拷贝赋值
+    return *this;
+}
+
+Widget::Widget(Widget&& other) noexcept = default;
+Widget& Widget::operator=(Widget&& other) noexcept = default;
+
+void Widget::setData(const std::string& data) {
+    // TODO
+}
+
+std::string Widget::getData() const {
+    return pImpl_->data;
+}
+
+// ==================== Document::Impl ====================
+
+class Document::Impl {
+public:
+    std::string content;
+    Impl() = default;
+    Impl(const Impl& other) : content(other.content) {}
+};
+
+// ==================== Document 实现 ====================
+
+Document::Document() : pImpl_(std::make_shared<Impl>()) {
+}
+
+Document::~Document() = default;
+
+Document::Document(const Document& other) : pImpl_(other.pImpl_) {
+    // 浅拷贝，共享 Impl
+}
+
+Document& Document::operator=(const Document& other) {
+    // TODO: 实现拷贝赋值
+    return *this;
+}
+
+void Document::write(const std::string& content) {
+    // TODO: 先 detach，再写入
+}
+
+std::string Document::read() const {
+    return pImpl_->content;
+}
+
+long Document::useCount() const {
+    return pImpl_.use_count();
+}
+
+void Document::detach() {
+    // TODO: 如果 use_count > 1，则复制一份
+}
+
+// ==================== Base::BaseImpl ====================
+
+class Base::BaseImpl {
+public:
+    int baseData = 0;
+    virtual ~BaseImpl() = default;
+    virtual int doSomethingImpl() {
+        return baseData;
+    }
+};
+
+// ==================== Base 实现 ====================
+
+Base::Base() : pImpl_(std::make_unique<BaseImpl>()) {
+}
+
+Base::Base(std::unique_ptr<BaseImpl> impl) : pImpl_(std::move(impl)) {
+}
+
+Base::~Base() = default;
+
+int Base::doSomething() {
+    return pImpl_->doSomethingImpl();
+}
+
+// ==================== Derived::DerivedImpl ====================
+
+class Derived::DerivedImpl : public Base::BaseImpl {
+public:
+    int derivedData = 0;
+
+    int doSomethingImpl() override {
+        // TODO
+        return 0;
+    }
+
+    int doExtraImpl() {
+        // TODO
+        return 0;
+    }
+};
+
+// ==================== Derived 实现 ====================
+
+Derived::Derived() : Base(std::make_unique<DerivedImpl>()) {
+}
+
+Derived::~Derived() = default;
+
+int Derived::doSomething() {
+    return getDerivedImpl()->doSomethingImpl();
+}
+
+int Derived::doExtra() {
+    return getDerivedImpl()->doExtraImpl();
+}
+
+void Derived::setDerivedData(int value) {
+    // TODO
+}
+
+Derived::DerivedImpl* Derived::getDerivedImpl() {
+    return static_cast<DerivedImpl*>(pImpl_.get());
+}
+
+// ==================== FastPimpl 模板实现 ====================
+
+template <size_t Size, size_t Alignment>
+template <typename T, typename... Args>
+void FastPimpl<Size, Alignment>::construct(Args&&... args) {
+    // TODO: 使用 placement new 在 buffer_ 中构造对象
+}
+
+template <size_t Size, size_t Alignment>
+template <typename T>
+void FastPimpl<Size, Alignment>::destroy() {
+    // TODO: 调用析构函数
+}
+
+template <size_t Size, size_t Alignment>
+template <typename T>
+T* FastPimpl<Size, Alignment>::get() {
+    return reinterpret_cast<T*>(buffer_);
+}
+
+template <size_t Size, size_t Alignment>
+template <typename T>
+const T* FastPimpl<Size, Alignment>::get() const {
+    return reinterpret_cast<const T*>(buffer_);
+}
+
+// ==================== FastWidget 实现 ====================
+
+struct FastWidget::Impl {
+    int value = 0;
+};
+
+FastWidget::FastWidget() {
+    // TODO: 使用 storage_.construct<Impl>()
+}
+
+FastWidget::~FastWidget() {
+    // TODO: 使用 storage_.destroy<Impl>()
+}
+
+void FastWidget::setValue(int v) {
+    // TODO
+}
+
+int FastWidget::getValue() const {
+    return 0;  // TODO
+}
+
+} // namespace PimplImpl

@@ -1,23 +1,19 @@
 /**
  * @file type_erasure_solution.cpp
- * @brief 类型擦除实现 - 解答
+ * @brief 类型擦除实现 - 参考答案
  */
 
+#include "type_erasure.h"
 #include <iostream>
-#include <memory>
-#include <string>
+#include <cassert>
 #include <vector>
-#include <typeinfo>
-#include <stdexcept>
-#include <functional>
 
-/**
- * 题目1：简单类型擦除容器
- *
- * 实现思路：
- * 1. Concept（抽象基类）定义接口
- * 2. Model<T>（模板派生类）持有具体类型并实现接口
- */
+namespace TypeErasureImpl {
+
+namespace Solution {
+
+// ==================== Printable ====================
+
 class Printable {
 public:
     template <typename T>
@@ -37,16 +33,17 @@ public:
 
     Printable& operator=(Printable&& other) noexcept = default;
 
-    void print() const {
+    std::string print() const {
         if (pImpl_) {
-            pImpl_->print();
+            return pImpl_->print();
         }
+        return "";
     }
 
 private:
     struct Concept {
         virtual ~Concept() = default;
-        virtual void print() const = 0;
+        virtual std::string print() const = 0;
         virtual std::unique_ptr<Concept> clone() const = 0;
     };
 
@@ -56,8 +53,8 @@ private:
 
         explicit Model(T obj) : data_(std::move(obj)) {}
 
-        void print() const override {
-            data_.print();
+        std::string print() const override {
+            return data_.print();
         }
 
         std::unique_ptr<Concept> clone() const override {
@@ -68,24 +65,22 @@ private:
     std::unique_ptr<Concept> pImpl_;
 };
 
-// 测试用的可打印类
 struct Document {
     std::string content;
-    void print() const {
-        std::cout << "Document: " << content << "\n";
+    std::string print() const {
+        return "Document: " + content;
     }
 };
 
 struct Image {
     int width, height;
-    void print() const {
-        std::cout << "Image: " << width << "x" << height << "\n";
+    std::string print() const {
+        return "Image: " + std::to_string(width) + "x" + std::to_string(height);
     }
 };
 
-/**
- * 题目2：实现 std::function 风格的类型擦除
- */
+// ==================== Function ====================
+
 template <typename Signature>
 class Function;
 
@@ -147,9 +142,8 @@ private:
     std::unique_ptr<Concept> pImpl_;
 };
 
-/**
- * 题目3：实现 std::any 风格的类型擦除
- */
+// ==================== Any ====================
+
 class Any {
 public:
     Any() = default;
@@ -236,7 +230,6 @@ private:
     std::unique_ptr<Concept> pImpl_;
 };
 
-// any_cast 辅助函数
 template <typename T>
 T any_cast(Any& a) {
     return a.get<std::remove_reference_t<T>>();
@@ -247,9 +240,8 @@ T any_cast(const Any& a) {
     return a.get<std::remove_reference_t<T>>();
 }
 
-/**
- * 题目4：带小对象优化（SBO）的类型擦除
- */
+// ==================== AnyWithSBO ====================
+
 class AnyWithSBO {
 public:
     AnyWithSBO() : vtable_(nullptr) {}
@@ -260,11 +252,9 @@ public:
         if constexpr (sizeof(DecayT) <= BufferSize &&
                       alignof(DecayT) <= alignof(std::max_align_t) &&
                       std::is_nothrow_move_constructible_v<DecayT>) {
-            // 小对象：存储在栈上
             new (buffer_) DecayT(std::move(value));
             vtable_ = &getVTable<DecayT, true>();
         } else {
-            // 大对象：存储在堆上
             *reinterpret_cast<DecayT**>(buffer_) = new DecayT(std::move(value));
             vtable_ = &getVTable<DecayT, false>();
         }
@@ -381,85 +371,102 @@ private:
     const VTable* vtable_;
 };
 
-int main() {
-    std::cout << "=== 简单类型擦除：Printable ===\n";
-    {
-        std::vector<Printable> items;
-        items.push_back(Document{"Hello World"});
-        items.push_back(Image{800, 600});
+} // namespace Solution
 
-        for (const auto& item : items) {
-            item.print();
-        }
+// ==================== 测试函数 ====================
+
+void runTests() {
+    std::cout << "=== Type Erasure Tests ===" << std::endl;
+
+    // 测试 Printable 类型擦除
+    {
+        std::vector<Solution::Printable> items;
+        items.push_back(Solution::Document{"Hello World"});
+        items.push_back(Solution::Image{800, 600});
+
+        assert(items[0].print() == "Document: Hello World");
+        assert(items[1].print() == "Image: 800x600");
+
+        // 测试拷贝
+        Solution::Printable copy = items[0];
+        assert(copy.print() == "Document: Hello World");
     }
+    std::cout << "  Printable: PASSED" << std::endl;
 
-    std::cout << "\n=== Function 类型擦除 ===\n";
+    // 测试 Function 类型擦除
     {
-        Function<int(int, int)> add = [](int a, int b) { return a + b; };
-        Function<int(int, int)> mul = [](int a, int b) { return a * b; };
+        Solution::Function<int(int, int)> add = [](int a, int b) { return a + b; };
+        Solution::Function<int(int, int)> mul = [](int a, int b) { return a * b; };
 
-        std::cout << "add(3, 4) = " << add(3, 4) << "\n";
-        std::cout << "mul(3, 4) = " << mul(3, 4) << "\n";
+        assert(add(3, 4) == 7);
+        assert(mul(3, 4) == 12);
 
         // 拷贝
-        Function<int(int, int)> addCopy = add;
-        std::cout << "addCopy(5, 6) = " << addCopy(5, 6) << "\n";
+        Solution::Function<int(int, int)> addCopy = add;
+        assert(addCopy(5, 6) == 11);
 
         // 空函数检查
-        Function<void()> empty;
-        std::cout << "empty is valid: " << (empty ? "yes" : "no") << "\n";
-    }
+        Solution::Function<void()> empty;
+        assert(!empty);
 
-    std::cout << "\n=== Any 类型擦除 ===\n";
+        Solution::Function<void()> nonEmpty = [](){};
+        assert(nonEmpty);
+    }
+    std::cout << "  Function: PASSED" << std::endl;
+
+    // 测试 Any 类型擦除
     {
-        Any a = 42;
-        std::cout << "a holds int: " << (a.type() == typeid(int)) << "\n";
-        std::cout << "a value: " << any_cast<int>(a) << "\n";
+        Solution::Any a = 42;
+        assert(a.type() == typeid(int));
+        assert(Solution::any_cast<int>(a) == 42);
 
         a = std::string("Hello");
-        std::cout << "a holds string: " << (a.type() == typeid(std::string)) << "\n";
-        std::cout << "a value: " << any_cast<std::string>(a) << "\n";
+        assert(a.type() == typeid(std::string));
+        assert(Solution::any_cast<std::string>(a) == "Hello");
 
         // 类型不匹配
+        bool caught = false;
         try {
-            int x = any_cast<int>(a);
+            int x = Solution::any_cast<int>(a);
             (void)x;
         } catch (const std::bad_cast&) {
-            std::cout << "Bad cast caught!\n";
+            caught = true;
         }
+        assert(caught);
 
-        // 容器中使用
-        std::vector<Any> vec;
-        vec.push_back(1);
-        vec.push_back(3.14);
-        vec.push_back(std::string("world"));
-
-        for (auto& elem : vec) {
-            std::cout << "Type: " << elem.type().name() << "\n";
-        }
+        // hasValue 和 reset
+        assert(a.hasValue());
+        a.reset();
+        assert(!a.hasValue());
     }
+    std::cout << "  Any: PASSED" << std::endl;
 
-    std::cout << "\n=== AnyWithSBO 类型擦除 ===\n";
+    // 测试 AnyWithSBO 类型擦除
     {
         // 小对象（栈存储）
-        AnyWithSBO small = 42;
-        std::cout << "small type: " << small.type().name() << "\n";
-        std::cout << "small value: " << *small.tryGet<int>() << "\n";
+        Solution::AnyWithSBO small = 42;
+        assert(small.hasValue());
+        assert(small.type() == typeid(int));
+        assert(*small.tryGet<int>() == 42);
 
         // 大对象（堆存储）
         struct LargeObject {
             char data[100];
             int value;
         };
-        AnyWithSBO large = LargeObject{};
-        std::cout << "large has value: " << large.hasValue() << "\n";
+        Solution::AnyWithSBO large = LargeObject{{}, 123};
+        assert(large.hasValue());
 
-        // 拷贝和移动
-        AnyWithSBO copy = small;
-        AnyWithSBO moved = std::move(copy);
-        std::cout << "moved value: " << *moved.tryGet<int>() << "\n";
-        std::cout << "copy has value after move: " << copy.hasValue() << "\n";
+        // 拷贝
+        Solution::AnyWithSBO copy = small;
+        assert(*copy.tryGet<int>() == 42);
+
+        // 移动
+        Solution::AnyWithSBO moved = std::move(copy);
+        assert(*moved.tryGet<int>() == 42);
+        assert(!copy.hasValue());
     }
-
-    return 0;
+    std::cout << "  AnyWithSBO: PASSED" << std::endl;
 }
+
+} // namespace TypeErasureImpl

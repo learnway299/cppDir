@@ -1,130 +1,185 @@
 /**
  * @file object_pool.cpp
- * @brief 对象池实现 - 面试题
- *
- * 对象池专门用于管理特定类型对象的创建和复用
+ * @brief 对象池实现 - 面试者实现文件
  */
 
-#include <cstddef>
-#include <vector>
-#include <memory>
+#include "object_pool.h"
+#include <iostream>
 
-/**
- * 题目1：实现简单对象池
- *
- * 要求：
- * 1. 预创建一定数量的对象
- * 2. acquire() 获取对象
- * 3. release() 归还对象
- * 4. 支持对象复用
- */
+namespace ObjectPoolImpl {
+
+// ==================== SimpleObjectPool 实现 ====================
+
 template <typename T>
-class SimpleObjectPool {
-public:
-    // TODO: 实现构造函数，预创建 size 个对象
-    explicit SimpleObjectPool(size_t size) {
-    }
+SimpleObjectPool<T>::SimpleObjectPool(size_t size) {
+    // TODO: 预创建 size 个对象
+    // 提示：使用 make_unique 创建对象，存入 objects_
+    // 将裸指针存入 available_
+}
 
-    // TODO: 获取一个对象
-    T* acquire() {
-        return nullptr;
-    }
-
-    // TODO: 归还一个对象
-    void release(T* obj) {
-    }
-
-    // TODO: 返回可用对象数
-    size_t available() const {
-        return 0;
-    }
-
-private:
-    // TODO: 定义成员变量
-};
-
-/**
- * 题目2：实现带重置功能的对象池
- *
- * 要求：
- * 1. 对象归还时自动重置状态
- * 2. 支持自定义重置函数
- */
 template <typename T>
-class ResettableObjectPool {
-public:
-    using ResetFunc = void(*)(T&);
+T* SimpleObjectPool<T>::acquire() {
+    // TODO: 从 available_ 取出一个对象
+    return nullptr;
+}
 
-    // TODO: 实现带重置函数的对象池
-    explicit ResettableObjectPool(size_t size, ResetFunc resetFunc = nullptr) {
-    }
-
-    T* acquire() {
-        return nullptr;
-    }
-
-    void release(T* obj) {
-    }
-
-private:
-    // TODO: 定义成员变量
-};
-
-/**
- * 题目3：实现 RAII 包装的对象池
- *
- * 要求：
- * 1. acquire() 返回智能指针
- * 2. 智能指针析构时自动归还对象
- * 3. 支持自定义删除器
- */
 template <typename T>
-class SmartObjectPool {
-public:
-    // 自定义删除器，归还而非删除
-    struct Deleter {
-        // TODO: 实现删除器
-    };
+void SimpleObjectPool<T>::release(T* obj) {
+    // TODO: 将对象放回 available_
+}
 
-    using Ptr = std::unique_ptr<T, Deleter>;
-
-    explicit SmartObjectPool(size_t size) {
-    }
-
-    // TODO: 获取对象，返回智能指针
-    Ptr acquire() {
-        return nullptr;
-    }
-
-private:
-    // TODO: 定义成员变量
-};
-
-/**
- * 题目4：实现线程安全的对象池
- *
- * 要求：
- * 1. 支持多线程并发访问
- * 2. 使用互斥锁保护
- */
 template <typename T>
-class ThreadSafeObjectPool {
-public:
-    explicit ThreadSafeObjectPool(size_t size) {
-    }
+size_t SimpleObjectPool<T>::available() const {
+    return available_.size();
+}
 
-    T* acquire() {
-        return nullptr;
-    }
+template <typename T>
+size_t SimpleObjectPool<T>::capacity() const {
+    return objects_.size();
+}
 
-    void release(T* obj) {
-    }
+// ==================== ResettableObjectPool 实现 ====================
 
-private:
-    // TODO: 定义成员变量
-    // 提示：使用 std::mutex
-};
+template <typename T>
+ResettableObjectPool<T>::ResettableObjectPool(size_t size, ResetFunc resetFunc)
+    : resetFunc_(std::move(resetFunc)) {
+    // TODO: 预创建对象
+}
 
-int main() {
+template <typename T>
+T* ResettableObjectPool<T>::acquire() {
+    // TODO: 获取对象
+    return nullptr;
+}
+
+template <typename T>
+void ResettableObjectPool<T>::release(T* obj) {
+    // TODO: 归还对象前调用重置函数
+}
+
+template <typename T>
+size_t ResettableObjectPool<T>::available() const {
+    return available_.size();
+}
+
+// ==================== SmartObjectPool 实现 ====================
+
+template <typename T>
+SmartObjectPool<T>::Deleter::Deleter(SmartObjectPool* pool) : pool_(pool) {
+}
+
+template <typename T>
+void SmartObjectPool<T>::Deleter::operator()(T* ptr) const {
+    // TODO: 调用 pool_->release(ptr)
+}
+
+template <typename T>
+SmartObjectPool<T>::SmartObjectPool(size_t size) {
+    // TODO: 预创建对象
+}
+
+template <typename T>
+typename SmartObjectPool<T>::Ptr SmartObjectPool<T>::acquire() {
+    // TODO: 返回带自定义删除器的 unique_ptr
+    return Ptr(nullptr, Deleter(this));
+}
+
+template <typename T>
+size_t SmartObjectPool<T>::available() const {
+    return available_.size();
+}
+
+template <typename T>
+void SmartObjectPool<T>::release(T* obj) {
+    // TODO: 归还对象
+}
+
+// ==================== ThreadSafeObjectPool 实现 ====================
+
+template <typename T>
+ThreadSafeObjectPool<T>::ThreadSafeObjectPool(size_t size) {
+    // TODO: 预创建对象
+}
+
+template <typename T>
+T* ThreadSafeObjectPool<T>::acquire() {
+    // TODO: 加锁后获取对象
+    return nullptr;
+}
+
+template <typename T>
+void ThreadSafeObjectPool<T>::release(T* obj) {
+    // TODO: 加锁后归还对象
+}
+
+template <typename T>
+size_t ThreadSafeObjectPool<T>::available() const {
+    // TODO: 加锁后返回数量
     return 0;
 }
+
+// ==================== GrowableObjectPool 实现 ====================
+
+template <typename T>
+GrowableObjectPool<T>::GrowableObjectPool(size_t initialSize, size_t maxSize)
+    : maxSize_(maxSize) {
+    // TODO: 调用 grow(initialSize)
+}
+
+template <typename T>
+T* GrowableObjectPool<T>::acquire() {
+    // TODO: 如果 available_ 为空且未达到最大容量，调用 grow
+    // TODO: 返回对象
+    return nullptr;
+}
+
+template <typename T>
+void GrowableObjectPool<T>::release(T* obj) {
+    // TODO: 归还对象
+}
+
+template <typename T>
+size_t GrowableObjectPool<T>::capacity() const {
+    std::lock_guard<std::mutex> lock(mutex_);
+    return objects_.size();
+}
+
+template <typename T>
+void GrowableObjectPool<T>::grow(size_t count) {
+    // TODO: 创建新对象并加入池
+}
+
+// ==================== Connection 实现 ====================
+
+int Connection::nextId_ = 1;
+int Connection::instanceCount = 0;
+
+Connection::Connection() : id(nextId_++), active(false) {
+    ++instanceCount;
+}
+
+Connection::~Connection() {
+    --instanceCount;
+}
+
+void Connection::connect() {
+    active = true;
+}
+
+void Connection::disconnect() {
+    active = false;
+}
+
+void Connection::reset() {
+    active = false;
+}
+
+// ==================== 测试函数 ====================
+
+void testObjectPool() {
+    std::cout << "=== Object Pool Tests (User Implementation) ===\n";
+    // TODO: 添加面试者实现的测试
+    std::cout << "  (No tests yet - implement your solutions first)\n";
+}
+
+} // namespace ObjectPoolImpl

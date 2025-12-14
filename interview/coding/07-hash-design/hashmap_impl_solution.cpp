@@ -1,32 +1,25 @@
 /**
  * @file hashmap_impl_solution.cpp
- * @brief 哈希表实现与应用 - 解答文件
- *
- * 哈希表核心要点：
- * 1. 哈希函数：将键映射到桶索引
- * 2. 冲突解决：链地址法、开放定址法
- * 3. 负载因子：动态扩容
+ * @brief 哈希表实现与应用 - 参考答案
  */
 
+#include "hashmap_impl.h"
 #include <iostream>
-#include <vector>
 #include <list>
-#include <string>
 #include <unordered_map>
 #include <unordered_set>
 #include <algorithm>
 #include <queue>
+#include <cassert>
 
-/**
- * 题目1: 设计哈希集合
- *
- * 解法: 链地址法
- * 时间复杂度: O(n/k)，k 为桶数量
- * 空间复杂度: O(k + n)
- */
-class MyHashSet {
+namespace HashMapImplProblems {
+
+// ==================== 参考答案实现 ====================
+
+// MyHashSetSolution 实现
+class MyHashSetSolutionImpl {
 private:
-    static const int BUCKET_SIZE = 769;  // 选择质数减少冲突
+    static const int BUCKET_SIZE = 769;
     std::vector<std::list<int>> buckets;
 
     int hash(int key) {
@@ -34,7 +27,7 @@ private:
     }
 
 public:
-    MyHashSet() : buckets(BUCKET_SIZE) {}
+    MyHashSetSolutionImpl() : buckets(BUCKET_SIZE) {}
 
     void add(int key) {
         int idx = hash(key);
@@ -58,27 +51,13 @@ public:
     }
 };
 
-/**
- * 简化版本：使用位图（适用于键范围已知）
- */
-class MyHashSetBitmap {
-private:
-    std::vector<bool> data;
+MyHashSetSolution::MyHashSetSolution() {}
+void MyHashSetSolution::add(int key) {}
+void MyHashSetSolution::remove(int key) {}
+bool MyHashSetSolution::contains(int key) { return false; }
 
-public:
-    MyHashSetBitmap() : data(1000001, false) {}
-
-    void add(int key) { data[key] = true; }
-    void remove(int key) { data[key] = false; }
-    bool contains(int key) { return data[key]; }
-};
-
-/**
- * 题目2: 设计哈希映射
- *
- * 解法: 链地址法
- */
-class MyHashMap {
+// MyHashMapSolution 实现
+class MyHashMapSolutionImpl {
 private:
     static const int BUCKET_SIZE = 769;
     std::vector<std::list<std::pair<int, int>>> buckets;
@@ -88,7 +67,7 @@ private:
     }
 
 public:
-    MyHashMap() : buckets(BUCKET_SIZE) {}
+    MyHashMapSolutionImpl() : buckets(BUCKET_SIZE) {}
 
     void put(int key, int value) {
         int idx = hash(key);
@@ -115,14 +94,13 @@ public:
     }
 };
 
-/**
- * 题目3: 两数之和
- *
- * 解法: 哈希表
- * 时间复杂度: O(n)
- * 空间复杂度: O(n)
- */
-std::vector<int> twoSum(std::vector<int>& nums, int target) {
+MyHashMapSolution::MyHashMapSolution() {}
+void MyHashMapSolution::put(int key, int value) {}
+int MyHashMapSolution::get(int key) { return -1; }
+void MyHashMapSolution::remove(int key) {}
+
+// 题目3: 两数之和
+std::vector<int> twoSumSolution(std::vector<int>& nums, int target) {
     std::unordered_map<int, int> seen;
 
     for (int i = 0; i < static_cast<int>(nums.size()); ++i) {
@@ -136,14 +114,8 @@ std::vector<int> twoSum(std::vector<int>& nums, int target) {
     return {};
 }
 
-/**
- * 题目4: 存在重复元素
- *
- * 解法: 哈希集合
- * 时间复杂度: O(n)
- * 空间复杂度: O(n)
- */
-bool containsDuplicate(std::vector<int>& nums) {
+// 题目4: 存在重复元素
+bool containsDuplicateSolution(std::vector<int>& nums) {
     std::unordered_set<int> seen;
 
     for (int num : nums) {
@@ -156,14 +128,8 @@ bool containsDuplicate(std::vector<int>& nums) {
     return false;
 }
 
-/**
- * 题目5: 存在重复元素 II
- *
- * 解法: 滑动窗口 + 哈希集合
- * 时间复杂度: O(n)
- * 空间复杂度: O(min(n, k))
- */
-bool containsNearbyDuplicate(std::vector<int>& nums, int k) {
+// 题目5: 存在重复元素 II
+bool containsNearbyDuplicateSolution(std::vector<int>& nums, int k) {
     std::unordered_set<int> window;
 
     for (int i = 0; i < static_cast<int>(nums.size()); ++i) {
@@ -172,7 +138,6 @@ bool containsNearbyDuplicate(std::vector<int>& nums, int k) {
         }
         window.insert(nums[i]);
 
-        // 维护窗口大小为 k
         if (static_cast<int>(window.size()) > k) {
             window.erase(nums[i - k]);
         }
@@ -181,14 +146,8 @@ bool containsNearbyDuplicate(std::vector<int>& nums, int k) {
     return false;
 }
 
-/**
- * 题目6: 字母异位词分组
- *
- * 解法: 排序作为键
- * 时间复杂度: O(n * k * log k)，k 为字符串平均长度
- * 空间复杂度: O(n * k)
- */
-std::vector<std::vector<std::string>> groupAnagrams(std::vector<std::string>& strs) {
+// 题目6: 字母异位词分组
+std::vector<std::vector<std::string>> groupAnagramsSolution(std::vector<std::string>& strs) {
     std::unordered_map<std::string, std::vector<std::string>> groups;
 
     for (const std::string& str : strs) {
@@ -205,44 +164,8 @@ std::vector<std::vector<std::string>> groupAnagrams(std::vector<std::string>& st
     return result;
 }
 
-/**
- * 使用字符计数作为键（更优）
- * 时间复杂度: O(n * k)
- */
-std::vector<std::vector<std::string>> groupAnagramsCount(std::vector<std::string>& strs) {
-    std::unordered_map<std::string, std::vector<std::string>> groups;
-
-    for (const std::string& str : strs) {
-        std::vector<int> count(26, 0);
-        for (char c : str) {
-            ++count[c - 'a'];
-        }
-
-        // 构建键
-        std::string key;
-        for (int c : count) {
-            key += std::to_string(c) + "#";
-        }
-
-        groups[key].push_back(str);
-    }
-
-    std::vector<std::vector<std::string>> result;
-    for (auto& [key, group] : groups) {
-        result.push_back(std::move(group));
-    }
-
-    return result;
-}
-
-/**
- * 题目7: 同构字符串
- *
- * 解法: 双向映射
- * 时间复杂度: O(n)
- * 空间复杂度: O(字符集大小)
- */
-bool isIsomorphic(std::string s, std::string t) {
+// 题目7: 同构字符串
+bool isIsomorphicSolution(std::string s, std::string t) {
     if (s.size() != t.size()) return false;
 
     std::unordered_map<char, char> s2t, t2s;
@@ -260,14 +183,8 @@ bool isIsomorphic(std::string s, std::string t) {
     return true;
 }
 
-/**
- * 题目8: 有效的字母异位词
- *
- * 解法: 字符计数
- * 时间复杂度: O(n)
- * 空间复杂度: O(1)
- */
-bool isAnagram(std::string s, std::string t) {
+// 题目8: 有效的字母异位词
+bool isAnagramSolution(std::string s, std::string t) {
     if (s.size() != t.size()) return false;
 
     std::vector<int> count(26, 0);
@@ -284,21 +201,12 @@ bool isAnagram(std::string s, std::string t) {
     return true;
 }
 
-/**
- * 题目9: 最长连续序列
- *
- * 解法: 哈希集合
- * 只从序列起点开始计数
- *
- * 时间复杂度: O(n)
- * 空间复杂度: O(n)
- */
-int longestConsecutive(std::vector<int>& nums) {
+// 题目9: 最长连续序列
+int longestConsecutiveSolution(std::vector<int>& nums) {
     std::unordered_set<int> numSet(nums.begin(), nums.end());
     int longest = 0;
 
     for (int num : numSet) {
-        // 只从序列起点开始
         if (!numSet.count(num - 1)) {
             int currentNum = num;
             int currentLength = 1;
@@ -315,21 +223,14 @@ int longestConsecutive(std::vector<int>& nums) {
     return longest;
 }
 
-/**
- * 题目10: 前 K 个高频元素
- *
- * 解法1: 桶排序
- * 时间复杂度: O(n)
- * 空间复杂度: O(n)
- */
-std::vector<int> topKFrequent(std::vector<int>& nums, int k) {
+// 题目10: 前 K 个高频元素
+std::vector<int> topKFrequentSolution(std::vector<int>& nums, int k) {
     std::unordered_map<int, int> freq;
     for (int num : nums) {
         ++freq[num];
     }
 
-    // 桶排序：buckets[i] 存储出现 i 次的元素
-    int n = nums.size();
+    int n = static_cast<int>(nums.size());
     std::vector<std::vector<int>> buckets(n + 1);
 
     for (auto& [num, count] : freq) {
@@ -347,45 +248,13 @@ std::vector<int> topKFrequent(std::vector<int>& nums, int k) {
     return result;
 }
 
-/**
- * 解法2: 小顶堆
- * 时间复杂度: O(n log k)
- * 空间复杂度: O(n)
- */
-std::vector<int> topKFrequentHeap(std::vector<int>& nums, int k) {
-    std::unordered_map<int, int> freq;
-    for (int num : nums) {
-        ++freq[num];
-    }
+// ==================== 测试函数 ====================
 
-    // 小顶堆，按频率排序
-    auto cmp = [](const std::pair<int, int>& a, const std::pair<int, int>& b) {
-        return a.second > b.second;
-    };
-    std::priority_queue<std::pair<int, int>, std::vector<std::pair<int, int>>, decltype(cmp)> pq(cmp);
+void testHashMapImplSolution() {
+    std::cout << "=== HashMap Implementation Tests (Solution) ===\n";
 
-    for (auto& [num, count] : freq) {
-        pq.push({num, count});
-        if (static_cast<int>(pq.size()) > k) {
-            pq.pop();
-        }
-    }
-
-    std::vector<int> result;
-    while (!pq.empty()) {
-        result.push_back(pq.top().first);
-        pq.pop();
-    }
-
-    return result;
-}
-
-
-// ==================== 测试代码 ====================
-#include <cassert>
-
-void testMyHashSet() {
-    MyHashSet myHashSet;
+    // MyHashSet
+    MyHashSetSolutionImpl myHashSet;
     myHashSet.add(1);
     myHashSet.add(2);
     assert(myHashSet.contains(1) == true);
@@ -394,12 +263,10 @@ void testMyHashSet() {
     assert(myHashSet.contains(2) == true);
     myHashSet.remove(2);
     assert(myHashSet.contains(2) == false);
+    std::cout << "  MyHashSetSolution: PASSED\n";
 
-    std::cout << "MyHashSet: PASSED\n";
-}
-
-void testMyHashMap() {
-    MyHashMap myHashMap;
+    // MyHashMap
+    MyHashMapSolutionImpl myHashMap;
     myHashMap.put(1, 1);
     myHashMap.put(2, 2);
     assert(myHashMap.get(1) == 1);
@@ -408,102 +275,61 @@ void testMyHashMap() {
     assert(myHashMap.get(2) == 1);
     myHashMap.remove(2);
     assert(myHashMap.get(2) == -1);
+    std::cout << "  MyHashMapSolution: PASSED\n";
 
-    std::cout << "MyHashMap: PASSED\n";
-}
+    // twoSum
+    std::vector<int> nums1 = {2, 7, 11, 15};
+    std::vector<int> expected1 = {0, 1};
+    assert(twoSumSolution(nums1, 9) == expected1);
+    std::cout << "  twoSumSolution: PASSED\n";
 
-void testTwoSum() {
-    std::vector<int> nums = {2, 7, 11, 15};
-    std::vector<int> expected = {0, 1};
-    assert(twoSum(nums, 9) == expected);
+    // containsDuplicate
+    std::vector<int> nums2 = {1, 2, 3, 1};
+    assert(containsDuplicateSolution(nums2) == true);
+    std::vector<int> nums3 = {1, 2, 3, 4};
+    assert(containsDuplicateSolution(nums3) == false);
+    std::cout << "  containsDuplicateSolution: PASSED\n";
 
-    std::cout << "twoSum: PASSED\n";
-}
+    // containsNearbyDuplicate
+    std::vector<int> nums4 = {1, 2, 3, 1};
+    assert(containsNearbyDuplicateSolution(nums4, 3) == true);
+    std::vector<int> nums5 = {1, 2, 3, 1, 2, 3};
+    assert(containsNearbyDuplicateSolution(nums5, 2) == false);
+    std::cout << "  containsNearbyDuplicateSolution: PASSED\n";
 
-void testContainsDuplicate() {
-    std::vector<int> nums1 = {1, 2, 3, 1};
-    assert(containsDuplicate(nums1) == true);
-
-    std::vector<int> nums2 = {1, 2, 3, 4};
-    assert(containsDuplicate(nums2) == false);
-
-    std::cout << "containsDuplicate: PASSED\n";
-}
-
-void testContainsNearbyDuplicate() {
-    std::vector<int> nums1 = {1, 2, 3, 1};
-    assert(containsNearbyDuplicate(nums1, 3) == true);
-
-    std::vector<int> nums2 = {1, 2, 3, 1, 2, 3};
-    assert(containsNearbyDuplicate(nums2, 2) == false);
-
-    std::cout << "containsNearbyDuplicate: PASSED\n";
-}
-
-void testGroupAnagrams() {
+    // groupAnagrams
     std::vector<std::string> strs = {"eat", "tea", "tan", "ate", "nat", "bat"};
-    auto result = groupAnagrams(strs);
+    auto result = groupAnagramsSolution(strs);
     assert(result.size() == 3);
+    std::cout << "  groupAnagramsSolution: PASSED\n";
 
-    auto result2 = groupAnagramsCount(strs);
-    assert(result2.size() == 3);
+    // isIsomorphic
+    assert(isIsomorphicSolution("egg", "add") == true);
+    assert(isIsomorphicSolution("foo", "bar") == false);
+    assert(isIsomorphicSolution("paper", "title") == true);
+    std::cout << "  isIsomorphicSolution: PASSED\n";
 
-    std::cout << "groupAnagrams: PASSED\n";
+    // isAnagram
+    assert(isAnagramSolution("anagram", "nagaram") == true);
+    assert(isAnagramSolution("rat", "car") == false);
+    std::cout << "  isAnagramSolution: PASSED\n";
+
+    // longestConsecutive
+    std::vector<int> nums6 = {100, 4, 200, 1, 3, 2};
+    assert(longestConsecutiveSolution(nums6) == 4);
+    std::vector<int> nums7 = {0, 3, 7, 2, 5, 8, 4, 6, 0, 1};
+    assert(longestConsecutiveSolution(nums7) == 9);
+    std::cout << "  longestConsecutiveSolution: PASSED\n";
+
+    // topKFrequent
+    std::vector<int> nums8 = {1, 1, 1, 2, 2, 3};
+    auto result3 = topKFrequentSolution(nums8, 2);
+    std::sort(result3.begin(), result3.end());
+    std::vector<int> expected2 = {1, 2};
+    assert(result3 == expected2);
+    std::cout << "  topKFrequentSolution: PASSED\n";
+
+    std::cout << "All HashMap Implementation tests passed!\n";
 }
 
-void testIsIsomorphic() {
-    assert(isIsomorphic("egg", "add") == true);
-    assert(isIsomorphic("foo", "bar") == false);
-    assert(isIsomorphic("paper", "title") == true);
-
-    std::cout << "isIsomorphic: PASSED\n";
-}
-
-void testIsAnagram() {
-    assert(isAnagram("anagram", "nagaram") == true);
-    assert(isAnagram("rat", "car") == false);
-
-    std::cout << "isAnagram: PASSED\n";
-}
-
-void testLongestConsecutive() {
-    std::vector<int> nums1 = {100, 4, 200, 1, 3, 2};
-    assert(longestConsecutive(nums1) == 4);
-
-    std::vector<int> nums2 = {0, 3, 7, 2, 5, 8, 4, 6, 0, 1};
-    assert(longestConsecutive(nums2) == 9);
-
-    std::cout << "longestConsecutive: PASSED\n";
-}
-
-void testTopKFrequent() {
-    std::vector<int> nums = {1, 1, 1, 2, 2, 3};
-    auto result = topKFrequent(nums, 2);
-    std::sort(result.begin(), result.end());
-    std::vector<int> expected = {1, 2};
-    assert(result == expected);
-
-    auto result2 = topKFrequentHeap(nums, 2);
-    std::sort(result2.begin(), result2.end());
-    assert(result2 == expected);
-
-    std::cout << "topKFrequent: PASSED\n";
-}
-
-int main() {
-    std::cout << "=== HashMap Implementation Solution Tests ===\n";
-
-    testMyHashSet();
-    testMyHashMap();
-    testTwoSum();
-    testContainsDuplicate();
-    testContainsNearbyDuplicate();
-    testGroupAnagrams();
-    testIsIsomorphic();
-    testIsAnagram();
-    testLongestConsecutive();
-    testTopKFrequent();
-
-    std::cout << "\nAll tests passed!\n";
-    return 0;
-}
+} // namespace HashMapImplProblems

@@ -3,7 +3,7 @@
 //
 
 #include "SubSet.h"
-#include "../sort/util/Util.h"
+#include "../util/Util.h"
 
 namespace {
     void backTrack(std::vector<int> &nums, std::vector<std::vector<int> > &result,
@@ -27,10 +27,10 @@ namespace SubSet {
     void solution() {
         std::cout << "SubSet::solution";
         std::vector<int> input{1, 2, 3};
-        Util::prntVec(input);
+        Util::printVector(input);
         std::vector<std::vector<int> > result = getSubset(input);
         for (auto item: result) {
-            Util::prntVec(item);
+            Util::printVector(item);
         }
     }
 

@@ -3,7 +3,7 @@
 //
 
 #include "MergeSort.h"
-#include "../util/Util.h"
+#include "util/Util.h"
 
 namespace MergeSort {
     void solution() {
@@ -11,16 +11,16 @@ namespace MergeSort {
 
         std::vector<int> vecN = {1, 3, 5, 7, 9};
         std::vector<int> vecM = {2, 3, 4, 6, 9};
-        Util::prntVec(vecN);
-        Util::prntVec(vecM);
+        Util::printVector(vecN);
+        Util::printVector(vecM);
         // 调整 vecN 的大小以容纳合并后的结果
         vecN.reserve(vecN.size() + vecM.size());
 
         mergeSortedVectors(vecM, vecN);
-        Util::prntVec(vecN);
+        Util::printVector(vecN);
 
         std::cout << "MergeSort::solution::mergeSortList" << std::endl;
-        ListNode* list = Util::creatList({1,3,2,4,6,5,7,8});
+        ListNode* list = Util::createList({1,3,2,4,6,5,7,8});
         Util::printList(list);
         list = mergeSortList(list);
         Util::printList(list);

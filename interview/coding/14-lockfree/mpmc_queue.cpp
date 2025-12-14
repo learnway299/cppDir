@@ -1,70 +1,80 @@
 /**
  * @file mpmc_queue.cpp
- * @brief 多生产者多消费者队列 - 面试题
- *
- * MPMC (Multi-Producer Multi-Consumer) 队列是最复杂的无锁队列，
- * 需要处理多个生产者和消费者之间的竞争。
+ * @brief 多生产者多消费者队列 - 面试题实现
  */
-#include <atomic>
-#include <cstddef>
+#include "mpmc_queue.h"
+
+namespace MPMCQueue {
+
+// ==================== 面试者实现区域 ====================
 
 // 题目1: 实现有界 MPMC 队列
-// 使用序列号避免 ABA 问题
 template <typename T, size_t Capacity>
-class MPMCQueue {
-public:
-    MPMCQueue() { /* TODO: 初始化序列号 */ }
+MPMCQueue<T, Capacity>::MPMCQueue() {
+    // TODO: 初始化序列号
+}
 
-    bool push(const T& value) { return false; /* TODO */ }
-    bool pop(T& value) { return false; /* TODO */ }
+template <typename T, size_t Capacity>
+bool MPMCQueue<T, Capacity>::push(const T& value) {
+    // TODO: 实现无锁 push
+    return false;
+}
 
-private:
-    struct Cell {
-        std::atomic<size_t> sequence;
-        T data;
-    };
-
-    Cell buffer_[Capacity];
-    std::atomic<size_t> enqueuePos_{0};
-    std::atomic<size_t> dequeuePos_{0};
-};
+template <typename T, size_t Capacity>
+bool MPMCQueue<T, Capacity>::pop(T& value) {
+    // TODO: 实现无锁 pop
+    return false;
+}
 
 // 题目2: Michael & Scott 无锁队列
-// 经典的无锁队列算法（链表实现）
 template <typename T>
-class MSQueue {
-public:
-    MSQueue() { /* TODO: 初始化哨兵节点 */ }
-    ~MSQueue() { /* TODO: 清理 */ }
+MSQueue<T>::MSQueue() {
+    // TODO: 初始化哨兵节点
+}
 
-    void push(const T& value) { /* TODO */ }
-    bool pop(T& value) { return false; /* TODO */ }
+template <typename T>
+MSQueue<T>::~MSQueue() {
+    // TODO: 清理节点
+}
 
-private:
-    struct Node {
-        T data;
-        std::atomic<Node*> next{nullptr};
-    };
+template <typename T>
+void MSQueue<T>::push(const T& value) {
+    // TODO: 实现 M&S 队列的 push
+}
 
-    std::atomic<Node*> head_;
-    std::atomic<Node*> tail_;
-};
+template <typename T>
+bool MSQueue<T>::pop(T& value) {
+    // TODO: 实现 M&S 队列的 pop
+    return false;
+}
 
 // 题目3: 带背压的 MPMC 队列
-// 当队列满时生产者等待，当队列空时消费者等待
 template <typename T, size_t Capacity>
-class MPMCQueueBlocking {
-public:
-    void push(const T& value) { /* TODO: 阻塞直到成功 */ }
-    T pop() { return T{}; /* TODO: 阻塞直到成功 */ }
-
-    bool try_push(const T& value) { return false; /* TODO */ }
-    bool try_pop(T& value) { return false; /* TODO */ }
-
-private:
-    // TODO
-};
-
-int main() {
-    return 0;
+void MPMCQueueBlocking<T, Capacity>::push(const T& value) {
+    // TODO: 阻塞直到成功 push
 }
+
+template <typename T, size_t Capacity>
+T MPMCQueueBlocking<T, Capacity>::pop() {
+    // TODO: 阻塞直到成功 pop
+    return T{};
+}
+
+template <typename T, size_t Capacity>
+bool MPMCQueueBlocking<T, Capacity>::try_push(const T& value) {
+    // TODO: 非阻塞 push
+    return false;
+}
+
+template <typename T, size_t Capacity>
+bool MPMCQueueBlocking<T, Capacity>::try_pop(T& value) {
+    // TODO: 非阻塞 pop
+    return false;
+}
+
+// 显式实例化常用模板
+template class MPMCQueue<int, 1024>;
+template class MSQueue<int>;
+template class MPMCQueueBlocking<int, 1024>;
+
+} // namespace MPMCQueue

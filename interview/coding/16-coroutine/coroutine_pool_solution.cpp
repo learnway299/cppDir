@@ -1,22 +1,22 @@
 /**
  * @file coroutine_pool_solution.cpp
- * @brief 协程池 - 解答
+ * @brief 协程池 - 参考答案
  */
-#include <coroutine>
-#include <queue>
-#include <functional>
-#include <memory>
-#include <vector>
-#include <mutex>
-#include <iostream>
-#include <atomic>
-#include <thread>
-#include <condition_variable>
 
-// ==================== 自定义内存分配器 ====================
+#include "coroutine_pool.h"
+#include <iostream>
+#include <cassert>
+#include <chrono>
+
+namespace CoroutinePoolImpl {
+
+namespace Solution {
+
+// ==================== 题目1: 协程内存池 ====================
+
 class CoroutineMemoryPool {
 public:
-    static constexpr size_t BLOCK_SIZE = 256;  // 协程帧的典型大小
+    static constexpr size_t BLOCK_SIZE = 256;
     static constexpr size_t POOL_SIZE = 100;
 
     CoroutineMemoryPool() {
@@ -54,10 +54,8 @@ public:
         }
     }
 
-    void printStats() const {
-        std::cout << "Pool allocations: " << allocations_
-                  << ", Fallback allocations: " << fallbackAllocations_ << "\n";
-    }
+    size_t getAllocations() const { return allocations_; }
+    size_t getFallbackAllocations() const { return fallbackAllocations_; }
 
 private:
     std::stack<char*> freeBlocks_;
@@ -72,7 +70,8 @@ CoroutineMemoryPool& getMemoryPool() {
     return pool;
 }
 
-// ==================== 题目1 & 4: 带自定义分配器的 Task ====================
+// ==================== 题目2: 带自定义分配器的 Task ====================
+
 template <typename T>
 class PooledTask {
 public:
@@ -142,7 +141,8 @@ private:
     handle_type handle_;
 };
 
-// ==================== 题目2: 可复用 Task ====================
+// ==================== 题目3: 可复用 Task ====================
+
 template <typename T>
 class ReusableTask {
 public:
@@ -200,31 +200,8 @@ private:
     handle_type handle_;
 };
 
-// ==================== 题目3: 协程缓存 ====================
-template <typename Signature>
-class CoroutineCache;
-
-template <typename R, typename... Args>
-class CoroutineCache<R(Args...)> {
-public:
-    using TaskType = PooledTask<R>;
-    using FactoryFunc = std::function<TaskType(Args...)>;
-
-    explicit CoroutineCache(FactoryFunc factory, size_t maxSize = 10)
-        : factory_(std::move(factory)), maxSize_(maxSize) {}
-
-    TaskType acquire(Args... args) {
-        // 简化实现：直接创建新任务
-        // 真实实现需要缓存协程帧并重置状态
-        return factory_(std::forward<Args>(args)...);
-    }
-
-private:
-    FactoryFunc factory_;
-    size_t maxSize_;
-};
-
 // ==================== 题目5: 协程池化执行器 ====================
+
 class PooledExecutor {
 public:
     explicit PooledExecutor(size_t numWorkers)
@@ -242,16 +219,9 @@ public:
     auto execute(F&& func) -> PooledTask<decltype(func())> {
         using R = decltype(func());
 
-        auto task = [](F f, PooledExecutor* exec) -> PooledTask<R> {
+        auto task = [](F f, PooledExecutor*) -> PooledTask<R> {
             co_return f();
         }(std::forward<F>(func), this);
-
-        // 提交到工作队列
-        {
-            std::lock_guard<std::mutex> lock(mutex_);
-            // 实际实现需要存储协程句柄
-        }
-        cv_.notify_one();
 
         return task;
     }
@@ -299,16 +269,12 @@ private:
     std::atomic<bool> running_;
 };
 
-// ==================== 简单的协程池 ====================
+// ==================== 简单协程池 ====================
+
 class SimpleCoroutinePool {
 public:
-    explicit SimpleCoroutinePool(size_t) {
-        // 协程池的真正实现比较复杂
-        // 因为协程帧的生命周期由编译器管理
-        // 这里提供一个概念性实现
-    }
+    explicit SimpleCoroutinePool(size_t) {}
 
-    // 统计信息
     struct Stats {
         size_t totalCreated = 0;
         size_t totalReused = 0;
@@ -321,53 +287,62 @@ private:
     Stats stats_;
 };
 
-// ==================== 测试代码 ====================
+// ==================== 测试辅助协程 ====================
+
 PooledTask<int> computeTask(int x) {
-    std::cout << "Computing for " << x << "\n";
     co_return x * x;
 }
 
-int main() {
-    std::cout << "=== Coroutine Pool Tests ===\n\n";
+} // namespace Solution
+
+// ==================== 测试函数 ====================
+
+void runTests() {
+    std::cout << "=== Coroutine Pool Tests ===" << std::endl;
 
     // 测试内存池分配
-    std::cout << "--- Memory Pool Test ---\n";
     {
-        std::vector<PooledTask<int>> tasks;
+        std::vector<Solution::PooledTask<int>> tasks;
         for (int i = 0; i < 10; ++i) {
-            tasks.push_back(computeTask(i));
+            tasks.push_back(Solution::computeTask(i));
         }
 
+        int sum = 0;
         for (auto& task : tasks) {
-            std::cout << "Result: " << task.get() << "\n";
+            sum += task.get();
         }
-
-        getMemoryPool().printStats();
+        // 0 + 1 + 4 + 9 + 16 + 25 + 36 + 49 + 64 + 81 = 285
+        assert(sum == 285);
     }
+    std::cout << "  Memory Pool Allocation: PASSED" << std::endl;
 
     // 测试池化执行器
-    std::cout << "\n--- Pooled Executor Test ---\n";
     {
-        PooledExecutor executor(2);
+        Solution::PooledExecutor executor(2);
 
         auto task1 = executor.execute([]() {
-            std::cout << "Task 1 running on thread " << std::this_thread::get_id() << "\n";
             return 42;
         });
 
         auto task2 = executor.execute([]() {
-            std::cout << "Task 2 running on thread " << std::this_thread::get_id() << "\n";
             return 100;
         });
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        assert(task1.get() == 42);
+        assert(task2.get() == 100);
     }
+    std::cout << "  Pooled Executor: PASSED" << std::endl;
 
-    std::cout << "\n--- Final Memory Pool Stats ---\n";
-    getMemoryPool().printStats();
-
-    return 0;
+    // 测试简单协程池
+    {
+        Solution::SimpleCoroutinePool pool(10);
+        auto stats = pool.getStats();
+        assert(stats.currentActive == 0);
+    }
+    std::cout << "  Simple Coroutine Pool: PASSED" << std::endl;
 }
+
+} // namespace CoroutinePoolImpl
 
 /**
  * 关键要点：

@@ -1,17 +1,17 @@
 /**
  * @file timer_wheel_solution.cpp
- * @brief 时间轮 - 解答
+ * @brief 时间轮 - 参考解答
  */
-#include <functional>
-#include <vector>
-#include <list>
-#include <unordered_map>
+
+#include "timer_wheel.h"
 #include <iostream>
-using namespace std;
+
+namespace TimerWheelImpl {
+namespace Solution {
 
 class TimerWheel {
 public:
-    using Callback = function<void()>;
+    using Callback = std::function<void()>;
     using TimerId = uint64_t;
 
 private:
@@ -21,8 +21,8 @@ private:
         int rounds;  // 剩余圈数
     };
 
-    vector<list<Timer>> wheel_;
-    unordered_map<TimerId, list<Timer>::iterator> timerMap_;
+    std::vector<std::list<Timer>> wheel_;
+    std::unordered_map<TimerId, std::list<Timer>::iterator> timerMap_;
     int slots_;
     int tickMs_;
     int currentSlot_ = 0;
@@ -36,7 +36,7 @@ public:
         int slot = (currentSlot_ + ticks) % slots_;
         int rounds = ticks / slots_;
 
-        Timer timer{nextId_++, move(cb), rounds};
+        Timer timer{nextId_++, std::move(cb), rounds};
         wheel_[slot].push_back(timer);
 
         auto it = --wheel_[slot].end();
@@ -83,27 +83,37 @@ public:
     int getCurrentSlot() const { return currentSlot_; }
 };
 
-int main() {
+void runSolutionTests() {
+    std::cout << "=== Timer Wheel Solution ===" << std::endl;
+
     TimerWheel tw(8, 100);  // 8个槽，每个槽100ms
 
     // 添加定时器
-    auto id1 = tw.addTimer(300, []{ cout << "Timer 1 fired!\n"; });
-    auto id2 = tw.addTimer(500, []{ cout << "Timer 2 fired!\n"; });
-    auto id3 = tw.addTimer(1000, []{ cout << "Timer 3 fired!\n"; });
+    auto id1 = tw.addTimer(300, []{ std::cout << "Timer 1 fired!"; });
+    auto id2 = tw.addTimer(500, []{ std::cout << "Timer 2 fired!"; });
+    auto id3 = tw.addTimer(1000, []{ std::cout << "Timer 3 fired!"; });
 
-    cout << "Added timers: " << id1 << ", " << id2 << ", " << id3 << "\n";
+    std::cout << "Added timers: " << id1 << ", " << id2 << ", " << id3 << std::endl;
 
     // 取消一个定时器
     tw.cancelTimer(id2);
-    cout << "Cancelled timer " << id2 << "\n";
+    std::cout << "Cancelled timer " << id2 << std::endl;
 
     // 模拟时间推进
-    cout << "\nSimulating ticks:\n";
+    std::cout << "\nSimulating ticks:" << std::endl;
     for (int i = 0; i < 12; ++i) {
-        cout << "Tick " << i << " (slot " << tw.getCurrentSlot() << "): ";
+        std::cout << "Tick " << i << " (slot " << tw.getCurrentSlot() << "): ";
         tw.tick();
-        cout << "\n";
+        std::cout << std::endl;
     }
 
-    return 0;
+    std::cout << "\nTimer wheel tests completed!" << std::endl;
 }
+
+} // namespace Solution
+
+void runTests() {
+    Solution::runSolutionTests();
+}
+
+} // namespace TimerWheelImpl

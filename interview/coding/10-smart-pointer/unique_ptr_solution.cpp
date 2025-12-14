@@ -1,20 +1,21 @@
 /**
  * @file unique_ptr_solution.cpp
- * @brief unique_ptr 实现 - 解答
+ * @brief unique_ptr 实现 - 参考答案
  */
 
+#include "unique_ptr.h"
 #include <iostream>
-#include <utility>
-#include <functional>
+#include <cassert>
+#include <memory>
 
-/**
- * 题目1：实现基础 UniquePtr
- *
- * 关键点：
- * 1. 独占所有权 - 禁止拷贝
- * 2. 移动语义 - 转移所有权
- * 3. RAII - 析构时释放资源
- */
+namespace SmartPointer {
+
+// ==================== UniquePtr Solution 实现 ====================
+
+// 由于模板类的特殊性，这里提供完整的参考实现类
+
+namespace Solution {
+
 template <typename T>
 class UniquePtr {
 public:
@@ -85,11 +86,6 @@ private:
     T* ptr_;
 };
 
-/**
- * 题目2：实现带自定义删除器的 UniquePtr
- *
- * 删除器作为模板参数，支持零开销抽象
- */
 template <typename T, typename Deleter = std::default_delete<T>>
 class UniquePtrWithDeleter {
 public:
@@ -149,14 +145,6 @@ private:
     Deleter deleter_;
 };
 
-/**
- * 题目3：实现数组特化版本
- *
- * 关键点：
- * 1. 使用 delete[] 释放
- * 2. 支持 operator[]
- * 3. 禁用 operator* 和 operator->
- */
 template <typename T>
 class UniquePtrArray {
 public:
@@ -208,78 +196,87 @@ private:
     T* ptr_;
 };
 
-/**
- * 题目4：实现 make_unique
- *
- * 优点：
- * 1. 异常安全
- * 2. 避免裸 new
- * 3. 代码更简洁
- */
 template <typename T, typename... Args>
 UniquePtr<T> makeUnique(Args&&... args) {
     return UniquePtr<T>(new T(std::forward<Args>(args)...));
 }
 
-// 数组版本
 template <typename T>
 UniquePtrArray<T> makeUniqueArray(size_t size) {
     return UniquePtrArray<T>(new T[size]());
 }
 
-// 测试类
-struct TestClass {
-    int value;
-    TestClass(int v = 0) : value(v) {
-        std::cout << "TestClass(" << value << ") constructed\n";
-    }
-    ~TestClass() {
-        std::cout << "TestClass(" << value << ") destroyed\n";
-    }
-};
+} // namespace Solution
 
-int main() {
-    std::cout << "=== 测试基础 UniquePtr ===\n";
+// ==================== 测试函数 ====================
+
+void testUniquePtrSolution() {
+    std::cout << "=== Unique Ptr Tests (Solution) ===\n";
+
+    // 测试基础 UniquePtr
+    TestClass::instanceCount = 0;
     {
-        UniquePtr<TestClass> p1(new TestClass(1));
-        std::cout << "p1 value: " << p1->value << "\n";
+        Solution::UniquePtr<TestClass> p1(new TestClass(1));
+        assert(p1->value == 1);
+        assert(TestClass::instanceCount == 1);
 
-        UniquePtr<TestClass> p2 = std::move(p1);
-        std::cout << "After move, p1 is " << (p1 ? "valid" : "null") << "\n";
-        std::cout << "p2 value: " << p2->value << "\n";
+        Solution::UniquePtr<TestClass> p2 = std::move(p1);
+        assert(!p1);
+        assert(p2->value == 1);
+        assert(TestClass::instanceCount == 1);
 
         p2.reset(new TestClass(2));
-        std::cout << "After reset, p2 value: " << p2->value << "\n";
+        assert(p2->value == 2);
+        assert(TestClass::instanceCount == 1);
     }
+    assert(TestClass::instanceCount == 0);
+    std::cout << "  UniquePtr basic: PASSED\n";
 
-    std::cout << "\n=== 测试自定义删除器 ===\n";
+    // 测试 release
     {
-        auto customDeleter = [](TestClass* p) {
-            std::cout << "Custom deleter called\n";
+        Solution::UniquePtr<TestClass> p(new TestClass(3));
+        TestClass* raw = p.release();
+        assert(!p);
+        assert(raw->value == 3);
+        delete raw;
+    }
+    std::cout << "  UniquePtr release: PASSED\n";
+
+    // 测试自定义删除器
+    {
+        bool deleterCalled = false;
+        auto customDeleter = [&deleterCalled](TestClass* p) {
+            deleterCalled = true;
             delete p;
         };
 
-        UniquePtrWithDeleter<TestClass, decltype(customDeleter)>
-            p(new TestClass(3), customDeleter);
+        {
+            Solution::UniquePtrWithDeleter<TestClass, decltype(customDeleter)>
+                p(new TestClass(4), customDeleter);
+            assert(p->value == 4);
+        }
+        assert(deleterCalled);
     }
+    std::cout << "  UniquePtrWithDeleter: PASSED\n";
 
-    std::cout << "\n=== 测试数组版本 ===\n";
+    // 测试数组版本
     {
-        UniquePtrArray<int> arr(new int[5]);
+        Solution::UniquePtrArray<int> arr(new int[5]);
         for (int i = 0; i < 5; ++i) {
             arr[i] = i * 10;
         }
-        for (int i = 0; i < 5; ++i) {
-            std::cout << arr[i] << " ";
-        }
-        std::cout << "\n";
+        assert(arr[0] == 0);
+        assert(arr[1] == 10);
+        assert(arr[4] == 40);
     }
+    std::cout << "  UniquePtrArray: PASSED\n";
 
-    std::cout << "\n=== 测试 make_unique ===\n";
+    // 测试 make_unique
     {
-        auto p = makeUnique<TestClass>(42);
-        std::cout << "make_unique value: " << p->value << "\n";
+        auto p = Solution::makeUnique<TestClass>(42);
+        assert(p->value == 42);
     }
-
-    return 0;
+    std::cout << "  makeUnique: PASSED\n";
 }
+
+} // namespace SmartPointer

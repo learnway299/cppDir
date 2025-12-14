@@ -1,245 +1,199 @@
 /**
  * @file combination_solution.cpp
- * @brief 组合问题 - 解答
+ * @brief 组合问题 - 参考答案
  */
-#include <vector>
+#include "combination.h"
 #include <algorithm>
 #include <iostream>
+#include <cassert>
 
-using namespace std;
+namespace Combination {
 
-// ==================== 题目1: 组合 ====================
-class Solution77 {
-public:
-    vector<vector<int>> combine(int n, int k) {
-        vector<vector<int>> result;
-        vector<int> path;
-        backtrack(result, path, n, k, 1);
-        return result;
-    }
-
-private:
-    void backtrack(vector<vector<int>>& result, vector<int>& path,
-                   int n, int k, int start) {
-        if (path.size() == k) {
-            result.push_back(path);
-            return;
-        }
-
-        // 剪枝：剩余元素不够选
-        for (int i = start; i <= n - (k - path.size()) + 1; ++i) {
-            path.push_back(i);
-            backtrack(result, path, n, k, i + 1);
-            path.pop_back();
-        }
-    }
-};
-
-// ==================== 题目2: 组合总和 ====================
-class Solution39 {
-public:
-    vector<vector<int>> combinationSum(vector<int>& candidates, int target) {
-        vector<vector<int>> result;
-        vector<int> path;
-        sort(candidates.begin(), candidates.end());  // 排序用于剪枝
-        backtrack(result, path, candidates, target, 0);
-        return result;
-    }
-
-private:
-    void backtrack(vector<vector<int>>& result, vector<int>& path,
-                   vector<int>& candidates, int remain, int start) {
-        if (remain == 0) {
-            result.push_back(path);
-            return;
-        }
-
-        for (int i = start; i < candidates.size(); ++i) {
-            if (candidates[i] > remain) break;  // 剪枝
-
-            path.push_back(candidates[i]);
-            backtrack(result, path, candidates, remain - candidates[i], i);  // 可重复使用
-            path.pop_back();
-        }
-    }
-};
-
-// ==================== 题目3: 组合总和 II ====================
-class Solution40 {
-public:
-    vector<vector<int>> combinationSum2(vector<int>& candidates, int target) {
-        vector<vector<int>> result;
-        vector<int> path;
-        sort(candidates.begin(), candidates.end());
-        backtrack(result, path, candidates, target, 0);
-        return result;
-    }
-
-private:
-    void backtrack(vector<vector<int>>& result, vector<int>& path,
-                   vector<int>& candidates, int remain, int start) {
-        if (remain == 0) {
-            result.push_back(path);
-            return;
-        }
-
-        for (int i = start; i < candidates.size(); ++i) {
-            if (candidates[i] > remain) break;
-
-            // 跳过同层重复元素
-            if (i > start && candidates[i] == candidates[i - 1]) continue;
-
-            path.push_back(candidates[i]);
-            backtrack(result, path, candidates, remain - candidates[i], i + 1);
-            path.pop_back();
-        }
-    }
-};
-
-// ==================== 题目4: 组合总和 III ====================
-class Solution216 {
-public:
-    vector<vector<int>> combinationSum3(int k, int n) {
-        vector<vector<int>> result;
-        vector<int> path;
-        backtrack(result, path, k, n, 1);
-        return result;
-    }
-
-private:
-    void backtrack(vector<vector<int>>& result, vector<int>& path,
-                   int k, int remain, int start) {
-        if (path.size() == k) {
-            if (remain == 0) {
-                result.push_back(path);
-            }
-            return;
-        }
-
-        for (int i = start; i <= 9; ++i) {
-            if (i > remain) break;  // 剪枝
-
-            path.push_back(i);
-            backtrack(result, path, k, remain - i, i + 1);
-            path.pop_back();
-        }
-    }
-};
-
-// ==================== 题目5: 子集 ====================
-class Solution78 {
-public:
-    // 方法1: 回溯
-    vector<vector<int>> subsets(vector<int>& nums) {
-        vector<vector<int>> result;
-        vector<int> path;
-        backtrack(result, path, nums, 0);
-        return result;
-    }
-
-    // 方法2: 迭代（位运算）
-    vector<vector<int>> subsetsIterative(vector<int>& nums) {
-        int n = nums.size();
-        vector<vector<int>> result;
-
-        for (int mask = 0; mask < (1 << n); ++mask) {
-            vector<int> subset;
-            for (int i = 0; i < n; ++i) {
-                if (mask & (1 << i)) {
-                    subset.push_back(nums[i]);
-                }
-            }
-            result.push_back(subset);
-        }
-        return result;
-    }
-
-private:
-    void backtrack(vector<vector<int>>& result, vector<int>& path,
-                   vector<int>& nums, int start) {
-        result.push_back(path);  // 每个节点都是一个子集
-
-        for (int i = start; i < nums.size(); ++i) {
-            path.push_back(nums[i]);
-            backtrack(result, path, nums, i + 1);
-            path.pop_back();
-        }
-    }
-};
-
-// ==================== 题目6: 子集 II ====================
-class Solution90 {
-public:
-    vector<vector<int>> subsetsWithDup(vector<int>& nums) {
-        vector<vector<int>> result;
-        vector<int> path;
-        sort(nums.begin(), nums.end());
-        backtrack(result, path, nums, 0);
-        return result;
-    }
-
-private:
-    void backtrack(vector<vector<int>>& result, vector<int>& path,
-                   vector<int>& nums, int start) {
+// ==================== 辅助函数 ====================
+static void backtrackCombine(std::vector<std::vector<int>>& result,
+                              std::vector<int>& path, int n, int k, int start) {
+    if (static_cast<int>(path.size()) == k) {
         result.push_back(path);
-
-        for (int i = start; i < nums.size(); ++i) {
-            // 跳过同层重复
-            if (i > start && nums[i] == nums[i - 1]) continue;
-
-            path.push_back(nums[i]);
-            backtrack(result, path, nums, i + 1);
-            path.pop_back();
-        }
+        return;
     }
-};
-
-// ==================== 测试代码 ====================
-void printResult(const vector<vector<int>>& result) {
-    cout << "[";
-    for (int i = 0; i < result.size(); ++i) {
-        cout << "[";
-        for (int j = 0; j < result[i].size(); ++j) {
-            cout << result[i][j];
-            if (j < result[i].size() - 1) cout << ",";
-        }
-        cout << "]";
-        if (i < result.size() - 1) cout << ",";
+    // 剪枝：剩余元素不够选
+    for (int i = start; i <= n - (k - static_cast<int>(path.size())) + 1; ++i) {
+        path.push_back(i);
+        backtrackCombine(result, path, n, k, i + 1);
+        path.pop_back();
     }
-    cout << "]\n";
 }
 
-int main() {
-    // 组合
-    cout << "Combine(4, 2): ";
-    printResult(Solution77().combine(4, 2));
-
-    // 组合总和
-    vector<int> candidates1 = {2, 3, 6, 7};
-    cout << "CombinationSum([2,3,6,7], 7): ";
-    printResult(Solution39().combinationSum(candidates1, 7));
-
-    // 组合总和 II
-    vector<int> candidates2 = {10, 1, 2, 7, 6, 1, 5};
-    cout << "CombinationSum2([10,1,2,7,6,1,5], 8): ";
-    printResult(Solution40().combinationSum2(candidates2, 8));
-
-    // 组合总和 III
-    cout << "CombinationSum3(3, 9): ";
-    printResult(Solution216().combinationSum3(3, 9));
-
-    // 子集
-    vector<int> nums1 = {1, 2, 3};
-    cout << "Subsets([1,2,3]): ";
-    printResult(Solution78().subsets(nums1));
-
-    // 子集 II
-    vector<int> nums2 = {1, 2, 2};
-    cout << "SubsetsWithDup([1,2,2]): ";
-    printResult(Solution90().subsetsWithDup(nums2));
-
-    return 0;
+static void backtrackSum(std::vector<std::vector<int>>& result, std::vector<int>& path,
+                          std::vector<int>& candidates, int remain, int start) {
+    if (remain == 0) {
+        result.push_back(path);
+        return;
+    }
+    for (size_t i = start; i < candidates.size(); ++i) {
+        if (candidates[i] > remain) break;  // 剪枝
+        path.push_back(candidates[i]);
+        backtrackSum(result, path, candidates, remain - candidates[i], static_cast<int>(i));
+        path.pop_back();
+    }
 }
+
+static void backtrackSum2(std::vector<std::vector<int>>& result, std::vector<int>& path,
+                           std::vector<int>& candidates, int remain, int start) {
+    if (remain == 0) {
+        result.push_back(path);
+        return;
+    }
+    for (size_t i = start; i < candidates.size(); ++i) {
+        if (candidates[i] > remain) break;
+        // 跳过同层重复元素
+        if (i > static_cast<size_t>(start) && candidates[i] == candidates[i - 1]) continue;
+        path.push_back(candidates[i]);
+        backtrackSum2(result, path, candidates, remain - candidates[i], static_cast<int>(i) + 1);
+        path.pop_back();
+    }
+}
+
+static void backtrackSum3(std::vector<std::vector<int>>& result, std::vector<int>& path,
+                           int k, int remain, int start) {
+    if (static_cast<int>(path.size()) == k) {
+        if (remain == 0) {
+            result.push_back(path);
+        }
+        return;
+    }
+    for (int i = start; i <= 9; ++i) {
+        if (i > remain) break;  // 剪枝
+        path.push_back(i);
+        backtrackSum3(result, path, k, remain - i, i + 1);
+        path.pop_back();
+    }
+}
+
+static void backtrackSubsets(std::vector<std::vector<int>>& result, std::vector<int>& path,
+                              std::vector<int>& nums, int start) {
+    result.push_back(path);  // 每个节点都是一个子集
+    for (size_t i = start; i < nums.size(); ++i) {
+        path.push_back(nums[i]);
+        backtrackSubsets(result, path, nums, static_cast<int>(i) + 1);
+        path.pop_back();
+    }
+}
+
+static void backtrackSubsetsDup(std::vector<std::vector<int>>& result, std::vector<int>& path,
+                                 std::vector<int>& nums, int start) {
+    result.push_back(path);
+    for (size_t i = start; i < nums.size(); ++i) {
+        // 跳过同层重复
+        if (i > static_cast<size_t>(start) && nums[i] == nums[i - 1]) continue;
+        path.push_back(nums[i]);
+        backtrackSubsetsDup(result, path, nums, static_cast<int>(i) + 1);
+        path.pop_back();
+    }
+}
+
+// ==================== 参考答案实现 ====================
+
+std::vector<std::vector<int>> combineSolution(int n, int k) {
+    std::vector<std::vector<int>> result;
+    std::vector<int> path;
+    backtrackCombine(result, path, n, k, 1);
+    return result;
+}
+
+std::vector<std::vector<int>> combinationSumSolution(std::vector<int>& candidates, int target) {
+    std::vector<std::vector<int>> result;
+    std::vector<int> path;
+    std::sort(candidates.begin(), candidates.end());
+    backtrackSum(result, path, candidates, target, 0);
+    return result;
+}
+
+std::vector<std::vector<int>> combinationSum2Solution(std::vector<int>& candidates, int target) {
+    std::vector<std::vector<int>> result;
+    std::vector<int> path;
+    std::sort(candidates.begin(), candidates.end());
+    backtrackSum2(result, path, candidates, target, 0);
+    return result;
+}
+
+std::vector<std::vector<int>> combinationSum3Solution(int k, int n) {
+    std::vector<std::vector<int>> result;
+    std::vector<int> path;
+    backtrackSum3(result, path, k, n, 1);
+    return result;
+}
+
+std::vector<std::vector<int>> subsetsSolution(std::vector<int>& nums) {
+    std::vector<std::vector<int>> result;
+    std::vector<int> path;
+    backtrackSubsets(result, path, nums, 0);
+    return result;
+}
+
+std::vector<std::vector<int>> subsetsWithDupSolution(std::vector<int>& nums) {
+    std::vector<std::vector<int>> result;
+    std::vector<int> path;
+    std::sort(nums.begin(), nums.end());
+    backtrackSubsetsDup(result, path, nums, 0);
+    return result;
+}
+
+// ==================== 测试函数 ====================
+
+void runTests() {
+    std::cout << "\n=== Combination Tests ===" << std::endl;
+
+    // 测试组合
+    {
+        auto result = combineSolution(4, 2);
+        assert(result.size() == 6);  // C(4,2) = 6
+        std::cout << "  [PASS] Combine (n=4, k=2)" << std::endl;
+    }
+
+    // 测试组合总和
+    {
+        std::vector<int> candidates = {2, 3, 6, 7};
+        auto result = combinationSumSolution(candidates, 7);
+        assert(result.size() == 2);  // [7], [2,2,3]
+        std::cout << "  [PASS] Combination Sum" << std::endl;
+    }
+
+    // 测试组合总和 II
+    {
+        std::vector<int> candidates = {10, 1, 2, 7, 6, 1, 5};
+        auto result = combinationSum2Solution(candidates, 8);
+        assert(result.size() == 4);  // [1,1,6], [1,2,5], [1,7], [2,6]
+        std::cout << "  [PASS] Combination Sum II" << std::endl;
+    }
+
+    // 测试组合总和 III
+    {
+        auto result = combinationSum3Solution(3, 9);
+        assert(result.size() == 3);  // [1,2,6], [1,3,5], [2,3,4]
+        std::cout << "  [PASS] Combination Sum III" << std::endl;
+    }
+
+    // 测试子集
+    {
+        std::vector<int> nums = {1, 2, 3};
+        auto result = subsetsSolution(nums);
+        assert(result.size() == 8);  // 2^3 = 8
+        std::cout << "  [PASS] Subsets" << std::endl;
+    }
+
+    // 测试子集 II
+    {
+        std::vector<int> nums = {1, 2, 2};
+        auto result = subsetsWithDupSolution(nums);
+        assert(result.size() == 6);  // [], [1], [1,2], [1,2,2], [2], [2,2]
+        std::cout << "  [PASS] Subsets With Dup" << std::endl;
+    }
+
+    std::cout << "=== All Combination Tests Passed! ===" << std::endl;
+}
+
+} // namespace Combination
 
 /**
  * 关键要点：
@@ -267,8 +221,4 @@ int main() {
  * 5. 可重复 vs 不可重复：
  *    - 可重复：递归时传 i
  *    - 不可重复：递归时传 i + 1
- *
- * 6. 位运算枚举子集：
- *    - 用 0 到 2^n-1 表示所有子集
- *    - 第 i 位为 1 表示选择第 i 个元素
  */

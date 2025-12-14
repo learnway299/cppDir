@@ -2,14 +2,23 @@
  * @file find_median_solution.cpp
  * @brief 数据流的中位数 - 解答
  */
-#include <queue>
-#include <iostream>
-using namespace std;
 
+#include "find_median.h"
+#include <queue>
+#include <vector>
+#include <iostream>
+#include <cassert>
+#include <cmath>
+
+namespace FindMedianImpl {
+namespace Solution {
+
+// ==================== 数据流中位数 ====================
 // 使用两个堆: 大顶堆存较小的一半，小顶堆存较大的一半
+
 class MedianFinder {
-    priority_queue<int> maxHeap;                             // 较小的一半
-    priority_queue<int, vector<int>, greater<int>> minHeap;  // 较大的一半
+    std::priority_queue<int> maxHeap;                             // 较小的一半
+    std::priority_queue<int, std::vector<int>, std::greater<int>> minHeap;  // 较大的一半
 
 public:
     MedianFinder() {}
@@ -35,19 +44,49 @@ public:
     }
 };
 
-int main() {
-    MedianFinder mf;
-    mf.addNum(1);
-    mf.addNum(2);
-    cout << "Median after [1,2]: " << mf.findMedian() << "\n";  // 1.5
+} // namespace Solution
 
-    mf.addNum(3);
-    cout << "Median after [1,2,3]: " << mf.findMedian() << "\n";  // 2
+// ==================== 测试函数 ====================
 
-    mf.addNum(4);
-    cout << "Median after [1,2,3,4]: " << mf.findMedian() << "\n";  // 2.5
+void runTests() {
+    std::cout << "=== Find Median Tests ===" << std::endl;
 
-    mf.addNum(5);
-    cout << "Median after [1,2,3,4,5]: " << mf.findMedian() << "\n";  // 3
-    return 0;
+    // 测试偶数个元素
+    {
+        Solution::MedianFinder mf;
+        mf.addNum(1);
+        mf.addNum(2);
+        assert(std::abs(mf.findMedian() - 1.5) < 1e-9);
+    }
+    std::cout << "  MedianFinder (even): PASSED" << std::endl;
+
+    // 测试奇数个元素
+    {
+        Solution::MedianFinder mf;
+        mf.addNum(1);
+        mf.addNum(2);
+        mf.addNum(3);
+        assert(std::abs(mf.findMedian() - 2.0) < 1e-9);
+    }
+    std::cout << "  MedianFinder (odd): PASSED" << std::endl;
+
+    // 测试连续添加
+    {
+        Solution::MedianFinder mf;
+        mf.addNum(1);
+        mf.addNum(2);
+        assert(std::abs(mf.findMedian() - 1.5) < 1e-9);
+
+        mf.addNum(3);
+        assert(std::abs(mf.findMedian() - 2.0) < 1e-9);
+
+        mf.addNum(4);
+        assert(std::abs(mf.findMedian() - 2.5) < 1e-9);
+
+        mf.addNum(5);
+        assert(std::abs(mf.findMedian() - 3.0) < 1e-9);
+    }
+    std::cout << "  MedianFinder (sequence): PASSED" << std::endl;
 }
+
+} // namespace FindMedianImpl

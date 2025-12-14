@@ -1,61 +1,45 @@
 /**
  * @file thread_pool.cpp
- * @brief 线程池实现 - 面试题
+ * @brief 线程池实现 - 面试题实现
  */
 
-#include <iostream>
-#include <thread>
-#include <mutex>
-#include <condition_variable>
-#include <queue>
-#include <vector>
-#include <functional>
-#include <future>
+#include "thread_pool.h"
 
-/**
- * 题目：实现线程池
- *
- * 要求：
- * 1. 固定数量工作线程
- * 2. 支持提交任务
- * 3. 支持获取返回值（future）
- * 4. 支持优雅关闭
- */
-class ThreadPool {
-public:
-    explicit ThreadPool(size_t threadCount) {
-        // TODO: 创建工作线程
-    }
+namespace ThreadPool {
 
-    ~ThreadPool() {
-        // TODO: 关闭线程池
-    }
+// ==================== 面试者实现 ====================
 
-    // TODO: 提交任务
-    template <typename F, typename... Args>
-    auto submit(F&& f, Args&&... args)
-        -> std::future<typename std::result_of<F(Args...)>::type> {
-        using ReturnType = typename std::result_of<F(Args...)>::type;
-        return std::future<ReturnType>();
-    }
+ThreadPool::ThreadPool(size_t threadCount) {
+    // TODO: 创建工作线程
+}
 
+ThreadPool::~ThreadPool() {
     // TODO: 关闭线程池
-    void shutdown() {
-    }
+}
 
-    // TODO: 返回线程数量
-    size_t size() const {
-        return 0;
-    }
+template <typename F, typename... Args>
+auto ThreadPool::submit(F&& f, Args&&... args)
+    -> std::future<typename std::invoke_result<F, Args...>::type> {
+    using ReturnType = typename std::invoke_result<F, Args...>::type;
+    // TODO
+    return std::future<ReturnType>();
+}
 
-private:
-    // TODO: 工作线程函数
-    void workerThread() {
-    }
+void ThreadPool::shutdown() {
+    // TODO
+}
 
-    // TODO: 定义成员变量
-};
-
-int main() {
+size_t ThreadPool::size() const {
+    // TODO
     return 0;
 }
+
+void ThreadPool::workerThread() {
+    // TODO
+}
+
+// Explicit template instantiation
+template auto ThreadPool::submit(std::function<int()>&&)
+    -> std::future<int>;
+
+} // namespace ThreadPool

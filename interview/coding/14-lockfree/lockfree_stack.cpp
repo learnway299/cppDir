@@ -1,68 +1,58 @@
 /**
  * @file lockfree_stack.cpp
- * @brief 无锁栈 - 面试题
- *
- * 无锁栈是无锁数据结构的经典入门例子，使用 CAS 操作实现。
+ * @brief 无锁栈 - 面试题实现
  */
-#include <atomic>
-#include <memory>
+#include "lockfree_stack.h"
+
+namespace LockFreeStack {
+
+// ==================== 面试者实现区域 ====================
 
 // 题目1: 实现基本的无锁栈
-// 使用 compare_exchange 实现 push 和 pop
 template <typename T>
-class LockFreeStack {
-public:
-    void push(const T& value) { /* TODO */ }
+void LockFreeStack<T>::push(const T& value) {
+    // TODO: 使用 CAS 实现无锁 push
+}
 
-    bool pop(T& result) { return false; /* TODO */ }
+template <typename T>
+bool LockFreeStack<T>::pop(T& result) {
+    // TODO: 使用 CAS 实现无锁 pop
+    return false;
+}
 
-    bool empty() const { return true; /* TODO */ }
-
-private:
-    struct Node {
-        T data;
-        Node* next;
-        Node(const T& value) : data(value), next(nullptr) {}
-    };
-
-    std::atomic<Node*> head_{nullptr};
-};
+template <typename T>
+bool LockFreeStack<T>::empty() const {
+    // TODO: 检查栈是否为空
+    return true;
+}
 
 // 题目2: 解决 ABA 问题
-// 使用带版本号的指针
 template <typename T>
-class LockFreeStackABA {
-public:
-    void push(const T& value) { /* TODO */ }
-    bool pop(T& result) { return false; /* TODO */ }
+void LockFreeStackABA<T>::push(const T& value) {
+    // TODO: 使用带版本号的指针实现 push
+}
 
-private:
-    struct Node {
-        T data;
-        Node* next;
-    };
-
-    // TODO: 定义带版本号的指针结构
-};
+template <typename T>
+bool LockFreeStackABA<T>::pop(T& result) {
+    // TODO: 使用带版本号的指针实现 pop
+    return false;
+}
 
 // 题目3: 使用 shared_ptr 的无锁栈
-// 利用 atomic<shared_ptr> 简化内存管理
 template <typename T>
-class LockFreeStackShared {
-public:
-    void push(const T& value) { /* TODO */ }
-
-    std::shared_ptr<T> pop() { return nullptr; /* TODO */ }
-
-private:
-    struct Node {
-        T data;
-        std::shared_ptr<Node> next;
-    };
-
-    // TODO
-};
-
-int main() {
-    return 0;
+void LockFreeStackShared<T>::push(const T& value) {
+    // TODO: 使用 shared_ptr 实现 push
 }
+
+template <typename T>
+std::shared_ptr<T> LockFreeStackShared<T>::pop() {
+    // TODO: 使用 shared_ptr 实现 pop
+    return nullptr;
+}
+
+// 显式实例化常用模板
+template class LockFreeStack<int>;
+template class LockFreeStackABA<int>;
+template class LockFreeStackShared<int>;
+
+} // namespace LockFreeStack

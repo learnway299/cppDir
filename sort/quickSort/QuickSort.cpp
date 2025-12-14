@@ -3,7 +3,7 @@
 //
 
 #include "QuickSort.h"
-#include "../util/Util.h"
+#include "util/Util.h"
 
 namespace QuickSort {
     int partition(std::vector<int>& input, const int left, const int right)
@@ -32,8 +32,8 @@ namespace QuickSort {
     void solution() {
         std::cout <<"QuickSort::solution" <<std::endl;
         std::vector<int> temp = {4, 2, 23, 14, 5, 16, 7, 28, 19, 10};
-        Util::prntVec(temp);
+        Util::printVector(temp);
         quickSort(temp, 0, temp.size() - 1);
-        Util::prntVec(temp);
+        Util::printVector(temp);
     }
 } // QuickSort

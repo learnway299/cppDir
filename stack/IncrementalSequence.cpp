@@ -5,18 +5,18 @@
 #include "IncrementalSequence.h"
 #include <algorithm>
 #include <stack>
-#include "../sort/util/Util.h"
+#include "../util/Util.h"
 
 namespace IncrementalSequence {
     void solution() {
         std::cout << "IncrementalSequence::solution" << std::endl;
         std::vector<int> temp{1,2,3,5,8,6,7};
-        Util::prntVec(temp);
+        Util::printVector(temp);
         std::vector<int> result = incrementalSequence(temp);
-        Util::prntVec(result);
+        Util::printVector(result);
     }
     std::vector<int> incrementalSequence(const std::vector<int> &input) {
-        stack<int> cache;
+        std::stack<int> cache;
         for (auto num : input) {
             if (cache.empty()) {
                 cache.push(num);

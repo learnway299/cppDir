@@ -1,71 +1,92 @@
 /**
  * @file sfinae.cpp
- * @brief SFINAE - 面试题
- *
- * SFINAE (Substitution Failure Is Not An Error) 是 C++ 模板的核心特性，
- * 用于在编译期根据类型特征选择不同的函数重载或模板特化。
+ * @brief SFINAE - 面试者实现文件
  */
-#include <type_traits>
-#include <iostream>
 
-// 题目1: 检测类型是否有 size() 成员函数
-template <typename T, typename = void>
-struct has_size : std::false_type {};
+#include "sfinae.h"
+#include <vector>
+#include <set>
 
-// TODO: 添加特化来检测 size() 成员
+namespace SfinaeImpl {
 
-// 题目2: 检测类型是否可以使用 << 输出到 ostream
-template <typename T, typename = void>
-struct is_printable : std::false_type {};
+// ==================== 题目3: 根据类型选择实现 ====================
 
-// TODO: 添加特化
-
-// 题目3: 实现根据类型选择不同实现的函数
-// 对于整数类型使用位运算，对于其他类型使用普通运算
+// 方法1: enable_if (需要两个重载)
 template <typename T>
-T multiply_by_two(T value) {
-    // TODO: 使用 if constexpr 或 enable_if 实现
+std::enable_if_t<std::is_integral_v<T>, T>
+multiply_by_two_enable_if_impl(T value) {
+    // TODO: 整数类型使用位运算
     return value * 2;
 }
 
-// 题目4: 检测类是否有指定名称的成员类型
-// 例如检测是否有 value_type
-template <typename T, typename = void>
-struct has_value_type : std::false_type {};
-
-// TODO: 添加特化
-
-// 题目5: 实现 void_t（如果没有 C++17）
-// template <typename...>
-// using void_t = void;
-
-// 题目6: 检测类型是否可默认构造
-template <typename T, typename = void>
-struct is_default_constructible : std::false_type {};
-
-// TODO: 添加特化
-
-// 题目7: 检测两个类型是否可以相加
-template <typename T, typename U, typename = void>
-struct can_add : std::false_type {};
-
-// TODO: 添加特化
-
-// 题目8: 使用 SFINAE 实现函数重载（tag dispatch 替代方案）
-struct Container {
-    void push_back(int) {}
-};
-
-struct NonContainer {
-    void insert(int) {}
-};
-
-// 根据是否有 push_back 选择不同的插入方式
-template <typename C>
-void insert_element(C& container, int value) {
-    // TODO: 使用 SFINAE 选择 push_back 或 insert
+template <typename T>
+std::enable_if_t<!std::is_integral_v<T>, T>
+multiply_by_two_enable_if_impl(T value) {
+    // TODO: 其他类型使用普通运算
+    return value * 2;
 }
 
-int main() {
-    return 0;
+template <typename T>
+T multiply_by_two_enable_if(T value) {
+    return multiply_by_two_enable_if_impl(value);
 }
+
+// 方法2: if constexpr (C++17)
+template <typename T>
+T multiply_by_two_if_constexpr(T value) {
+    // TODO: 使用 if constexpr 实现
+    return value * 2;
+}
+
+// 方法3: tag dispatch
+template <typename T>
+T multiply_impl(T value, std::true_type /* is_integral */) {
+    // TODO: 整数类型使用位运算
+    return value * 2;
+}
+
+template <typename T>
+T multiply_impl(T value, std::false_type /* is_integral */) {
+    // TODO: 其他类型使用普通运算
+    return value * 2;
+}
+
+template <typename T>
+T multiply_by_two_tag_dispatch(T value) {
+    return multiply_impl(value, std::is_integral<T>{});
+}
+
+// ==================== 题目7: SFINAE 函数重载 ====================
+
+// 有 push_back 的容器
+template <typename C, typename V>
+auto insert_element_impl(C& container, V&& value, int)
+    -> decltype(container.push_back(std::forward<V>(value)), void())
+{
+    // TODO: 使用 push_back
+}
+
+// 有 insert 的容器
+template <typename C, typename V>
+auto insert_element_impl(C& container, V&& value, long)
+    -> decltype(container.insert(std::forward<V>(value)), void())
+{
+    // TODO: 使用 insert
+}
+
+template <typename C, typename V>
+void insert_element(C& container, V&& value) {
+    insert_element_impl(container, std::forward<V>(value), 0);
+}
+
+// 显式模板实例化
+template int multiply_by_two_enable_if<int>(int);
+template double multiply_by_two_enable_if<double>(double);
+template int multiply_by_two_if_constexpr<int>(int);
+template double multiply_by_two_if_constexpr<double>(double);
+template int multiply_by_two_tag_dispatch<int>(int);
+template double multiply_by_two_tag_dispatch<double>(double);
+template void insert_element<std::vector<int>, int>(std::vector<int>&, int&&);
+template void insert_element<std::set<int>, int>(std::set<int>&, int&&);
+
+} // namespace SfinaeImpl

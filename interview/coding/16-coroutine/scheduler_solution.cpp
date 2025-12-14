@@ -1,18 +1,19 @@
 /**
  * @file scheduler_solution.cpp
- * @brief 协程调度器 - 解答
+ * @brief 协程调度器 - 参考答案
  */
-#include <coroutine>
-#include <queue>
-#include <functional>
-#include <thread>
-#include <mutex>
-#include <condition_variable>
-#include <vector>
-#include <atomic>
+
+#include "scheduler.h"
 #include <iostream>
+#include <cassert>
+#include <deque>
+
+namespace SchedulerImpl {
+
+namespace Solution {
 
 // ==================== 题目1: 简单调度器 ====================
+
 class SimpleScheduler {
 public:
     void schedule(std::coroutine_handle<> handle) {
@@ -47,6 +48,7 @@ private:
 };
 
 // ==================== 题目2: 多线程调度器 ====================
+
 class ThreadPoolScheduler {
 public:
     explicit ThreadPoolScheduler(size_t numThreads) : running_(true) {
@@ -132,6 +134,7 @@ private:
 };
 
 // ==================== 题目3: 优先级调度器 ====================
+
 class PriorityScheduler {
 public:
     enum class Priority { Low = 0, Normal = 1, High = 2 };
@@ -167,15 +170,14 @@ private:
 };
 
 // ==================== 题目4: Yield 操作 ====================
+
 class YieldScheduler;
 
 struct Yield {
     YieldScheduler* scheduler;
 
     bool await_ready() noexcept { return false; }
-
     void await_suspend(std::coroutine_handle<> handle) noexcept;
-
     void await_resume() noexcept {}
 };
 
@@ -219,6 +221,7 @@ void Yield::await_suspend(std::coroutine_handle<> handle) noexcept {
 }
 
 // ==================== 题目5: 公平调度器（时间片轮转）====================
+
 class FairScheduler {
 public:
     explicit FairScheduler(int timeSliceMs = 10)
@@ -259,85 +262,8 @@ private:
     int timeSliceMs_;
 };
 
-// ==================== 工作窃取调度器（高级）====================
-class WorkStealingScheduler {
-public:
-    explicit WorkStealingScheduler(size_t numThreads)
-        : queues_(numThreads), running_(true) {
-        for (size_t i = 0; i < numThreads; ++i) {
-            workers_.emplace_back([this, i] { workerLoop(i); });
-        }
-    }
-
-    ~WorkStealingScheduler() {
-        shutdown();
-    }
-
-    void schedule(std::coroutine_handle<> handle) {
-        // 简化：轮流分配
-        static std::atomic<size_t> next{0};
-        size_t idx = next.fetch_add(1) % queues_.size();
-
-        {
-            std::lock_guard<std::mutex> lock(mutexes_[idx]);
-            queues_[idx].push_back(handle);
-        }
-        cv_.notify_all();
-    }
-
-    void shutdown() {
-        running_ = false;
-        cv_.notify_all();
-        for (auto& w : workers_) {
-            if (w.joinable()) w.join();
-        }
-    }
-
-private:
-    void workerLoop(size_t id) {
-        while (running_) {
-            std::coroutine_handle<> handle;
-
-            // 尝试从自己的队列取
-            {
-                std::lock_guard<std::mutex> lock(mutexes_[id]);
-                if (!queues_[id].empty()) {
-                    handle = queues_[id].back();
-                    queues_[id].pop_back();
-                }
-            }
-
-            // 如果自己的队列空了，尝试窃取
-            if (!handle) {
-                for (size_t i = 0; i < queues_.size(); ++i) {
-                    if (i == id) continue;
-                    std::lock_guard<std::mutex> lock(mutexes_[i]);
-                    if (!queues_[i].empty()) {
-                        handle = queues_[i].front();
-                        queues_[i].pop_front();
-                        break;
-                    }
-                }
-            }
-
-            if (handle && !handle.done()) {
-                handle.resume();
-            } else {
-                std::unique_lock<std::mutex> lock(cvMutex_);
-                cv_.wait_for(lock, std::chrono::milliseconds(10));
-            }
-        }
-    }
-
-    std::vector<std::deque<std::coroutine_handle<>>> queues_;
-    std::vector<std::mutex> mutexes_{queues_.size()};
-    std::vector<std::thread> workers_;
-    std::mutex cvMutex_;
-    std::condition_variable cv_;
-    std::atomic<bool> running_;
-};
-
 // ==================== Task 类型（用于测试）====================
+
 template <typename T = void>
 struct Task {
     struct promise_type {
@@ -359,63 +285,75 @@ struct Task {
     ~Task() { if (handle) handle.destroy(); }
 };
 
-// ==================== 测试代码 ====================
-Task<int> simpleTask(SimpleScheduler& scheduler, int id) {
-    std::cout << "Task " << id << " started\n";
+// 测试辅助协程
+Task<int> simpleTask(int id) {
     co_return id;
 }
 
-int main() {
-    std::cout << "=== Scheduler Tests ===\n\n";
+} // namespace Solution
+
+// ==================== 测试函数 ====================
+
+void runTests() {
+    std::cout << "=== Scheduler Tests ===" << std::endl;
 
     // 简单调度器测试
-    std::cout << "--- Simple Scheduler ---\n";
     {
-        SimpleScheduler scheduler;
-        auto task1 = simpleTask(scheduler, 1);
-        auto task2 = simpleTask(scheduler, 2);
-        auto task3 = simpleTask(scheduler, 3);
+        Solution::SimpleScheduler scheduler;
+        auto task1 = Solution::simpleTask(1);
+        auto task2 = Solution::simpleTask(2);
+        auto task3 = Solution::simpleTask(3);
 
         scheduler.schedule(task1.handle);
         scheduler.schedule(task2.handle);
         scheduler.schedule(task3.handle);
         scheduler.run();
+
+        assert(task1.handle.done());
+        assert(task2.handle.done());
+        assert(task3.handle.done());
     }
+    std::cout << "  SimpleScheduler: PASSED" << std::endl;
 
     // 优先级调度器测试
-    std::cout << "\n--- Priority Scheduler ---\n";
     {
-        PriorityScheduler scheduler;
+        Solution::PriorityScheduler scheduler;
 
-        auto lowTask = simpleTask(scheduler, 1);
-        auto normalTask = simpleTask(scheduler, 2);
-        auto highTask = simpleTask(scheduler, 3);
+        auto lowTask = Solution::simpleTask(1);
+        auto normalTask = Solution::simpleTask(2);
+        auto highTask = Solution::simpleTask(3);
 
-        scheduler.schedule(lowTask.handle, PriorityScheduler::Priority::Low);
-        scheduler.schedule(normalTask.handle, PriorityScheduler::Priority::Normal);
-        scheduler.schedule(highTask.handle, PriorityScheduler::Priority::High);
+        scheduler.schedule(lowTask.handle, Solution::PriorityScheduler::Priority::Low);
+        scheduler.schedule(normalTask.handle, Solution::PriorityScheduler::Priority::Normal);
+        scheduler.schedule(highTask.handle, Solution::PriorityScheduler::Priority::High);
 
-        std::cout << "Running with priority...\n";
         scheduler.run();
+
+        assert(lowTask.handle.done());
+        assert(normalTask.handle.done());
+        assert(highTask.handle.done());
     }
+    std::cout << "  PriorityScheduler: PASSED" << std::endl;
 
     // 多线程调度器测试
-    std::cout << "\n--- Thread Pool Scheduler ---\n";
     {
-        ThreadPoolScheduler scheduler(2);
+        Solution::ThreadPoolScheduler scheduler(2);
 
-        auto task1 = simpleTask(scheduler, 1);
-        auto task2 = simpleTask(scheduler, 2);
+        auto task1 = Solution::simpleTask(1);
+        auto task2 = Solution::simpleTask(2);
 
         scheduler.schedule(task1.handle);
         scheduler.schedule(task2.handle);
 
         scheduler.wait_idle();
-        std::cout << "All tasks completed\n";
-    }
 
-    return 0;
+        assert(task1.handle.done());
+        assert(task2.handle.done());
+    }
+    std::cout << "  ThreadPoolScheduler: PASSED" << std::endl;
 }
+
+} // namespace SchedulerImpl
 
 /**
  * 关键要点：

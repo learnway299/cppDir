@@ -1,57 +1,19 @@
 /**
  * @file make_shared_solution.cpp
- * @brief make_shared/make_unique 实现 - 解答
+ * @brief make_shared/make_unique 实现 - 参考答案
  */
 
+#include "make_shared.h"
 #include <iostream>
-#include <memory>
-#include <utility>
-#include <atomic>
+#include <cassert>
 #include <new>
 
-/**
- * 题目1：为什么要使用 make_shared/make_unique？
- *
- * 原因1：异常安全
- * - shared_ptr<T>(new T(...)) 中，new 和 shared_ptr 构造是两个步骤
- * - 如果中间有异常，new 的内存可能泄漏
- *
- * 原因2：效率（make_shared）
- * - new T + shared_ptr 需要两次内存分配
- * - make_shared 只需一次分配（对象和控制块连续存储）
- *
- * 原因3：代码简洁
- * - 避免重复类型名
- */
+namespace MakeSharedImpl {
 
-// 演示异常安全问题
-int g() {
-    throw std::runtime_error("exception");
-    return 0;
-}
+namespace Solution {
 
-void foo(std::shared_ptr<int> p, int x) {
-    std::cout << "foo called\n";
-}
+// ==================== make_unique ====================
 
-void exceptionSafetyDemo() {
-    // 危险代码（C++17 前）：
-    // foo(std::shared_ptr<int>(new int(42)), g());
-    //
-    // 求值顺序可能是：
-    // 1. new int(42)
-    // 2. g() 抛出异常
-    // 3. shared_ptr 构造未执行
-    // 结果：内存泄漏！
-
-    // 安全代码：
-    // foo(std::make_shared<int>(42), g());
-    // make_shared 是单个函数调用，要么完全执行，要么不执行
-}
-
-/**
- * 题目2：实现 make_unique
- */
 template <typename T, typename... Args>
 std::unique_ptr<T> myMakeUnique(Args&&... args) {
     return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
@@ -63,16 +25,8 @@ std::unique_ptr<T[]> myMakeUniqueArray(size_t size) {
     return std::unique_ptr<T[]>(new T[size]());
 }
 
-// 禁止已知大小数组（如 make_unique<int[5]>()）
-template <typename T, typename... Args>
-typename std::enable_if<std::extent<T>::value != 0>::type
-myMakeUnique(Args&&...) = delete;
+// ==================== CombinedBlock ====================
 
-/**
- * 题目3：实现 make_shared（单次分配版本）
- *
- * 关键：控制块和对象一起分配
- */
 template <typename T>
 struct alignas(std::max_align_t) CombinedBlock {
     std::atomic<long> strong_count;
@@ -93,6 +47,8 @@ struct alignas(std::max_align_t) CombinedBlock {
         getPtr()->~T();
     }
 };
+
+// ==================== MySharedPtr ====================
 
 template <typename T>
 class MySharedPtr {
@@ -165,115 +121,108 @@ private:
     CombinedBlock<T>* block_;
 };
 
+// ==================== myMakeShared ====================
+
 template <typename T, typename... Args>
 MySharedPtr<T> myMakeShared(Args&&... args) {
     auto* block = new CombinedBlock<T>(std::forward<Args>(args)...);
     return MySharedPtr<T>(block);
 }
 
-/**
- * 题目4：make_shared 的缺点
- */
-void makeSharedDrawbacks() {
-    std::cout << "=== make_shared 缺点分析 ===\n";
+// ==================== 测试类 ====================
 
-    // 缺点1：不支持自定义删除器
-    std::cout << "\n1. 不支持自定义删除器\n";
-    // 必须使用构造函数：
-    auto fileDeleter = [](FILE* f) {
-        if (f) fclose(f);
-    };
-    std::shared_ptr<FILE> file(fopen("test.txt", "w"), fileDeleter);
-
-    // 缺点2：weak_ptr 延长内存占用
-    std::cout << "\n2. weak_ptr 延长内存占用\n";
-    struct LargeObject {
-        char data[1024 * 1024];  // 1MB
-        ~LargeObject() {
-            std::cout << "LargeObject destroyed\n";
-        }
-    };
-
-    std::weak_ptr<LargeObject> wp;
-    {
-        // make_shared: 对象和控制块一起分配
-        auto sp = std::make_shared<LargeObject>();
-        wp = sp;
-        std::cout << "sp going out of scope...\n";
-    }
-    std::cout << "Object destroyed, but memory still held by weak_ptr\n";
-    // 1MB 内存仍被占用，直到所有 weak_ptr 也销毁
-
-    // 解决方案：对大对象使用 shared_ptr(new T)
-    {
-        std::shared_ptr<LargeObject> sp(new LargeObject());
-        // 对象和控制块分别分配
-        // 当 strong_count = 0 时，对象内存立即释放
-    }
-
-    // 缺点3：不能使用 {} 初始化
-    std::cout << "\n3. 不能使用列表初始化\n";
-    // auto v = std::make_shared<std::vector<int>>({1, 2, 3});  // 编译错误
-    auto v = std::make_shared<std::vector<int>>(std::initializer_list<int>{1, 2, 3});
-}
-
-/**
- * 题目5：allocate_shared 实现示意
- */
-template <typename T, typename Alloc, typename... Args>
-std::shared_ptr<T> myAllocateShared(const Alloc& alloc, Args&&... args) {
-    // 实际实现需要使用 allocator_traits
-    // 这里简化为使用标准库
-    return std::allocate_shared<T>(alloc, std::forward<Args>(args)...);
-}
-
-// 测试类
 struct TestClass {
     int value;
     std::string name;
+    static int instanceCount;
 
     TestClass(int v, const std::string& n) : value(v), name(n) {
-        std::cout << "TestClass(" << value << ", " << name << ") constructed\n";
+        ++instanceCount;
     }
 
     ~TestClass() {
-        std::cout << "TestClass(" << value << ", " << name << ") destroyed\n";
+        --instanceCount;
     }
 };
 
-int main() {
-    std::cout << "=== 测试 myMakeUnique ===\n";
-    {
-        auto p = myMakeUnique<TestClass>(42, "unique");
-        std::cout << "Value: " << p->value << ", Name: " << p->name << "\n";
-    }
+int TestClass::instanceCount = 0;
 
-    std::cout << "\n=== 测试 myMakeUniqueArray ===\n";
+} // namespace Solution
+
+// ==================== 测试函数 ====================
+
+void testMakeSharedSolution() {
+    std::cout << "=== Make Shared Tests (Solution) ===" << std::endl;
+
+    // 测试 myMakeUnique
+    Solution::TestClass::instanceCount = 0;
     {
-        auto arr = myMakeUniqueArray<int>(5);
+        auto p = Solution::myMakeUnique<Solution::TestClass>(42, std::string("unique"));
+        assert(p->value == 42);
+        assert(p->name == "unique");
+        assert(Solution::TestClass::instanceCount == 1);
+    }
+    assert(Solution::TestClass::instanceCount == 0);
+    std::cout << "  myMakeUnique: PASSED" << std::endl;
+
+    // 测试 myMakeUniqueArray
+    {
+        auto arr = Solution::myMakeUniqueArray<int>(5);
         for (int i = 0; i < 5; ++i) {
             arr[i] = i * 10;
         }
-        for (int i = 0; i < 5; ++i) {
-            std::cout << arr[i] << " ";
-        }
-        std::cout << "\n";
+        assert(arr[0] == 0);
+        assert(arr[4] == 40);
     }
+    std::cout << "  myMakeUniqueArray: PASSED" << std::endl;
 
-    std::cout << "\n=== 测试 myMakeShared ===\n";
+    // 测试 myMakeShared
+    Solution::TestClass::instanceCount = 0;
     {
-        auto p1 = myMakeShared<TestClass>(100, "shared1");
-        std::cout << "p1 use_count: " << p1.use_count() << "\n";
+        auto p1 = Solution::myMakeShared<Solution::TestClass>(100, std::string("shared1"));
+        assert(p1.use_count() == 1);
+        assert(p1->value == 100);
 
         auto p2 = p1;
-        std::cout << "After copy, use_count: " << p1.use_count() << "\n";
+        assert(p1.use_count() == 2);
 
-        p2 = myMakeShared<TestClass>(200, "shared2");
-        std::cout << "After reassign, p1 use_count: " << p1.use_count() << "\n";
+        p2 = Solution::myMakeShared<Solution::TestClass>(200, std::string("shared2"));
+        assert(p1.use_count() == 1);
     }
+    assert(Solution::TestClass::instanceCount == 0);
+    std::cout << "  myMakeShared: PASSED" << std::endl;
 
-    std::cout << "\n=== 分析 make_shared 缺点 ===\n";
-    makeSharedDrawbacks();
+    // 测试移动语义
+    {
+        auto p1 = Solution::myMakeShared<Solution::TestClass>(300, std::string("move"));
+        auto p2 = std::move(p1);
+        assert(!p1);
+        assert(p2.use_count() == 1);
+    }
+    std::cout << "  myMakeShared move: PASSED" << std::endl;
 
-    return 0;
+    // 测试单次分配优势
+    {
+        // 使用 make_shared 时，控制块和对象只需一次分配
+        // 这比 shared_ptr(new T) 的两次分配更高效
+        auto p = Solution::myMakeShared<int>(42);
+        assert(*p == 42);
+    }
+    std::cout << "  single allocation: PASSED" << std::endl;
+
+    // 测试拷贝赋值
+    {
+        auto p1 = Solution::myMakeShared<int>(1);
+        auto p2 = Solution::myMakeShared<int>(2);
+        assert(p1.use_count() == 1);
+        assert(p2.use_count() == 1);
+
+        p1 = p2;
+        assert(p1.use_count() == 2);
+        assert(p2.use_count() == 2);
+        assert(*p1 == 2);
+    }
+    std::cout << "  copy assignment: PASSED" << std::endl;
 }
+
+} // namespace MakeSharedImpl

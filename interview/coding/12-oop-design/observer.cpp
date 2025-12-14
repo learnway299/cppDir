@@ -1,152 +1,196 @@
 /**
  * @file observer.cpp
- * @brief 观察者模式实现 - 面试题
- *
- * 定义对象间一对多的依赖关系，当一个对象状态改变时，
- * 所有依赖它的对象都得到通知并自动更新
+ * @brief 观察者模式实现 - 面试者实现文件
  */
 
-#include <iostream>
-#include <vector>
-#include <memory>
-#include <string>
-#include <functional>
+#include "observer.h"
 #include <algorithm>
 
-/**
- * 题目1：实现基础观察者模式
- *
- * 要求：
- * 1. Subject（主题）可以添加/移除 Observer
- * 2. 状态变化时通知所有 Observer
- * 3. Observer 收到通知后更新自己
- */
+namespace ObserverImpl {
 
-// TODO: 定义观察者接口
-class Observer {
-public:
-    virtual ~Observer() = default;
-    virtual void update(const std::string& message) = 0;
-};
+// ==================== ConcreteSubject 实现 ====================
 
-// TODO: 定义主题接口
-class Subject {
-public:
-    virtual ~Subject() = default;
-    virtual void attach(Observer* observer) = 0;
-    virtual void detach(Observer* observer) = 0;
-    virtual void notify() = 0;
-};
+void ConcreteSubject::attach(Observer* observer) {
+    // TODO: 添加观察者到列表
+}
 
-// TODO: 实现具体主题
-class ConcreteSubject : public Subject {
-public:
-    void attach(Observer* observer) override {
-    }
+void ConcreteSubject::detach(Observer* observer) {
+    // TODO: 从列表移除观察者
+    // 提示：使用 std::remove 和 erase
+}
 
-    void detach(Observer* observer) override {
-    }
+void ConcreteSubject::notify() {
+    // TODO: 通知所有观察者
+}
 
-    void notify() override {
-    }
+void ConcreteSubject::setState(const std::string& state) {
+    // TODO: 设置状态并通知
+}
 
-    void setState(const std::string& state) {
-    }
+const std::string& ConcreteSubject::getState() const {
+    return state_;
+}
 
-private:
-    // TODO: 定义成员变量
-};
+size_t ConcreteSubject::observerCount() const {
+    return observers_.size();
+}
 
-// TODO: 实现具体观察者
-class ConcreteObserver : public Observer {
-public:
-    explicit ConcreteObserver(const std::string& name) {
-    }
+// ==================== ConcreteObserver 实现 ====================
 
-    void update(const std::string& message) override {
-    }
+ConcreteObserver::ConcreteObserver(const std::string& name) : name_(name) {
+}
 
-private:
-    std::string name_;
-};
+void ConcreteObserver::update(const std::string& message) {
+    // TODO: 处理通知
+}
 
-/**
- * 题目2：实现类型安全的观察者（使用模板）
- *
- * 要求：
- * 1. 观察者可以接收特定类型的事件
- * 2. 编译期类型检查
- */
-template <typename EventType>
-class TypedObserver {
-public:
-    virtual ~TypedObserver() = default;
-    virtual void onEvent(const EventType& event) = 0;
-};
+const std::string& ConcreteObserver::getLastMessage() const {
+    return lastMessage_;
+}
+
+const std::string& ConcreteObserver::getName() const {
+    return name_;
+}
+
+// ==================== TypedSubject 模板实现 ====================
 
 template <typename EventType>
-class TypedSubject {
-public:
-    // TODO: 实现类型安全的主题
-};
+void TypedSubject<EventType>::attach(TypedObserver<EventType>* observer) {
+    // TODO: 添加观察者
+}
 
-/**
- * 题目3：实现基于函数的观察者（现代 C++ 风格）
- *
- * 要求：
- * 1. 使用 std::function 作为回调
- * 2. 支持 lambda 表达式
- * 3. 返回可用于取消订阅的句柄
- */
+template <typename EventType>
+void TypedSubject<EventType>::detach(TypedObserver<EventType>* observer) {
+    // TODO: 移除观察者
+}
+
+template <typename EventType>
+void TypedSubject<EventType>::notify(const EventType& event) {
+    // TODO: 通知所有观察者
+}
+
+template <typename EventType>
+size_t TypedSubject<EventType>::observerCount() const {
+    return observers_.size();
+}
+
+// ==================== PriceObserver 实现 ====================
+
+PriceObserver::PriceObserver(const std::string& name) : name_(name) {
+}
+
+void PriceObserver::onEvent(const PriceChangeEvent& event) {
+    // TODO: 处理价格变化事件
+}
+
+const PriceChangeEvent& PriceObserver::getLastEvent() const {
+    return lastEvent_;
+}
+
+// ==================== Signal 模板实现 ====================
+
 template <typename... Args>
-class Signal {
-public:
-    using Slot = std::function<void(Args...)>;
-    using SlotId = size_t;
-
-    // TODO: 实现订阅
-    SlotId connect(Slot slot) {
-        return 0;
-    }
-
-    // TODO: 实现取消订阅
-    void disconnect(SlotId id) {
-    }
-
-    // TODO: 实现触发
-    void emit(Args... args) {
-    }
-
-private:
-    // TODO: 定义成员变量
-};
-
-/**
- * 题目4：实现弱引用观察者
- *
- * 要求：
- * 1. 使用 weak_ptr 避免循环引用
- * 2. 自动清理已销毁的观察者
- */
-class WeakObserver {
-public:
-    virtual ~WeakObserver() = default;
-    virtual void update() = 0;
-};
-
-class WeakSubject {
-public:
-    // TODO: 实现使用 weak_ptr 的主题
-    void attach(std::shared_ptr<WeakObserver> observer) {
-    }
-
-    void notify() {
-    }
-
-private:
-    // std::vector<std::weak_ptr<WeakObserver>> observers_;
-};
-
-int main() {
+typename Signal<Args...>::SlotId Signal<Args...>::connect(Slot slot) {
+    // TODO: 注册回调并返回 ID
     return 0;
 }
+
+template <typename... Args>
+void Signal<Args...>::disconnect(SlotId id) {
+    // TODO: 移除回调
+}
+
+template <typename... Args>
+void Signal<Args...>::emit(Args... args) {
+    // TODO: 调用所有注册的回调
+}
+
+template <typename... Args>
+void Signal<Args...>::disconnectAll() {
+    slots_.clear();
+}
+
+template <typename... Args>
+size_t Signal<Args...>::slotCount() const {
+    return slots_.size();
+}
+
+// ==================== ScopedConnection 模板实现 ====================
+
+template <typename... Args>
+ScopedConnection<Args...>::ScopedConnection(Signal<Args...>& signal, typename Signal<Args...>::SlotId id)
+    : signal_(&signal), id_(id) {
+}
+
+template <typename... Args>
+ScopedConnection<Args...>::~ScopedConnection() {
+    // TODO: 自动断开连接
+}
+
+template <typename... Args>
+ScopedConnection<Args...>::ScopedConnection(ScopedConnection&& other) noexcept
+    : signal_(other.signal_), id_(other.id_) {
+    other.signal_ = nullptr;
+}
+
+template <typename... Args>
+void ScopedConnection<Args...>::release() {
+    signal_ = nullptr;
+}
+
+// ==================== WeakSubject 实现 ====================
+
+void WeakSubject::attach(std::shared_ptr<WeakObserver> observer) {
+    // TODO: 添加弱引用
+}
+
+void WeakSubject::notify(const std::string& message) {
+    // TODO: 通知所有有效的观察者，清理已销毁的
+}
+
+size_t WeakSubject::observerCount() const {
+    // TODO: 统计有效观察者数量
+    return 0;
+}
+
+// ==================== ConcreteWeakObserver 实现 ====================
+
+ConcreteWeakObserver::ConcreteWeakObserver(const std::string& name) : name_(name) {
+}
+
+void ConcreteWeakObserver::update(const std::string& message) {
+    // TODO: 处理通知
+}
+
+const std::string& ConcreteWeakObserver::getLastMessage() const {
+    return lastMessage_;
+}
+
+// ==================== EventBus 实现 ====================
+
+EventBus& EventBus::getInstance() {
+    static EventBus instance;
+    return instance;
+}
+
+template <typename Event>
+void EventBus::subscribe(std::function<void(const Event&)> handler) {
+    // TODO: 注册事件处理器
+}
+
+template <typename Event>
+void EventBus::publish(const Event& event) {
+    // TODO: 发布事件到所有订阅者
+}
+
+void EventBus::clear() {
+    handlers_.clear();
+}
+
+// 显式模板实例化
+template class TypedSubject<PriceChangeEvent>;
+template class Signal<int, std::string>;
+template class Signal<std::string>;
+template class ScopedConnection<std::string>;
+
+} // namespace ObserverImpl

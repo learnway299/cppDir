@@ -1,204 +1,143 @@
 /**
  * @file crtp.cpp
- * @brief CRTP (Curiously Recurring Template Pattern) 实现 - 面试题
- *
- * CRTP：基类模板以派生类作为模板参数
- * 实现静态多态，零运行时开销
+ * @brief CRTP (Curiously Recurring Template Pattern) - 面试者实现文件
  */
 
-#include <iostream>
-#include <string>
-#include <chrono>
-#include <vector>
+#include "crtp.h"
+#include <sstream>
 
-/**
- * 题目1：实现静态多态（替代虚函数）
- *
- * 要求：
- * 1. 基类提供接口
- * 2. 派生类提供实现
- * 3. 编译期绑定，无虚函数开销
- */
-template <typename Derived>
-class Shape {
-public:
-    // TODO: 实现静态多态接口
-    void draw() const {
-        // 调用派生类的实现
-    }
+namespace CRTPImpl {
 
-    double area() const {
-        return 0.0;
-    }
+// ==================== Circle 实现 ====================
 
-protected:
-    // 防止直接实例化基类
-    Shape() = default;
-};
+Circle::Circle(double radius) : radius_(radius) {}
 
-// TODO: 实现派生类
-class Circle : public Shape<Circle> {
-public:
-    Circle(double radius) : radius_(radius) {}
+std::string Circle::nameImpl() const {
+    // TODO: 返回 "Circle"
+    return "";
+}
 
-    void drawImpl() const {
-        // TODO
-    }
+double Circle::areaImpl() const {
+    // TODO: 返回 M_PI * radius_ * radius_
+    return 0.0;
+}
 
-    double areaImpl() const {
-        return 0.0;
-    }
+double Circle::getRadius() const {
+    return radius_;
+}
 
-private:
-    double radius_;
-};
+// ==================== Rectangle 实现 ====================
 
-class Rectangle : public Shape<Rectangle> {
-public:
-    Rectangle(double width, double height) : width_(width), height_(height) {}
+Rectangle::Rectangle(double width, double height) : width_(width), height_(height) {}
 
-    void drawImpl() const {
-        // TODO
-    }
+std::string Rectangle::nameImpl() const {
+    // TODO: 返回 "Rectangle"
+    return "";
+}
 
-    double areaImpl() const {
-        return 0.0;
-    }
+double Rectangle::areaImpl() const {
+    // TODO: 返回 width_ * height_
+    return 0.0;
+}
 
-private:
-    double width_, height_;
-};
+// ==================== Config 实现 ====================
 
-/**
- * 题目2：实现静态接口约束（编译期检查）
- *
- * 要求：
- * 1. 派生类必须实现特定方法
- * 2. 编译期报错提示
- */
-template <typename Derived>
-class Serializable {
-public:
-    std::string serialize() const {
-        // TODO: 调用派生类的 serializeImpl
-        return "";
-    }
+Config::Config() : port_(8080), host_("localhost") {}
 
-    void deserialize(const std::string& data) {
-        // TODO
-    }
+std::string Config::serializeImpl() const {
+    // TODO: 返回 "host:port" 格式
+    return "";
+}
 
-private:
-    // 编译期检查辅助
-    Serializable() {
-        // TODO: 静态断言检查派生类是否实现了必要方法
-    }
-    friend Derived;
-};
+void Config::deserializeImpl(const std::string& data) {
+    // TODO: 解析 "host:port" 格式
+}
 
-/**
- * 题目3：实现对象计数器
- *
- * 要求：
- * 1. 每个类有独立的计数器
- * 2. 跟踪创建和销毁
- */
-template <typename Derived>
-class ObjectCounter {
-public:
-    static size_t getCount() {
-        return count_;
-    }
+int Config::getPort() const {
+    return port_;
+}
 
-protected:
-    ObjectCounter() {
-        // TODO
-    }
+const std::string& Config::getHost() const {
+    return host_;
+}
 
-    ~ObjectCounter() {
-        // TODO
-    }
-
-    // 拷贝也计数
-    ObjectCounter(const ObjectCounter&) {
-        // TODO
-    }
-
-private:
-    static size_t count_;
-};
+// ==================== ObjectCounter 实现 ====================
 
 template <typename Derived>
-size_t ObjectCounter<Derived>::count_ = 0;
-
-/**
- * 题目4：实现 Mixin（混入）模式
- *
- * 通过 CRTP 组合多个功能
- */
-template <typename Derived>
-class Printable {
-public:
-    void print() const {
-        // TODO
-    }
-};
+ObjectCounter<Derived>::ObjectCounter() {
+    // TODO: 增加计数
+}
 
 template <typename Derived>
-class Comparable {
-public:
-    bool operator<(const Derived& other) const {
-        // TODO
-        return false;
-    }
+ObjectCounter<Derived>::~ObjectCounter() {
+    // TODO: 减少计数
+}
 
-    bool operator>(const Derived& other) const {
-        return other < static_cast<const Derived&>(*this);
-    }
+template <typename Derived>
+ObjectCounter<Derived>::ObjectCounter(const ObjectCounter&) {
+    // TODO: 增加计数
+}
 
-    bool operator<=(const Derived& other) const {
-        return !(static_cast<const Derived&>(*this) > other);
-    }
+template <typename Derived>
+ObjectCounter<Derived>::ObjectCounter(ObjectCounter&&) noexcept {
+    // TODO: 增加计数
+}
 
-    bool operator>=(const Derived& other) const {
-        return !(static_cast<const Derived&>(*this) < other);
-    }
-};
+// ==================== Entity 实现 ====================
 
-// 组合使用
-class Person : public Printable<Person>, public Comparable<Person> {
-public:
-    Person(const std::string& name, int age) : name_(name), age_(age) {}
+Entity::Entity(int id) : id_(id) {}
 
-    // TODO: 实现 Printable 需要的方法
-    // TODO: 实现 Comparable 需要的方法
+int Entity::getId() const {
+    return id_;
+}
 
-private:
-    std::string name_;
-    int age_;
-};
+// ==================== Component 实现 ====================
 
-/**
- * 题目5：实现表达式模板（性能优化）
- *
- * 场景：向量运算，避免临时对象
- */
-template <typename E>
-class VecExpression {
-public:
-    double operator[](size_t i) const {
-        return static_cast<const E&>(*this)[i];
-    }
+Component::Component(const std::string& name) : name_(name) {}
 
-    size_t size() const {
-        return static_cast<const E&>(*this).size();
-    }
-};
+const std::string& Component::getName() const {
+    return name_;
+}
 
-// TODO: 实现 Vec 类
-// TODO: 实现 VecSum 表达式类
-// TODO: 实现 operator+
+// ==================== Person 实现 ====================
 
-int main() {
+Person::Person(const std::string& name, int age) : name_(name), age_(age) {}
+
+std::string Person::toString() const {
+    // TODO: 返回 "Person(name, age)" 格式
+    return "";
+}
+
+int Person::compareImpl(const Person& other) const {
+    // TODO: 先比较年龄，再比较名字
     return 0;
 }
+
+size_t Person::hashImpl() const {
+    // TODO: 返回 name 和 age 的组合哈希
+    return 0;
+}
+
+// ==================== Vec 实现 ====================
+
+Vec::Vec(size_t n) : data_(n) {}
+
+Vec::Vec(std::initializer_list<double> list) : data_(list) {}
+
+double Vec::operator[](size_t i) const {
+    return data_[i];
+}
+
+double& Vec::operator[](size_t i) {
+    return data_[i];
+}
+
+size_t Vec::size() const {
+    return data_.size();
+}
+
+// 显式模板实例化
+template class ObjectCounter<Entity>;
+template class ObjectCounter<Component>;
+
+} // namespace CRTPImpl

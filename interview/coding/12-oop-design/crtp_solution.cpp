@@ -1,63 +1,42 @@
 /**
  * @file crtp_solution.cpp
- * @brief CRTP 实现 - 解答
+ * @brief CRTP (Curiously Recurring Template Pattern) - 参考答案
  */
 
+#include "crtp.h"
 #include <iostream>
-#include <string>
-#include <cmath>
-#include <vector>
+#include <cassert>
 #include <sstream>
 
-/**
- * 题目1：静态多态
- *
- * 通过 CRTP 实现编译期多态，避免虚函数开销
- */
-template <typename Derived>
-class Shape {
-public:
-    void draw() const {
-        static_cast<const Derived*>(this)->drawImpl();
-    }
+namespace CRTPImpl {
 
-    double area() const {
-        return static_cast<const Derived*>(this)->areaImpl();
-    }
+namespace Solution {
 
-    // 统一接口
-    void describe() const {
-        std::cout << "Shape with area: " << area() << "\n";
-        draw();
-    }
-
-protected:
-    Shape() = default;
-};
+// ==================== Circle ====================
 
 class Circle : public Shape<Circle> {
 public:
     explicit Circle(double radius) : radius_(radius) {}
 
-    void drawImpl() const {
-        std::cout << "Drawing Circle with radius " << radius_ << "\n";
-    }
+    std::string nameImpl() const { return "Circle"; }
 
     double areaImpl() const {
         return M_PI * radius_ * radius_;
     }
 
+    double getRadius() const { return radius_; }
+
 private:
     double radius_;
 };
+
+// ==================== Rectangle ====================
 
 class Rectangle : public Shape<Rectangle> {
 public:
     Rectangle(double width, double height) : width_(width), height_(height) {}
 
-    void drawImpl() const {
-        std::cout << "Drawing Rectangle " << width_ << "x" << height_ << "\n";
-    }
+    std::string nameImpl() const { return "Rectangle"; }
 
     double areaImpl() const {
         return width_ * height_;
@@ -67,38 +46,7 @@ private:
     double width_, height_;
 };
 
-// 模板函数可以处理所有 Shape 派生类
-template <typename T>
-void processShape(const Shape<T>& shape) {
-    shape.describe();
-}
-
-/**
- * 题目2：静态接口约束
- *
- * 编译期检查派生类是否实现了必要方法
- */
-template <typename Derived>
-class Serializable {
-public:
-    std::string serialize() const {
-        return static_cast<const Derived*>(this)->serializeImpl();
-    }
-
-    void deserialize(const std::string& data) {
-        static_cast<Derived*>(this)->deserializeImpl(data);
-    }
-
-protected:
-    Serializable() = default;
-
-    // 使用 C++20 概念或 static_assert 进行编译期检查
-    ~Serializable() {
-        // 编译期检查（如果 Derived 没有实现 serializeImpl，这里会报错）
-        auto check = &Derived::serializeImpl;
-        (void)check;
-    }
-};
+// ==================== Config ====================
 
 class Config : public Serializable<Config> {
 public:
@@ -116,25 +64,22 @@ public:
         }
     }
 
-    void print() const {
-        std::cout << "Config: " << host_ << ":" << port_ << "\n";
-    }
+    int getPort() const { return port_; }
+    const std::string& getHost() const { return host_; }
 
 private:
     int port_;
     std::string host_;
 };
 
-/**
- * 题目3：对象计数器
- *
- * 每个类有独立的静态计数器
- */
+// ==================== ObjectCounter ====================
+
 template <typename Derived>
 class ObjectCounter {
 public:
     static size_t getCount() { return count_; }
     static size_t getCreated() { return created_; }
+    static void resetStats() { count_ = 0; created_ = 0; }
 
 protected:
     ObjectCounter() {
@@ -172,7 +117,7 @@ size_t ObjectCounter<Derived>::created_ = 0;
 
 class Entity : public ObjectCounter<Entity> {
 public:
-    Entity(int id) : id_(id) {}
+    explicit Entity(int id) : id_(id) {}
     int getId() const { return id_; }
 private:
     int id_;
@@ -180,22 +125,19 @@ private:
 
 class Component : public ObjectCounter<Component> {
 public:
-    Component(const std::string& name) : name_(name) {}
+    explicit Component(const std::string& name) : name_(name) {}
     const std::string& getName() const { return name_; }
 private:
     std::string name_;
 };
 
-/**
- * 题目4：Mixin 模式
- *
- * 组合多个 CRTP 基类实现功能混入
- */
+// ==================== Mixin 模式 ====================
+
 template <typename Derived>
 class Printable {
 public:
-    void print(std::ostream& os = std::cout) const {
-        os << static_cast<const Derived*>(this)->toString() << "\n";
+    std::string print() const {
+        return static_cast<const Derived*>(this)->toString();
     }
 };
 
@@ -216,14 +158,6 @@ public:
 
     bool operator>(const Derived& other) const {
         return other < static_cast<const Derived&>(*this);
-    }
-
-    bool operator<=(const Derived& other) const {
-        return !(static_cast<const Derived&>(*this) > other);
-    }
-
-    bool operator>=(const Derived& other) const {
-        return !(static_cast<const Derived&>(*this) < other);
     }
 };
 
@@ -259,11 +193,8 @@ private:
     int age_;
 };
 
-/**
- * 题目5：表达式模板
- *
- * 惰性求值，避免临时对象
- */
+// ==================== 表达式模板 ====================
+
 template <typename E>
 class VecExpression {
 public:
@@ -278,11 +209,10 @@ public:
 
 class Vec : public VecExpression<Vec> {
 public:
-    Vec(size_t n) : data_(n) {}
+    explicit Vec(size_t n) : data_(n) {}
 
     Vec(std::initializer_list<double> list) : data_(list) {}
 
-    // 从任意表达式构造
     template <typename E>
     Vec(const VecExpression<E>& expr) : data_(expr.size()) {
         for (size_t i = 0; i < expr.size(); ++i) {
@@ -294,20 +224,10 @@ public:
     double& operator[](size_t i) { return data_[i]; }
     size_t size() const { return data_.size(); }
 
-    void print() const {
-        std::cout << "[";
-        for (size_t i = 0; i < data_.size(); ++i) {
-            if (i > 0) std::cout << ", ";
-            std::cout << data_[i];
-        }
-        std::cout << "]\n";
-    }
-
 private:
     std::vector<double> data_;
 };
 
-// 表达式类：向量加法
 template <typename E1, typename E2>
 class VecSum : public VecExpression<VecSum<E1, E2>> {
 public:
@@ -324,7 +244,6 @@ private:
     const E2& b_;
 };
 
-// 表达式类：标量乘法
 template <typename E>
 class VecScale : public VecExpression<VecScale<E>> {
 public:
@@ -341,97 +260,115 @@ private:
     const E& expr_;
 };
 
-// 运算符重载
 template <typename E1, typename E2>
-VecSum<E1, E2> operator+(const VecExpression<E1>& a, const VecExpression<E2>& b) {
+VecSum<E1, E2> vecAdd(const VecExpression<E1>& a, const VecExpression<E2>& b) {
     return VecSum<E1, E2>(static_cast<const E1&>(a), static_cast<const E2&>(b));
 }
 
 template <typename E>
-VecScale<E> operator*(double scalar, const VecExpression<E>& expr) {
+VecScale<E> vecScale(double scalar, const VecExpression<E>& expr) {
     return VecScale<E>(scalar, static_cast<const E&>(expr));
 }
 
-int main() {
-    std::cout << "=== 静态多态 ===\n";
-    {
-        Circle circle(5.0);
-        Rectangle rect(4.0, 3.0);
+} // namespace Solution
 
-        processShape(circle);
-        processShape(rect);
+// ==================== 测试函数 ====================
+
+void runTests() {
+    std::cout << "=== CRTP Tests ===" << std::endl;
+
+    // 测试静态多态
+    {
+        Solution::Circle circle(5.0);
+        Solution::Rectangle rect(4.0, 3.0);
+
+        assert(circle.name() == "Circle");
+        assert(rect.name() == "Rectangle");
+
+        double circleArea = processShape(circle);
+        assert(circleArea > 78.5 && circleArea < 78.6);
+
+        double rectArea = processShape(rect);
+        assert(rectArea == 12.0);
     }
+    std::cout << "  Static Polymorphism: PASSED" << std::endl;
 
-    std::cout << "\n=== 静态接口约束 ===\n";
+    // 测试静态接口约束
     {
-        Config config;
+        Solution::Config config;
         std::string serialized = config.serialize();
-        std::cout << "Serialized: " << serialized << "\n";
+        assert(serialized == "localhost:8080");
 
-        Config config2;
+        Solution::Config config2;
         config2.deserialize("192.168.1.1:9000");
-        config2.print();
+        assert(config2.getHost() == "192.168.1.1");
+        assert(config2.getPort() == 9000);
     }
+    std::cout << "  Serializable: PASSED" << std::endl;
 
-    std::cout << "\n=== 对象计数器 ===\n";
+    // 测试对象计数器
+    Solution::Entity::resetStats();
+    Solution::Component::resetStats();
     {
-        std::cout << "Initial - Entity: " << Entity::getCount()
-                  << ", Component: " << Component::getCount() << "\n";
+        assert(Solution::Entity::getCount() == 0);
+        assert(Solution::Component::getCount() == 0);
 
-        Entity e1(1), e2(2);
-        Component c1("Physics");
+        Solution::Entity e1(1), e2(2);
+        Solution::Component c1("Physics");
 
-        std::cout << "After creation - Entity: " << Entity::getCount()
-                  << ", Component: " << Component::getCount() << "\n";
+        assert(Solution::Entity::getCount() == 2);
+        assert(Solution::Component::getCount() == 1);
 
         {
-            Entity e3(3);
-            Component c2("Graphics");
-            std::cout << "Inside scope - Entity: " << Entity::getCount()
-                      << ", Component: " << Component::getCount() << "\n";
+            Solution::Entity e3(3);
+            Solution::Component c2("Graphics");
+            assert(Solution::Entity::getCount() == 3);
+            assert(Solution::Component::getCount() == 2);
         }
 
-        std::cout << "After scope - Entity: " << Entity::getCount()
-                  << ", Component: " << Component::getCount() << "\n";
-        std::cout << "Total created - Entity: " << Entity::getCreated()
-                  << ", Component: " << Component::getCreated() << "\n";
+        assert(Solution::Entity::getCount() == 2);
+        assert(Solution::Component::getCount() == 1);
+        assert(Solution::Entity::getCreated() == 3);
+        assert(Solution::Component::getCreated() == 2);
     }
+    std::cout << "  ObjectCounter: PASSED" << std::endl;
 
-    std::cout << "\n=== Mixin 模式 ===\n";
+    // 测试 Mixin 模式
     {
-        Person alice("Alice", 30);
-        Person bob("Bob", 25);
-        Person charlie("Charlie", 30);
+        Solution::Person alice("Alice", 30);
+        Solution::Person bob("Bob", 25);
+        Solution::Person charlie("Charlie", 30);
 
-        alice.print();
-        bob.print();
+        assert(alice.print() == "Person(Alice, 30)");
+        assert(bob.print() == "Person(Bob, 25)");
 
-        std::cout << "alice < bob: " << (alice < bob) << "\n";
-        std::cout << "alice > bob: " << (alice > bob) << "\n";
-        std::cout << "alice == charlie: " << (alice == charlie) << "\n";
+        assert(alice > bob);  // alice 年龄大
+        assert(bob < alice);
+        assert(!(alice == charlie));  // 名字不同
 
-        std::cout << "Hash of alice: " << alice.hash() << "\n";
+        assert(alice.hash() != bob.hash());
     }
+    std::cout << "  Mixin Pattern: PASSED" << std::endl;
 
-    std::cout << "\n=== 表达式模板 ===\n";
+    // 测试表达式模板
     {
-        Vec a = {1.0, 2.0, 3.0};
-        Vec b = {4.0, 5.0, 6.0};
-        Vec c = {7.0, 8.0, 9.0};
+        Solution::Vec a = {1.0, 2.0, 3.0};
+        Solution::Vec b = {4.0, 5.0, 6.0};
+        Solution::Vec c = {7.0, 8.0, 9.0};
 
-        std::cout << "a = "; a.print();
-        std::cout << "b = "; b.print();
-        std::cout << "c = "; c.print();
-
-        // a + b + c 不会产生临时 Vec 对象
-        // 表达式在赋值时才真正计算
-        Vec result = a + b + c;
-        std::cout << "a + b + c = "; result.print();
+        // a + b + c
+        Solution::Vec result = Solution::vecAdd(Solution::vecAdd(a, b), c);
+        assert(result[0] == 12.0);
+        assert(result[1] == 15.0);
+        assert(result[2] == 18.0);
 
         // 2.0 * a + b
-        Vec scaled = 2.0 * a + b;
-        std::cout << "2*a + b = "; scaled.print();
+        Solution::Vec scaled = Solution::vecAdd(Solution::vecScale(2.0, a), b);
+        assert(scaled[0] == 6.0);
+        assert(scaled[1] == 9.0);
+        assert(scaled[2] == 12.0);
     }
-
-    return 0;
+    std::cout << "  Expression Template: PASSED" << std::endl;
 }
+
+} // namespace CRTPImpl

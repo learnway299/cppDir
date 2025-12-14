@@ -1,25 +1,28 @@
 /**
  * @file skiplist_solution.cpp
- * @brief 跳表 - 解答
+ * @brief 跳表 - 参考解答
  */
-#include <vector>
-#include <random>
+
+#include "skiplist.h"
 #include <iostream>
 #include <climits>
-using namespace std;
+
+namespace SkiplistImpl {
+namespace Solution {
 
 class Skiplist {
+private:
     static const int MAX_LEVEL = 16;
 
     struct Node {
         int val;
-        vector<Node*> forward;
+        std::vector<Node*> forward;
         Node(int v, int level) : val(v), forward(level, nullptr) {}
     };
 
     Node* head_;
     int level_;
-    mt19937 rng_;
+    std::mt19937 rng_;
 
     int randomLevel() {
         int lvl = 1;
@@ -28,7 +31,7 @@ class Skiplist {
     }
 
 public:
-    Skiplist() : level_(1), rng_(random_device{}()) {
+    Skiplist() : level_(1), rng_(std::random_device{}()) {
         head_ = new Node(INT_MIN, MAX_LEVEL);
     }
 
@@ -53,7 +56,7 @@ public:
     }
 
     void add(int num) {
-        vector<Node*> update(MAX_LEVEL, head_);
+        std::vector<Node*> update(MAX_LEVEL, head_);
         Node* curr = head_;
 
         for (int i = level_ - 1; i >= 0; --i) {
@@ -76,7 +79,7 @@ public:
     }
 
     bool erase(int num) {
-        vector<Node*> update(MAX_LEVEL);
+        std::vector<Node*> update(MAX_LEVEL);
         Node* curr = head_;
 
         for (int i = level_ - 1; i >= 0; --i) {
@@ -104,20 +107,22 @@ public:
     }
 
     void print() {
-        cout << "Skiplist (level " << level_ << "):\n";
+        std::cout << "Skiplist (level " << level_ << "):" << std::endl;
         for (int i = level_ - 1; i >= 0; --i) {
-            cout << "Level " << i << ": ";
+            std::cout << "Level " << i << ": ";
             Node* curr = head_->forward[i];
             while (curr) {
-                cout << curr->val << " -> ";
+                std::cout << curr->val << " -> ";
                 curr = curr->forward[i];
             }
-            cout << "null\n";
+            std::cout << "null" << std::endl;
         }
     }
 };
 
-int main() {
+void runSolutionTests() {
+    std::cout << "=== Skip List Solution ===" << std::endl;
+
     Skiplist sl;
 
     // 添加元素
@@ -130,14 +135,22 @@ int main() {
     sl.print();
 
     // 查找
-    cout << "\nsearch(2): " << sl.search(2) << "\n";  // 1
-    cout << "search(4): " << sl.search(4) << "\n";    // 0
+    std::cout << "\nsearch(2): " << sl.search(2) << std::endl;  // 1
+    std::cout << "search(4): " << sl.search(4) << std::endl;    // 0
 
     // 删除
-    cout << "erase(2): " << sl.erase(2) << "\n";      // 1
-    cout << "search(2): " << sl.search(2) << "\n";    // 0
+    std::cout << "erase(2): " << sl.erase(2) << std::endl;      // 1
+    std::cout << "search(2): " << sl.search(2) << std::endl;    // 0
 
     sl.print();
 
-    return 0;
+    std::cout << "\nSkip list tests completed!" << std::endl;
 }
+
+} // namespace Solution
+
+void runTests() {
+    Solution::runSolutionTests();
+}
+
+} // namespace SkiplistImpl

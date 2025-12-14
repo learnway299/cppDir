@@ -1,16 +1,20 @@
 /**
  * @file generator_solution.cpp
- * @brief 生成器协程 - 解答
+ * @brief 生成器协程 - 参考答案
  *
  * 编译: g++ -std=c++20 -fcoroutines generator_solution.cpp
  */
-#include <coroutine>
-#include <iostream>
-#include <optional>
-#include <exception>
-#include <utility>
 
-// ==================== 题目1: 基本 Generator 实现 ====================
+#include "generator.h"
+#include <vector>
+#include <cassert>
+
+namespace GeneratorImpl {
+
+namespace Solution {
+
+// ==================== 题目1: 完整 Generator 实现 ====================
+
 template <typename T>
 class Generator {
 public:
@@ -145,6 +149,7 @@ private:
 };
 
 // ==================== 题目2: 斐波那契数列 ====================
+
 Generator<long long> fibonacci(int n) {
     long long a = 0, b = 1;
     for (int i = 0; i < n; ++i) {
@@ -167,7 +172,8 @@ Generator<long long> fibonacci_infinite() {
 }
 
 // ==================== 题目3: 范围生成器 ====================
-Generator<int> range(int start, int end, int step = 1) {
+
+Generator<int> range(int start, int end, int step) {
     if (step > 0) {
         for (int i = start; i < end; i += step) {
             co_yield i;
@@ -180,6 +186,7 @@ Generator<int> range(int start, int end, int step = 1) {
 }
 
 // ==================== 题目4: 无限生成器 ====================
+
 Generator<int> natural_numbers() {
     int n = 0;
     while (true) {
@@ -193,7 +200,9 @@ Generator<int> count_from(int start) {
     }
 }
 
-// ==================== 题目5: take 操作 ====================
+// ==================== 题目5: Generator 操作 ====================
+
+// take: 从生成器中取前 n 个元素
 template <typename T>
 Generator<T> take(Generator<T> gen, int n) {
     int count = 0;
@@ -204,8 +213,6 @@ Generator<T> take(Generator<T> gen, int n) {
         co_yield value;
     }
 }
-
-// ==================== 更多生成器操作 ====================
 
 // map: 对每个元素应用函数
 template <typename T, typename F>
@@ -234,79 +241,70 @@ Generator<std::pair<size_t, T>> enumerate(Generator<T> gen) {
     }
 }
 
-// zip: 合并两个生成器
-template <typename T, typename U>
-Generator<std::pair<T, U>> zip(Generator<T> gen1, Generator<U> gen2) {
-    auto it1 = gen1.begin();
-    auto it2 = gen2.begin();
-    auto end1 = gen1.end();
-    auto end2 = gen2.end();
+} // namespace Solution
 
-    while (it1 != end1 && it2 != end2) {
-        co_yield std::make_pair(*it1, *it2);
-        ++it1;
-        ++it2;
-    }
-}
+// ==================== 测试函数 ====================
 
-// flatten: 展平嵌套生成器
-template <typename T>
-Generator<T> flatten(Generator<Generator<T>> nested) {
-    for (auto& inner : nested) {
-        for (auto& value : inner) {
-            co_yield value;
+void runTests() {
+    std::cout << "=== Generator Tests ===" << std::endl;
+
+    // 测试斐波那契数列
+    {
+        std::vector<long long> expected = {0, 1, 1, 2, 3, 5, 8, 13, 21, 34};
+        std::vector<long long> result;
+        for (auto n : Solution::fibonacci(10)) {
+            result.push_back(n);
         }
+        assert(result == expected);
     }
+    std::cout << "  Fibonacci: PASSED" << std::endl;
+
+    // 测试 range
+    {
+        std::vector<int> expected = {0, 2, 4, 6, 8};
+        std::vector<int> result;
+        for (auto n : Solution::range(0, 10, 2)) {
+            result.push_back(n);
+        }
+        assert(result == expected);
+    }
+    std::cout << "  Range: PASSED" << std::endl;
+
+    // 测试 take
+    {
+        std::vector<int> result;
+        for (auto n : Solution::take(Solution::natural_numbers(), 5)) {
+            result.push_back(n);
+        }
+        assert(result.size() == 5);
+        assert(result[0] == 0 && result[4] == 4);
+    }
+    std::cout << "  Take: PASSED" << std::endl;
+
+    // 测试 map
+    {
+        std::vector<int> result;
+        for (auto n : Solution::map(Solution::range(0, 5, 1), [](int x) { return x * x; })) {
+            result.push_back(n);
+        }
+        std::vector<int> expected = {0, 1, 4, 9, 16};
+        assert(result == expected);
+    }
+    std::cout << "  Map: PASSED" << std::endl;
+
+    // 测试 filter
+    {
+        std::vector<int> result;
+        for (auto n : Solution::filter(Solution::range(0, 10, 1), [](int x) { return x % 2 == 0; })) {
+            result.push_back(n);
+        }
+        std::vector<int> expected = {0, 2, 4, 6, 8};
+        assert(result == expected);
+    }
+    std::cout << "  Filter: PASSED" << std::endl;
 }
 
-// ==================== 测试代码 ====================
-int main() {
-    std::cout << "=== Generator Tests ===\n\n";
-
-    // 斐波那契数列
-    std::cout << "Fibonacci (first 10):\n";
-    for (auto n : fibonacci(10)) {
-        std::cout << n << " ";
-    }
-    std::cout << "\n\n";
-
-    // range
-    std::cout << "Range(0, 10, 2):\n";
-    for (auto n : range(0, 10, 2)) {
-        std::cout << n << " ";
-    }
-    std::cout << "\n\n";
-
-    // take from infinite
-    std::cout << "Natural numbers (first 5):\n";
-    for (auto n : take(natural_numbers(), 5)) {
-        std::cout << n << " ";
-    }
-    std::cout << "\n\n";
-
-    // map
-    std::cout << "Squares of 0-4:\n";
-    for (auto n : map(range(0, 5), [](int x) { return x * x; })) {
-        std::cout << n << " ";
-    }
-    std::cout << "\n\n";
-
-    // filter
-    std::cout << "Even numbers from 0-9:\n";
-    for (auto n : filter(range(0, 10), [](int x) { return x % 2 == 0; })) {
-        std::cout << n << " ";
-    }
-    std::cout << "\n\n";
-
-    // enumerate
-    std::cout << "Enumerate:\n";
-    auto fib5 = take(fibonacci_infinite(), 5);
-    for (auto [idx, val] : enumerate(std::move(fib5))) {
-        std::cout << idx << ": " << val << "\n";
-    }
-
-    return 0;
-}
+} // namespace GeneratorImpl
 
 /**
  * 关键要点：

@@ -5,7 +5,7 @@
 #ifndef TREENODETRAVERSAL_H
 #define TREENODETRAVERSAL_H
 #include <vector>
-#include "../sort/util/Util.h"
+#include "../util/Util.h"
 
 
 namespace TreeNodeTraversal {

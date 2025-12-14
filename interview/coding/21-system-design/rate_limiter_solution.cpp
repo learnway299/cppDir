@@ -1,15 +1,15 @@
 /**
  * @file rate_limiter_solution.cpp
- * @brief 限流器实现 - 解答
+ * @brief 限流器实现 - 参考解答
  */
-#include <chrono>
-#include <mutex>
-#include <queue>
+
+#include "rate_limiter.h"
 #include <iostream>
 #include <thread>
+#include <algorithm>
 
-using Clock = std::chrono::steady_clock;
-using TimePoint = Clock::time_point;
+namespace RateLimiterImpl {
+namespace Solution {
 
 // 固定窗口限流
 class FixedWindowRateLimiter {
@@ -63,7 +63,7 @@ public:
             }
         }
 
-        if (timestamps_.size() < limit_) {
+        if (static_cast<int>(timestamps_.size()) < limit_) {
             timestamps_.push(now);
             return true;
         }
@@ -99,7 +99,7 @@ private:
     void refill() {
         auto now = Clock::now();
         double elapsed = std::chrono::duration<double>(now - lastRefill_).count();
-        tokens_ = std::min((double)capacity_, tokens_ + elapsed * refillRate_);
+        tokens_ = std::min(static_cast<double>(capacity_), tokens_ + elapsed * refillRate_);
         lastRefill_ = now;
     }
 
@@ -142,18 +142,49 @@ private:
     std::mutex mutex_;
 };
 
-int main() {
-    std::cout << "=== Token Bucket ===\n";
+void runSolutionTests() {
+    std::cout << "=== Rate Limiter Solution ===" << std::endl;
+
+    // 测试固定窗口限流
+    std::cout << "\n--- Fixed Window (5 req/1000ms) ---" << std::endl;
+    FixedWindowRateLimiter fw(5, 1000);
+    for (int i = 0; i < 8; ++i) {
+        std::cout << "Request " << i << ": " << (fw.allow() ? "OK" : "DENIED") << std::endl;
+    }
+
+    // 测试滑动窗口限流
+    std::cout << "\n--- Sliding Window (5 req/1000ms) ---" << std::endl;
+    SlidingWindowRateLimiter sw(5, 1000);
+    for (int i = 0; i < 8; ++i) {
+        std::cout << "Request " << i << ": " << (sw.allow() ? "OK" : "DENIED") << std::endl;
+    }
+
+    // 测试令牌桶限流
+    std::cout << "\n--- Token Bucket (capacity=5, refill=2/s) ---" << std::endl;
     TokenBucketRateLimiter tb(5, 2.0);
-    for (int i = 0; i < 10; ++i) {
-        std::cout << "Request " << i << ": " << (tb.allow() ? "OK" : "DENIED") << "\n";
+    for (int i = 0; i < 8; ++i) {
+        std::cout << "Request " << i << ": " << (tb.allow() ? "OK" : "DENIED") << std::endl;
+    }
+    std::cout << "Waiting 1s for refill..." << std::endl;
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    for (int i = 0; i < 3; ++i) {
+        std::cout << "Request: " << (tb.allow() ? "OK" : "DENIED") << std::endl;
     }
 
-    std::this_thread::sleep_for(std::chrono::seconds(2));
-    std::cout << "After 2s:\n";
-    for (int i = 0; i < 5; ++i) {
-        std::cout << "Request: " << (tb.allow() ? "OK" : "DENIED") << "\n";
+    // 测试漏桶限流
+    std::cout << "\n--- Leaky Bucket (capacity=5, leak=2/s) ---" << std::endl;
+    LeakyBucketRateLimiter lb(5, 2.0);
+    for (int i = 0; i < 8; ++i) {
+        std::cout << "Request " << i << ": " << (lb.allow() ? "OK" : "DENIED") << std::endl;
     }
 
-    return 0;
+    std::cout << "\nAll rate limiter tests completed!" << std::endl;
 }
+
+} // namespace Solution
+
+void runTests() {
+    Solution::runSolutionTests();
+}
+
+} // namespace RateLimiterImpl

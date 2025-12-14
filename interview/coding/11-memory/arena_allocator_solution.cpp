@@ -1,24 +1,22 @@
 /**
  * @file arena_allocator_solution.cpp
- * @brief Arena Allocator 实现 - 解答
+ * @brief Arena Allocator 实现 - 参考答案
  */
 
-#include <cstddef>
-#include <cstdint>
-#include <cstring>
+#include "arena_allocator.h"
 #include <iostream>
-#include <vector>
+#include <cassert>
 #include <new>
 #include <utility>
+#include <algorithm>
+#include <type_traits>
 
-/**
- * 题目1：实现基础 Arena Allocator
- *
- * 原理：
- * - 线性分配，移动指针即可
- * - O(1) 分配，无释放操作
- * - 适合短生命周期、大量小对象
- */
+namespace ArenaAllocatorImpl {
+
+namespace Solution {
+
+// ==================== 基础 Arena ====================
+
 class Arena {
 public:
     explicit Arena(size_t size)
@@ -70,11 +68,8 @@ private:
     size_t used_;
 };
 
-/**
- * 题目2：实现可增长的 Arena
- *
- * 空间不足时分配新的内存块
- */
+// ==================== 可增长的 Arena ====================
+
 class GrowableArena {
 public:
     explicit GrowableArena(size_t initialSize = 4096)
@@ -92,11 +87,9 @@ public:
     GrowableArena& operator=(const GrowableArena&) = delete;
 
     void* allocate(size_t size, size_t alignment = alignof(std::max_align_t)) {
-        // 尝试在当前块分配
         void* result = tryAllocate(size, alignment);
         if (result) return result;
 
-        // 当前块不够，创建新块
         size_t newBlockSize = std::max(defaultSize_, size + alignment);
         addBlock(newBlockSize);
 
@@ -111,7 +104,6 @@ public:
     }
 
     void reset() {
-        // 保留第一块，释放其他块
         while (blocks_.size() > 1) {
             delete[] blocks_.back().memory;
             blocks_.pop_back();
@@ -166,11 +158,8 @@ private:
     size_t defaultSize_;
 };
 
-/**
- * 题目3：实现带析构器的 Arena
- *
- * 记录需要析构的对象，reset 时调用析构函数
- */
+// ==================== 带析构器的 Arena ====================
+
 class ArenaWithDestructors {
 public:
     explicit ArenaWithDestructors(size_t size)
@@ -187,7 +176,6 @@ public:
 
         T* obj = new (mem) T(std::forward<Args>(args)...);
 
-        // 如果 T 有非平凡析构函数，记录它
         if (!std::is_trivially_destructible<T>::value) {
             destructors_.push_back({
                 [](void* p) { static_cast<T*>(p)->~T(); },
@@ -212,7 +200,6 @@ private:
     };
 
     void callDestructors() {
-        // 逆序调用析构函数
         for (auto it = destructors_.rbegin(); it != destructors_.rend(); ++it) {
             it->destroy(it->ptr);
         }
@@ -223,9 +210,8 @@ private:
     std::vector<Destructor> destructors_;
 };
 
-/**
- * 题目4：实现符合 STL 标准的 Arena Allocator
- */
+// ==================== STL Arena Allocator ====================
+
 template <typename T>
 class ArenaAllocator {
 public:
@@ -247,7 +233,7 @@ public:
         return static_cast<T*>(mem);
     }
 
-    void deallocate(T* p, size_t n) noexcept {
+    void deallocate(T*, size_t) noexcept {
         // Arena 不支持单独释放
     }
 
@@ -268,87 +254,113 @@ private:
     Arena* arena_;
 };
 
-// 测试用结构
+// ==================== 测试对象 ====================
+
 struct TestObject {
     int id;
     std::string name;
+    static int instanceCount;
 
     TestObject(int i, const char* n) : id(i), name(n) {
-        std::cout << "TestObject(" << id << ", " << name << ") constructed\n";
+        ++instanceCount;
     }
 
     ~TestObject() {
-        std::cout << "TestObject(" << id << ", " << name << ") destroyed\n";
+        --instanceCount;
     }
 };
 
-int main() {
-    std::cout << "=== 测试基础 Arena ===\n";
+int TestObject::instanceCount = 0;
+
+} // namespace Solution
+
+// ==================== 测试函数 ====================
+
+void testArenaAllocatorSolution() {
+    std::cout << "=== Arena Allocator Tests (Solution) ===" << std::endl;
+
+    // 测试基础 Arena
     {
-        Arena arena(1024);
+        Solution::Arena arena(1024);
 
         int* arr = static_cast<int*>(arena.allocate(sizeof(int) * 10));
         for (int i = 0; i < 10; ++i) {
             arr[i] = i * 10;
         }
-
-        std::cout << "Used: " << arena.used() << ", Remaining: " << arena.remaining() << "\n";
+        assert(arr[5] == 50);
 
         double* d = static_cast<double*>(arena.allocate(sizeof(double), alignof(double)));
         *d = 3.14159;
-        std::cout << "Double value: " << *d << "\n";
+        assert(*d > 3.14 && *d < 3.15);
 
         arena.reset();
-        std::cout << "After reset, used: " << arena.used() << "\n";
+        assert(arena.used() == 0);
     }
+    std::cout << "  Arena basic: PASSED" << std::endl;
 
-    std::cout << "\n=== 测试可增长 Arena ===\n";
+    // 测试可增长 Arena
     {
-        GrowableArena arena(64);  // 小初始大小
+        Solution::GrowableArena arena(64);  // 小初始大小
 
         for (int i = 0; i < 100; ++i) {
             int* p = arena.create<int>(i);
+            assert(*p == i);
         }
 
-        std::cout << "Total allocated: " << arena.totalAllocated() << " bytes\n";
+        assert(arena.totalAllocated() > 64);  // 应该有多个块
 
         arena.reset();
-        std::cout << "After reset, total: " << arena.totalAllocated() << " bytes\n";
     }
+    std::cout << "  GrowableArena: PASSED" << std::endl;
 
-    std::cout << "\n=== 测试带析构器的 Arena ===\n";
+    // 测试带析构器的 Arena
+    Solution::TestObject::instanceCount = 0;
     {
-        ArenaWithDestructors arena(4096);
+        Solution::ArenaWithDestructors arena(4096);
 
-        TestObject* obj1 = arena.create<TestObject>(1, "first");
-        TestObject* obj2 = arena.create<TestObject>(2, "second");
-        TestObject* obj3 = arena.create<TestObject>(3, "third");
+        Solution::TestObject* obj1 = arena.create<Solution::TestObject>(1, "first");
+        Solution::TestObject* obj2 = arena.create<Solution::TestObject>(2, "second");
+        Solution::TestObject* obj3 = arena.create<Solution::TestObject>(3, "third");
 
-        std::cout << "Objects created, used: " << arena.used() << "\n";
+        assert(Solution::TestObject::instanceCount == 3);
+        assert(obj1->id == 1);
+        assert(obj2->name == "second");
 
-        std::cout << "Calling reset...\n";
-        arena.reset();  // 会调用所有析构函数
-        std::cout << "Reset done\n";
+        arena.reset();
+        assert(Solution::TestObject::instanceCount == 0);
     }
+    std::cout << "  ArenaWithDestructors: PASSED" << std::endl;
 
-    std::cout << "\n=== 测试 STL Arena Allocator ===\n";
+    // 测试 STL Arena Allocator
     {
-        Arena arena(4096);
-        ArenaAllocator<int> alloc(arena);
+        Solution::Arena arena(4096);
+        Solution::ArenaAllocator<int> alloc(arena);
 
-        std::vector<int, ArenaAllocator<int>> vec(alloc);
+        std::vector<int, Solution::ArenaAllocator<int>> vec(alloc);
         vec.reserve(100);
 
         for (int i = 0; i < 100; ++i) {
             vec.push_back(i);
         }
 
-        std::cout << "Vector size: " << vec.size() << "\n";
-        std::cout << "Arena used: " << arena.used() << "\n";
-
-        // 注意：vector 析构时会调用 deallocate，但 Arena 忽略它
-        // 整个 arena 会在作用域结束时释放
+        assert(vec.size() == 100);
+        assert(vec[50] == 50);
+        assert(arena.used() > 0);
     }
+    std::cout << "  ArenaAllocator (STL): PASSED" << std::endl;
 
-    return 0;
+    // 测试对齐
+    {
+        Solution::Arena arena(256);
+
+        char* c = static_cast<char*>(arena.allocate(1));
+        double* d = static_cast<double*>(arena.allocate(sizeof(double), alignof(double)));
+
+        // 验证对齐
+        assert(reinterpret_cast<uintptr_t>(d) % alignof(double) == 0);
+        (void)c;
+    }
+    std::cout << "  Arena alignment: PASSED" << std::endl;
 }
+
+} // namespace ArenaAllocatorImpl

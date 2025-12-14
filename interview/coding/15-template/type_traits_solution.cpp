@@ -1,11 +1,18 @@
 /**
  * @file type_traits_solution.cpp
- * @brief 类型特征 - 解答
+ * @brief 类型特征 - 参考答案
  */
-#include <type_traits>
+
+#include "type_traits.h"
 #include <iostream>
+#include <cassert>
+
+namespace TypeTraitsImpl {
+
+namespace Solution {
 
 // ==================== 基础工具 ====================
+
 template <typename T, T v>
 struct integral_constant {
     static constexpr T value = v;
@@ -19,17 +26,18 @@ using true_type = integral_constant<bool, true>;
 using false_type = integral_constant<bool, false>;
 
 // ==================== 题目1: is_same ====================
+
 template <typename T, typename U>
 struct my_is_same : false_type {};
 
 template <typename T>
 struct my_is_same<T, T> : true_type {};
 
-// C++17 变量模板
 template <typename T, typename U>
-inline constexpr bool my_is_same_v = my_is_same<T, U>::value;
+constexpr bool my_is_same_v = my_is_same<T, U>::value;
 
 // ==================== 题目2: remove_const ====================
+
 template <typename T>
 struct my_remove_const { using type = T; };
 
@@ -46,6 +54,9 @@ struct my_remove_volatile { using type = T; };
 template <typename T>
 struct my_remove_volatile<volatile T> { using type = T; };
 
+template <typename T>
+using my_remove_volatile_t = typename my_remove_volatile<T>::type;
+
 // remove_cv
 template <typename T>
 struct my_remove_cv {
@@ -56,6 +67,7 @@ template <typename T>
 using my_remove_cv_t = typename my_remove_cv<T>::type;
 
 // ==================== 题目3: remove_reference ====================
+
 template <typename T>
 struct my_remove_reference { using type = T; };
 
@@ -69,6 +81,7 @@ template <typename T>
 using my_remove_reference_t = typename my_remove_reference<T>::type;
 
 // ==================== 题目4: is_pointer ====================
+
 template <typename T>
 struct my_is_pointer_helper : false_type {};
 
@@ -79,9 +92,10 @@ template <typename T>
 struct my_is_pointer : my_is_pointer_helper<my_remove_cv_t<T>> {};
 
 template <typename T>
-inline constexpr bool my_is_pointer_v = my_is_pointer<T>::value;
+constexpr bool my_is_pointer_v = my_is_pointer<T>::value;
 
 // ==================== 题目5: is_array ====================
+
 template <typename T>
 struct my_is_array : false_type {};
 
@@ -92,7 +106,7 @@ template <typename T, std::size_t N>
 struct my_is_array<T[N]> : true_type {};
 
 template <typename T>
-inline constexpr bool my_is_array_v = my_is_array<T>::value;
+constexpr bool my_is_array_v = my_is_array<T>::value;
 
 // extent: 获取数组维度
 template <typename T, unsigned N = 0>
@@ -111,6 +125,7 @@ template <typename T, std::size_t I, unsigned N>
 struct my_extent<T[I], N> : my_extent<T, N - 1> {};
 
 // ==================== 题目6: conditional ====================
+
 template <bool Cond, typename T, typename F>
 struct my_conditional { using type = T; };
 
@@ -121,6 +136,7 @@ template <bool Cond, typename T, typename F>
 using my_conditional_t = typename my_conditional<Cond, T, F>::type;
 
 // ==================== 题目7: enable_if ====================
+
 template <bool Cond, typename T = void>
 struct my_enable_if {};
 
@@ -131,6 +147,7 @@ template <bool Cond, typename T = void>
 using my_enable_if_t = typename my_enable_if<Cond, T>::type;
 
 // ==================== 题目8: decay ====================
+
 template <typename T>
 struct my_decay {
 private:
@@ -156,7 +173,7 @@ using my_decay_t = typename my_decay<T>::type;
 template <typename T>
 struct my_is_void : my_is_same<void, my_remove_cv_t<T>> {};
 
-// is_integral
+// is_integral (需要枚举所有整数类型)
 template <typename T>
 struct my_is_integral : false_type {};
 
@@ -200,72 +217,56 @@ struct my_add_volatile { using type = volatile T; };
 template <typename T>
 struct my_add_cv { using type = const volatile T; };
 
-// add_lvalue_reference, add_rvalue_reference
-template <typename T, typename = void>
-struct my_add_lvalue_reference { using type = T; };
+} // namespace Solution
 
-template <typename T>
-struct my_add_lvalue_reference<T, std::void_t<T&>> { using type = T&; };
+// ==================== 测试函数 ====================
 
-template <typename T, typename = void>
-struct my_add_rvalue_reference { using type = T; };
+void runTests() {
+    std::cout << "=== Type Traits Tests ===" << std::endl;
 
-template <typename T>
-struct my_add_rvalue_reference<T, std::void_t<T&&>> { using type = T&&; };
-
-// ==================== 测试代码 ====================
-template <typename T>
-void printTypeInfo() {
-    std::cout << "is_pointer: " << my_is_pointer<T>::value << "\n";
-    std::cout << "is_array: " << my_is_array<T>::value << "\n";
-    std::cout << "is_reference: " << my_is_reference<T>::value << "\n";
-}
-
-int main() {
     // is_same
-    static_assert(my_is_same_v<int, int>, "");
-    static_assert(!my_is_same_v<int, double>, "");
-    static_assert(!my_is_same_v<int, const int>, "");
+    static_assert(Solution::my_is_same_v<int, int>, "");
+    static_assert(!Solution::my_is_same_v<int, double>, "");
+    static_assert(!Solution::my_is_same_v<int, const int>, "");
+    std::cout << "  is_same: PASSED" << std::endl;
 
     // remove_const
-    static_assert(my_is_same_v<my_remove_const_t<const int>, int>, "");
-    static_assert(my_is_same_v<my_remove_const_t<const int*>, const int*>, "");
-    static_assert(my_is_same_v<my_remove_const_t<int* const>, int*>, "");
+    static_assert(Solution::my_is_same_v<Solution::my_remove_const_t<const int>, int>, "");
+    static_assert(Solution::my_is_same_v<Solution::my_remove_const_t<const int*>, const int*>, "");
+    static_assert(Solution::my_is_same_v<Solution::my_remove_const_t<int* const>, int*>, "");
+    std::cout << "  remove_const: PASSED" << std::endl;
 
     // remove_reference
-    static_assert(my_is_same_v<my_remove_reference_t<int&>, int>, "");
-    static_assert(my_is_same_v<my_remove_reference_t<int&&>, int>, "");
+    static_assert(Solution::my_is_same_v<Solution::my_remove_reference_t<int&>, int>, "");
+    static_assert(Solution::my_is_same_v<Solution::my_remove_reference_t<int&&>, int>, "");
+    std::cout << "  remove_reference: PASSED" << std::endl;
 
     // is_pointer
-    static_assert(my_is_pointer_v<int*>, "");
-    static_assert(my_is_pointer_v<const int*>, "");
-    static_assert(!my_is_pointer_v<int>, "");
-    static_assert(!my_is_pointer_v<int&>, "");
+    static_assert(Solution::my_is_pointer_v<int*>, "");
+    static_assert(Solution::my_is_pointer_v<const int*>, "");
+    static_assert(!Solution::my_is_pointer_v<int>, "");
+    static_assert(!Solution::my_is_pointer_v<int&>, "");
+    std::cout << "  is_pointer: PASSED" << std::endl;
 
     // is_array
-    static_assert(my_is_array_v<int[]>, "");
-    static_assert(my_is_array_v<int[10]>, "");
-    static_assert(!my_is_array_v<int*>, "");
+    static_assert(Solution::my_is_array_v<int[]>, "");
+    static_assert(Solution::my_is_array_v<int[10]>, "");
+    static_assert(!Solution::my_is_array_v<int*>, "");
+    std::cout << "  is_array: PASSED" << std::endl;
 
     // conditional
-    static_assert(my_is_same_v<my_conditional_t<true, int, double>, int>, "");
-    static_assert(my_is_same_v<my_conditional_t<false, int, double>, double>, "");
+    static_assert(Solution::my_is_same_v<Solution::my_conditional_t<true, int, double>, int>, "");
+    static_assert(Solution::my_is_same_v<Solution::my_conditional_t<false, int, double>, double>, "");
+    std::cout << "  conditional: PASSED" << std::endl;
 
     // decay
-    static_assert(my_is_same_v<my_decay_t<int&>, int>, "");
-    static_assert(my_is_same_v<my_decay_t<const int&>, int>, "");
-    static_assert(my_is_same_v<my_decay_t<int[10]>, int*>, "");
-
-    std::cout << "All type_traits tests passed!\n";
-
-    std::cout << "\nType info for int*:\n";
-    printTypeInfo<int*>();
-
-    std::cout << "\nType info for int[10]:\n";
-    printTypeInfo<int[10]>();
-
-    return 0;
+    static_assert(Solution::my_is_same_v<Solution::my_decay_t<int&>, int>, "");
+    static_assert(Solution::my_is_same_v<Solution::my_decay_t<const int&>, int>, "");
+    static_assert(Solution::my_is_same_v<Solution::my_decay_t<int[10]>, int*>, "");
+    std::cout << "  decay: PASSED" << std::endl;
 }
+
+} // namespace TypeTraitsImpl
 
 /**
  * 关键要点：

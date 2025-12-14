@@ -1,20 +1,34 @@
 /**
  * @file shared_ptr_solution.cpp
- * @brief shared_ptr 实现 - 解答
+ * @brief shared_ptr 实现 - 参考答案
  */
 
+#include "shared_ptr.h"
 #include <iostream>
-#include <atomic>
-#include <utility>
+#include <cassert>
 
-/**
- * 题目1：实现基础 SharedPtr（非线程安全版本）
- *
- * 关键点：
- * 1. 引用计数与指针分离存储
- * 2. 拷贝时增加计数，析构时减少计数
- * 3. 计数为 0 时释放资源
- */
+namespace SharedPtrImpl {
+
+// ==================== 测试类 ====================
+
+struct TestClass {
+    int value;
+    static int instanceCount;
+
+    TestClass(int v = 0) : value(v) {
+        ++instanceCount;
+    }
+    ~TestClass() {
+        --instanceCount;
+    }
+};
+
+int TestClass::instanceCount = 0;
+
+namespace Solution {
+
+// ==================== 基础 SharedPtr ====================
+
 template <typename T>
 class SharedPtr {
 public:
@@ -67,6 +81,10 @@ public:
         return count_ ? *count_ : 0;
     }
 
+    bool unique() const noexcept {
+        return use_count() == 1;
+    }
+
     void reset(T* ptr = nullptr) {
         release();
         ptr_ = ptr;
@@ -76,10 +94,6 @@ public:
     void swap(SharedPtr& other) noexcept {
         std::swap(ptr_, other.ptr_);
         std::swap(count_, other.count_);
-    }
-
-    bool unique() const noexcept {
-        return use_count() == 1;
     }
 
     T& operator*() const { return *ptr_; }
@@ -100,13 +114,8 @@ private:
     long* count_;
 };
 
-/**
- * 题目2：实现线程安全的 SharedPtr
- *
- * 关键点：
- * 1. 使用 atomic<long> 保证计数的原子性
- * 2. 注意内存序的选择
- */
+// ==================== 线程安全的 SharedPtr ====================
+
 template <typename T>
 class SharedPtrAtomic {
 public:
@@ -180,14 +189,8 @@ private:
     std::atomic<long>* count_;
 };
 
-/**
- * 题目3：实现控制块（更接近标准库实现）
- *
- * 控制块特点：
- * 1. 同时管理强引用和弱引用计数
- * 2. 强引用为 0 时删除对象
- * 3. 弱引用也为 0 时删除控制块
- */
+// ==================== 控制块 ====================
+
 template <typename T>
 struct ControlBlock {
     T* ptr;
@@ -228,13 +231,8 @@ struct ControlBlock {
 };
 
 template <typename T>
-class WeakPtrImpl;  // 前向声明
-
-template <typename T>
 class SharedPtrWithControlBlock {
 public:
-    friend class WeakPtrImpl<T>;
-
     explicit SharedPtrWithControlBlock(T* ptr = nullptr)
         : cb_(ptr ? new ControlBlock<T>(ptr) : nullptr) {}
 
@@ -296,61 +294,86 @@ private:
     ControlBlock<T>* cb_;
 };
 
-/**
- * 题目4：实现 make_shared
- *
- * 优化版本：单次分配对象和控制块
- */
+// ==================== make_shared ====================
+
 template <typename T, typename... Args>
 SharedPtr<T> makeShared(Args&&... args) {
     return SharedPtr<T>(new T(std::forward<Args>(args)...));
 }
 
-// 测试类
-struct TestClass {
-    int value;
-    TestClass(int v = 0) : value(v) {
-        std::cout << "TestClass(" << value << ") constructed\n";
-    }
-    ~TestClass() {
-        std::cout << "TestClass(" << value << ") destroyed\n";
-    }
-};
+} // namespace Solution
 
-int main() {
-    std::cout << "=== 测试基础 SharedPtr ===\n";
+// ==================== 测试函数 ====================
+
+void testSharedPtrSolution() {
+    std::cout << "=== Shared Ptr Tests (Solution) ===" << std::endl;
+
+    // 测试基础 SharedPtr
+    TestClass::instanceCount = 0;
     {
-        SharedPtr<TestClass> p1(new TestClass(1));
-        std::cout << "p1 use_count: " << p1.use_count() << "\n";
+        Solution::SharedPtr<TestClass> p1(new TestClass(1));
+        assert(p1.use_count() == 1);
+        assert(TestClass::instanceCount == 1);
 
         {
-            SharedPtr<TestClass> p2 = p1;
-            std::cout << "After copy, p1 use_count: " << p1.use_count() << "\n";
-            std::cout << "p2 use_count: " << p2.use_count() << "\n";
+            Solution::SharedPtr<TestClass> p2 = p1;
+            assert(p1.use_count() == 2);
+            assert(p2.use_count() == 2);
         }
 
-        std::cout << "After p2 destroyed, p1 use_count: " << p1.use_count() << "\n";
+        assert(p1.use_count() == 1);
     }
+    assert(TestClass::instanceCount == 0);
+    std::cout << "  SharedPtr basic: PASSED" << std::endl;
 
-    std::cout << "\n=== 测试线程安全 SharedPtr ===\n";
+    // 测试移动语义
     {
-        SharedPtrAtomic<TestClass> p1(new TestClass(2));
-        SharedPtrAtomic<TestClass> p2 = p1;
-        std::cout << "Atomic use_count: " << p1.use_count() << "\n";
+        Solution::SharedPtr<TestClass> p1(new TestClass(2));
+        Solution::SharedPtr<TestClass> p2 = std::move(p1);
+        assert(!p1);
+        assert(p2.use_count() == 1);
     }
+    std::cout << "  SharedPtr move: PASSED" << std::endl;
 
-    std::cout << "\n=== 测试控制块版本 ===\n";
+    // 测试 reset
+    TestClass::instanceCount = 0;
     {
-        SharedPtrWithControlBlock<TestClass> p1(new TestClass(3));
-        SharedPtrWithControlBlock<TestClass> p2 = p1;
-        std::cout << "ControlBlock use_count: " << p1.use_count() << "\n";
+        Solution::SharedPtr<TestClass> p1(new TestClass(1));
+        assert(TestClass::instanceCount == 1);
+        p1.reset(new TestClass(2));
+        assert(TestClass::instanceCount == 1);
+        assert(p1->value == 2);
     }
+    assert(TestClass::instanceCount == 0);
+    std::cout << "  SharedPtr reset: PASSED" << std::endl;
 
-    std::cout << "\n=== 测试 make_shared ===\n";
+    // 测试线程安全 SharedPtr
+    TestClass::instanceCount = 0;
     {
-        auto p = makeShared<TestClass>(42);
-        std::cout << "make_shared value: " << p->value << "\n";
+        Solution::SharedPtrAtomic<TestClass> p1(new TestClass(3));
+        Solution::SharedPtrAtomic<TestClass> p2 = p1;
+        assert(p1.use_count() == 2);
     }
+    assert(TestClass::instanceCount == 0);
+    std::cout << "  SharedPtrAtomic: PASSED" << std::endl;
 
-    return 0;
+    // 测试控制块版本
+    TestClass::instanceCount = 0;
+    {
+        Solution::SharedPtrWithControlBlock<TestClass> p1(new TestClass(4));
+        Solution::SharedPtrWithControlBlock<TestClass> p2 = p1;
+        assert(p1.use_count() == 2);
+    }
+    assert(TestClass::instanceCount == 0);
+    std::cout << "  SharedPtrWithControlBlock: PASSED" << std::endl;
+
+    // 测试 make_shared
+    {
+        auto p = Solution::makeShared<TestClass>(42);
+        assert(p->value == 42);
+        assert(p.use_count() == 1);
+    }
+    std::cout << "  makeShared: PASSED" << std::endl;
 }
+
+} // namespace SharedPtrImpl

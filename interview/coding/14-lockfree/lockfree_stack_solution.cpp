@@ -1,327 +1,269 @@
 /**
  * @file lockfree_stack_solution.cpp
- * @brief 无锁栈 - 解答
+ * @brief 无锁栈 - 参考答案
  */
-#include <atomic>
-#include <memory>
+#include "lockfree_stack.h"
 #include <iostream>
 #include <thread>
 #include <vector>
+#include <cassert>
+
+namespace LockFreeStack {
 
 // ==================== 题目1: 基本无锁栈 ====================
-// 注意：此实现存在 ABA 问题和内存泄漏问题，仅用于演示基本原理
+
 template <typename T>
-class LockFreeStackBasic {
-public:
-    ~LockFreeStackBasic() {
-        while (Node* node = head_.load()) {
-            head_.store(node->next);
-            delete node;
-        }
-    }
-
-    void push(const T& value) {
-        Node* newNode = new Node(value);
-        newNode->next = head_.load(std::memory_order_relaxed);
-        // CAS: 如果 head 没变，就将 head 指向新节点
-        while (!head_.compare_exchange_weak(newNode->next, newNode,
-                                            std::memory_order_release,
-                                            std::memory_order_relaxed)) {
-            // 失败时 newNode->next 会被更新为当前 head
-        }
-    }
-
-    bool pop(T& result) {
-        Node* oldHead = head_.load(std::memory_order_relaxed);
-        while (oldHead &&
-               !head_.compare_exchange_weak(oldHead, oldHead->next,
-                                            std::memory_order_acquire,
-                                            std::memory_order_relaxed)) {
-            // 失败时 oldHead 会被更新
-        }
-        if (oldHead) {
-            result = oldHead->data;
-            delete oldHead;  // 危险！可能有其他线程还在访问
-            return true;
-        }
-        return false;
-    }
-
-    bool empty() const {
-        return head_.load(std::memory_order_relaxed) == nullptr;
-    }
-
-private:
-    struct Node {
-        T data;
-        Node* next;
-        Node(const T& value) : data(value), next(nullptr) {}
-    };
-
-    std::atomic<Node*> head_{nullptr};
+struct LockFreeStackNode {
+    T data;
+    LockFreeStackNode* next;
+    LockFreeStackNode(const T& value) : data(value), next(nullptr) {}
 };
 
-// ==================== 题目2: 解决 ABA 问题（带版本号）====================
 template <typename T>
-class LockFreeStackABA {
-public:
-    ~LockFreeStackABA() {
-        T dummy;
-        while (pop(dummy)) {}
-    }
+void LockFreeStackBasicSolution<T>::push(const T& value) {
+    LockFreeStackNode<T>* newNode = new LockFreeStackNode<T>(value);
+    std::atomic<LockFreeStackNode<T>*>* head =
+        reinterpret_cast<std::atomic<LockFreeStackNode<T>*>*>(&head_);
+    newNode->next = head->load(std::memory_order_relaxed);
+    while (!head->compare_exchange_weak(newNode->next, newNode,
+                                        std::memory_order_release,
+                                        std::memory_order_relaxed)) {}
+}
 
-    void push(const T& value) {
-        Node* newNode = new Node(value);
-        TaggedPointer oldHead = head_.load(std::memory_order_relaxed);
-        TaggedPointer newHead;
-
-        do {
-            newNode->next = oldHead.ptr;
-            newHead.ptr = newNode;
-            newHead.tag = oldHead.tag + 1;
-        } while (!head_.compare_exchange_weak(oldHead, newHead,
-                                              std::memory_order_release,
-                                              std::memory_order_relaxed));
-    }
-
-    bool pop(T& result) {
-        TaggedPointer oldHead = head_.load(std::memory_order_relaxed);
-        TaggedPointer newHead;
-
-        do {
-            if (oldHead.ptr == nullptr) {
-                return false;
-            }
-            newHead.ptr = oldHead.ptr->next;
-            newHead.tag = oldHead.tag + 1;
-        } while (!head_.compare_exchange_weak(oldHead, newHead,
-                                              std::memory_order_acquire,
-                                              std::memory_order_relaxed));
-
-        result = oldHead.ptr->data;
-        // 延迟删除：这里仍有问题，实际应用需要 hazard pointer 或 epoch-based reclamation
-        delete oldHead.ptr;
+template <typename T>
+bool LockFreeStackBasicSolution<T>::pop(T& result) {
+    std::atomic<LockFreeStackNode<T>*>* head =
+        reinterpret_cast<std::atomic<LockFreeStackNode<T>*>*>(&head_);
+    LockFreeStackNode<T>* oldHead = head->load(std::memory_order_relaxed);
+    while (oldHead &&
+           !head->compare_exchange_weak(oldHead, oldHead->next,
+                                        std::memory_order_acquire,
+                                        std::memory_order_relaxed)) {}
+    if (oldHead) {
+        result = oldHead->data;
+        delete oldHead;
         return true;
     }
-
-private:
-    struct Node {
-        T data;
-        Node* next;
-        Node(const T& value) : data(value), next(nullptr) {}
-    };
-
-    // 带版本号的指针
-    struct TaggedPointer {
-        Node* ptr{nullptr};
-        unsigned long tag{0};
-
-        bool operator==(const TaggedPointer& other) const {
-            return ptr == other.ptr && tag == other.tag;
-        }
-    };
-
-    std::atomic<TaggedPointer> head_{TaggedPointer{}};
-};
-
-// ==================== 题目3: 使用引用计数的无锁栈 ====================
-// 使用内部和外部引用计数解决内存回收问题
-template <typename T>
-class LockFreeStackRefCount {
-public:
-    ~LockFreeStackRefCount() {
-        while (pop()) {}
-    }
-
-    void push(const T& value) {
-        CountedNodePtr newNode;
-        newNode.ptr = new Node(value);
-        newNode.externalCount = 1;
-        newNode.ptr->next = head_.load(std::memory_order_relaxed);
-
-        while (!head_.compare_exchange_weak(newNode.ptr->next, newNode,
-                                            std::memory_order_release,
-                                            std::memory_order_relaxed)) {}
-    }
-
-    std::shared_ptr<T> pop() {
-        CountedNodePtr oldHead = head_.load(std::memory_order_relaxed);
-
-        while (true) {
-            increaseHeadCount(oldHead);
-            Node* ptr = oldHead.ptr;
-            if (!ptr) {
-                return std::shared_ptr<T>();
-            }
-
-            if (head_.compare_exchange_strong(oldHead, ptr->next,
-                                              std::memory_order_relaxed)) {
-                std::shared_ptr<T> result;
-                result.swap(ptr->data);
-
-                int countIncrease = oldHead.externalCount - 2;
-                if (ptr->internalCount.fetch_add(countIncrease,
-                                                 std::memory_order_release) == -countIncrease) {
-                    delete ptr;
-                }
-                return result;
-            } else if (ptr->internalCount.fetch_sub(1, std::memory_order_relaxed) == 1) {
-                ptr->internalCount.load(std::memory_order_acquire);
-                delete ptr;
-            }
-        }
-    }
-
-private:
-    struct Node;
-
-    struct CountedNodePtr {
-        int externalCount{0};
-        Node* ptr{nullptr};
-    };
-
-    struct Node {
-        std::shared_ptr<T> data;
-        std::atomic<int> internalCount{0};
-        CountedNodePtr next;
-
-        Node(const T& value) : data(std::make_shared<T>(value)) {}
-    };
-
-    void increaseHeadCount(CountedNodePtr& oldCounter) {
-        CountedNodePtr newCounter;
-        do {
-            newCounter = oldCounter;
-            ++newCounter.externalCount;
-        } while (!head_.compare_exchange_strong(oldCounter, newCounter,
-                                                std::memory_order_acquire,
-                                                std::memory_order_relaxed));
-        oldCounter.externalCount = newCounter.externalCount;
-    }
-
-    std::atomic<CountedNodePtr> head_;
-};
-
-// ==================== 简化版：使用 shared_ptr 的无锁栈 ====================
-// C++20 提供 std::atomic<std::shared_ptr<T>>
-template <typename T>
-class LockFreeStackSimple {
-public:
-    void push(const T& value) {
-        auto newNode = std::make_shared<Node>();
-        newNode->data = value;
-        newNode->next = head_.load();
-        while (!head_.compare_exchange_weak(newNode->next, newNode)) {}
-    }
-
-    bool pop(T& result) {
-        auto oldHead = head_.load();
-        while (oldHead && !head_.compare_exchange_weak(oldHead, oldHead->next)) {}
-        if (oldHead) {
-            result = oldHead->data;
-            return true;
-        }
-        return false;
-    }
-
-    bool empty() const {
-        return head_.load() == nullptr;
-    }
-
-private:
-    struct Node {
-        T data;
-        std::shared_ptr<Node> next;
-    };
-
-    std::atomic<std::shared_ptr<Node>> head_{nullptr};
-};
-
-// ==================== 测试代码 ====================
-template <typename Stack>
-void testStack(const char* name) {
-    std::cout << "=== Testing " << name << " ===\n";
-
-    Stack stack;
-    std::atomic<int> pushCount{0};
-    std::atomic<int> popCount{0};
-
-    const int NUM_THREADS = 4;
-    const int OPS_PER_THREAD = 10000;
-
-    std::vector<std::thread> threads;
-
-    // 生产者线程
-    for (int i = 0; i < NUM_THREADS; ++i) {
-        threads.emplace_back([&stack, &pushCount, i] {
-            for (int j = 0; j < OPS_PER_THREAD; ++j) {
-                stack.push(i * OPS_PER_THREAD + j);
-                pushCount.fetch_add(1, std::memory_order_relaxed);
-            }
-        });
-    }
-
-    // 消费者线程
-    for (int i = 0; i < NUM_THREADS; ++i) {
-        threads.emplace_back([&stack, &popCount] {
-            int value;
-            for (int j = 0; j < OPS_PER_THREAD; ++j) {
-                while (!stack.pop(value)) {
-                    std::this_thread::yield();
-                }
-                popCount.fetch_add(1, std::memory_order_relaxed);
-            }
-        });
-    }
-
-    for (auto& t : threads) {
-        t.join();
-    }
-
-    std::cout << "Push count: " << pushCount << "\n";
-    std::cout << "Pop count: " << popCount << "\n";
-    std::cout << "Stack empty: " << (stack.empty() ? "yes" : "no") << "\n\n";
+    return false;
 }
 
-int main() {
-    testStack<LockFreeStackBasic<int>>("Basic Lock-Free Stack");
-    testStack<LockFreeStackABA<int>>("ABA-Safe Lock-Free Stack");
-
-    return 0;
+template <typename T>
+bool LockFreeStackBasicSolution<T>::empty() const {
+    auto* head = reinterpret_cast<const std::atomic<LockFreeStackNode<T>*>*>(&head_);
+    return head->load(std::memory_order_relaxed) == nullptr;
 }
 
-/**
- * 关键要点：
- *
- * 1. CAS 循环模式：
- *    - 加载当前值
- *    - 基于当前值准备新值
- *    - CAS 尝试更新
- *    - 失败则重试
- *
- * 2. ABA 问题：
- *    - 线程1读取 A
- *    - 线程2: A -> B -> A
- *    - 线程1 CAS 成功，但状态已变化
- *    - 解决：版本号、hazard pointer、epoch-based reclamation
- *
- * 3. 内存回收问题：
- *    - 删除节点时其他线程可能还在访问
- *    - 解决方案：
- *      a) 引用计数
- *      b) Hazard Pointer
- *      c) Epoch-based Reclamation (RCU)
- *      d) 使用 GC 的语言
- *
- * 4. 内存序选择：
- *    - push: release 语义，确保节点数据对其他线程可见
- *    - pop: acquire 语义，确保看到最新的节点数据
- *
- * 5. compare_exchange_weak vs strong：
- *    - weak: 可能虚假失败，在循环中使用更高效
- *    - strong: 不会虚假失败，单次使用时选择
- *
- * 6. 实际应用：
- *    - 简单场景：使用 std::atomic<shared_ptr>
- *    - 高性能场景：使用专业库（如 Boost.Lockfree, Folly）
- */
+// ==================== 题目2: 解决 ABA 问题（带版本号）====================
+// 使用 64 位打包指针：高 16 位存 tag，低 48 位存指针（x64 用户空间指针只用 48 位）
+
+template <typename T>
+class PackedPointer {
+    static constexpr uintptr_t PTR_MASK = 0x0000FFFFFFFFFFFF;  // 低 48 位
+    static constexpr int TAG_SHIFT = 48;
+    uintptr_t packed_{0};
+
+public:
+    PackedPointer() = default;
+    PackedPointer(LockFreeStackNode<T>* ptr, uint16_t tag) {
+        packed_ = (static_cast<uintptr_t>(tag) << TAG_SHIFT) |
+                  (reinterpret_cast<uintptr_t>(ptr) & PTR_MASK);
+    }
+
+    LockFreeStackNode<T>* ptr() const {
+        return reinterpret_cast<LockFreeStackNode<T>*>(packed_ & PTR_MASK);
+    }
+
+    uint16_t tag() const {
+        return static_cast<uint16_t>(packed_ >> TAG_SHIFT);
+    }
+
+    bool operator==(const PackedPointer& other) const {
+        return packed_ == other.packed_;
+    }
+};
+
+template <typename T>
+void LockFreeStackABASolution<T>::push(const T& value) {
+    LockFreeStackNode<T>* newNode = new LockFreeStackNode<T>(value);
+    std::atomic<PackedPointer<T>>* head =
+        reinterpret_cast<std::atomic<PackedPointer<T>>*>(&head_);
+    PackedPointer<T> oldHead = head->load(std::memory_order_relaxed);
+    PackedPointer<T> newHead;
+
+    do {
+        newNode->next = oldHead.ptr();
+        newHead = PackedPointer<T>(newNode, oldHead.tag() + 1);
+    } while (!head->compare_exchange_weak(oldHead, newHead,
+                                          std::memory_order_release,
+                                          std::memory_order_relaxed));
+}
+
+template <typename T>
+bool LockFreeStackABASolution<T>::pop(T& result) {
+    std::atomic<PackedPointer<T>>* head =
+        reinterpret_cast<std::atomic<PackedPointer<T>>*>(&head_);
+    PackedPointer<T> oldHead = head->load(std::memory_order_relaxed);
+    PackedPointer<T> newHead;
+
+    do {
+        if (oldHead.ptr() == nullptr) {
+            return false;
+        }
+        newHead = PackedPointer<T>(oldHead.ptr()->next, oldHead.tag() + 1);
+    } while (!head->compare_exchange_weak(oldHead, newHead,
+                                          std::memory_order_acquire,
+                                          std::memory_order_relaxed));
+
+    result = oldHead.ptr()->data;
+    delete oldHead.ptr();
+    return true;
+}
+
+template <typename T>
+bool LockFreeStackABASolution<T>::empty() const {
+    auto* head = reinterpret_cast<const std::atomic<PackedPointer<T>>*>(&head_);
+    return head->load(std::memory_order_relaxed).ptr() == nullptr;
+}
+
+// ==================== 题目3: 使用 shared_ptr 的无锁栈 ====================
+
+template <typename T>
+struct SharedNode {
+    T data;
+    std::shared_ptr<SharedNode> next;
+};
+
+template <typename T>
+void LockFreeStackSimpleSolution<T>::push(const T& value) {
+    auto newNode = std::make_shared<SharedNode<T>>();
+    newNode->data = value;
+    std::atomic<std::shared_ptr<SharedNode<T>>>* head =
+        reinterpret_cast<std::atomic<std::shared_ptr<SharedNode<T>>>*>(&head_);
+    newNode->next = head->load();
+    while (!head->compare_exchange_weak(newNode->next, newNode)) {}
+}
+
+template <typename T>
+bool LockFreeStackSimpleSolution<T>::pop(T& result) {
+    std::atomic<std::shared_ptr<SharedNode<T>>>* head =
+        reinterpret_cast<std::atomic<std::shared_ptr<SharedNode<T>>>*>(&head_);
+    auto oldHead = head->load();
+    while (oldHead && !head->compare_exchange_weak(oldHead, oldHead->next)) {}
+    if (oldHead) {
+        result = oldHead->data;
+        return true;
+    }
+    return false;
+}
+
+template <typename T>
+bool LockFreeStackSimpleSolution<T>::empty() const {
+    auto* head = reinterpret_cast<const std::atomic<std::shared_ptr<SharedNode<T>>>*>(&head_);
+    return head->load() == nullptr;
+}
+
+// 显式实例化
+template class LockFreeStackBasicSolution<int>;
+template class LockFreeStackABASolution<int>;
+template class LockFreeStackSimpleSolution<int>;
+
+// ==================== 测试函数 ====================
+
+void runTests() {
+    std::cout << "=== Lock-Free Stack Tests ===" << std::endl;
+
+    // 测试基本无锁栈
+    {
+        LockFreeStackBasicSolution<int> stack;
+        std::atomic<int> pushCount{0};
+        std::atomic<int> popCount{0};
+
+        std::vector<std::thread> threads;
+
+        for (int i = 0; i < 2; ++i) {
+            threads.emplace_back([&stack, &pushCount] {
+                for (int j = 0; j < 1000; ++j) {
+                    stack.push(j);
+                    ++pushCount;
+                }
+            });
+        }
+
+        for (int i = 0; i < 2; ++i) {
+            threads.emplace_back([&stack, &popCount] {
+                int value;
+                for (int j = 0; j < 1000; ++j) {
+                    while (!stack.pop(value)) {
+                        std::this_thread::yield();
+                    }
+                    ++popCount;
+                }
+            });
+        }
+
+        for (auto& t : threads) t.join();
+
+        assert(pushCount == 2000);
+        assert(popCount == 2000);
+        assert(stack.empty());
+    }
+    std::cout << "  Basic Lock-Free Stack: PASSED" << std::endl;
+
+    // 测试 ABA 安全的无锁栈
+    {
+        LockFreeStackABASolution<int> stack;
+        std::atomic<int> pushCount{0};
+        std::atomic<int> popCount{0};
+
+        std::vector<std::thread> threads;
+
+        for (int i = 0; i < 2; ++i) {
+            threads.emplace_back([&stack, &pushCount] {
+                for (int j = 0; j < 1000; ++j) {
+                    stack.push(j);
+                    ++pushCount;
+                }
+            });
+        }
+
+        for (int i = 0; i < 2; ++i) {
+            threads.emplace_back([&stack, &popCount] {
+                int value;
+                for (int j = 0; j < 1000; ++j) {
+                    while (!stack.pop(value)) {
+                        std::this_thread::yield();
+                    }
+                    ++popCount;
+                }
+            });
+        }
+
+        for (auto& t : threads) t.join();
+
+        assert(pushCount == 2000);
+        assert(popCount == 2000);
+        assert(stack.empty());
+    }
+    std::cout << "  ABA-Safe Lock-Free Stack: PASSED" << std::endl;
+
+    // 测试简单无锁栈
+    {
+        LockFreeStackSimpleSolution<int> stack;
+
+        stack.push(1);
+        stack.push(2);
+        stack.push(3);
+
+        int value;
+        assert(stack.pop(value) && value == 3);
+        assert(stack.pop(value) && value == 2);
+        assert(stack.pop(value) && value == 1);
+        assert(!stack.pop(value));
+        assert(stack.empty());
+    }
+    std::cout << "  Simple Lock-Free Stack: PASSED" << std::endl;
+
+    std::cout << "=== All Lock-Free Stack Tests Passed ===" << std::endl;
+}
+
+} // namespace LockFreeStack

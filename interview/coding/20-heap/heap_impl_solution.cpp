@@ -2,10 +2,17 @@
  * @file heap_impl_solution.cpp
  * @brief 堆实现 - 解答
  */
-#include <vector>
+
+#include "heap_impl.h"
 #include <iostream>
 #include <stdexcept>
-using namespace std;
+#include <cassert>
+#include <algorithm>
+
+namespace HeapImplImpl {
+namespace Solution {
+
+// ==================== 最小堆实现 ====================
 
 class MinHeap {
 public:
@@ -15,14 +22,14 @@ public:
     }
 
     void pop() {
-        if (empty()) throw runtime_error("Heap is empty");
+        if (empty()) throw std::runtime_error("Heap is empty");
         data_[0] = data_.back();
         data_.pop_back();
         if (!empty()) siftDown(0);
     }
 
     int top() const {
-        if (empty()) throw runtime_error("Heap is empty");
+        if (empty()) throw std::runtime_error("Heap is empty");
         return data_[0];
     }
 
@@ -30,13 +37,13 @@ public:
     bool empty() const { return data_.empty(); }
 
 private:
-    vector<int> data_;
+    std::vector<int> data_;
 
     void siftUp(int idx) {
         while (idx > 0) {
             int parent = (idx - 1) / 2;
             if (data_[idx] >= data_[parent]) break;
-            swap(data_[idx], data_[parent]);
+            std::swap(data_[idx], data_[parent]);
             idx = parent;
         }
     }
@@ -54,27 +61,56 @@ private:
                 smallest = right;
 
             if (smallest == idx) break;
-            swap(data_[idx], data_[smallest]);
+            std::swap(data_[idx], data_[smallest]);
             idx = smallest;
         }
     }
 };
 
-int main() {
-    MinHeap heap;
-    heap.push(5);
-    heap.push(3);
-    heap.push(7);
-    heap.push(1);
+} // namespace Solution
 
-    cout << "Top: " << heap.top() << "\n";  // 1
+// ==================== 测试函数 ====================
 
-    heap.pop();
-    cout << "After pop, top: " << heap.top() << "\n";  // 3
+void runTests() {
+    std::cout << "=== Heap Impl Tests ===" << std::endl;
 
-    heap.push(2);
-    cout << "After push(2), top: " << heap.top() << "\n";  // 2
+    // 测试基本操作
+    {
+        Solution::MinHeap heap;
+        heap.push(5);
+        heap.push(3);
+        heap.push(7);
+        heap.push(1);
 
-    cout << "Size: " << heap.size() << "\n";  // 4
-    return 0;
+        assert(heap.top() == 1);
+        assert(heap.size() == 4);
+    }
+    std::cout << "  MinHeap push/top: PASSED" << std::endl;
+
+    // 测试 pop
+    {
+        Solution::MinHeap heap;
+        heap.push(5);
+        heap.push(3);
+        heap.push(7);
+        heap.push(1);
+
+        heap.pop();
+        assert(heap.top() == 3);
+
+        heap.push(2);
+        assert(heap.top() == 2);
+    }
+    std::cout << "  MinHeap pop: PASSED" << std::endl;
+
+    // 测试空堆
+    {
+        Solution::MinHeap heap;
+        assert(heap.empty());
+        heap.push(1);
+        assert(!heap.empty());
+    }
+    std::cout << "  MinHeap empty: PASSED" << std::endl;
 }
+
+} // namespace HeapImplImpl

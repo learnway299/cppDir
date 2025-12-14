@@ -1,36 +1,43 @@
 /**
  * @file bloomfilter_solution.cpp
- * @brief 布隆过滤器 - 解答
+ * @brief 布隆过滤器 - 参考解答
  */
-#include <string>
-#include <vector>
-#include <functional>
+
+#include "bloomfilter.h"
 #include <iostream>
-using namespace std;
+#include <cmath>
+
+namespace BloomFilterImpl {
+namespace Solution {
+
+size_t hash(const std::string& key, int seed, size_t size) {
+    std::hash<std::string> hasher;
+    return hasher(key + std::to_string(seed)) % size;
+}
 
 class BloomFilter {
-    vector<bool> bits_;
+private:
+    std::vector<bool> bits_;
     size_t size_;
     int numHashFunctions_;
-    hash<string> hasher_;
 
-    // 使用不同的种子生成多个哈希值
-    size_t hash(const string& key, int seed) const {
-        return hasher_(key + to_string(seed)) % size_;
+    size_t hash(const std::string& key, int seed) const {
+        std::hash<std::string> hasher;
+        return hasher(key + std::to_string(seed)) % size_;
     }
 
 public:
     BloomFilter(size_t size, int numHashFunctions)
         : bits_(size, false), size_(size), numHashFunctions_(numHashFunctions) {}
 
-    void add(const string& key) {
+    void add(const std::string& key) {
         for (int i = 0; i < numHashFunctions_; ++i) {
             size_t idx = hash(key, i);
             bits_[idx] = true;
         }
     }
 
-    bool mightContain(const string& key) const {
+    bool mightContain(const std::string& key) const {
         for (int i = 0; i < numHashFunctions_; ++i) {
             size_t idx = hash(key, i);
             if (!bits_[idx]) return false;
@@ -38,18 +45,18 @@ public:
         return true;  // 可能存在 (有假阳性)
     }
 
-    // 估算假阳性率: (1 - e^(-kn/m))^k
-    // k = 哈希函数数, n = 插入元素数, m = 位数组大小
     double estimateFalsePositiveRate(int insertedCount) const {
         double k = numHashFunctions_;
         double n = insertedCount;
-        double m = size_;
-        double exp_val = exp(-k * n / m);
-        return pow(1.0 - exp_val, k);
+        double m = static_cast<double>(size_);
+        double exp_val = std::exp(-k * n / m);
+        return std::pow(1.0 - exp_val, k);
     }
 };
 
-int main() {
+void runSolutionTests() {
+    std::cout << "=== Bloom Filter Solution ===" << std::endl;
+
     BloomFilter bf(1000, 3);
 
     // 添加元素
@@ -58,23 +65,31 @@ int main() {
     bf.add("cherry");
 
     // 测试存在性
-    cout << "mightContain('apple'): " << bf.mightContain("apple") << "\n";   // 1
-    cout << "mightContain('banana'): " << bf.mightContain("banana") << "\n"; // 1
-    cout << "mightContain('grape'): " << bf.mightContain("grape") << "\n";   // 可能是0或1
+    std::cout << "mightContain('apple'): " << bf.mightContain("apple") << std::endl;   // 1
+    std::cout << "mightContain('banana'): " << bf.mightContain("banana") << std::endl; // 1
+    std::cout << "mightContain('grape'): " << bf.mightContain("grape") << std::endl;   // 可能是0或1
 
     // 假阳性测试
     int falsePositives = 0;
     int tests = 10000;
     for (int i = 0; i < tests; ++i) {
-        if (bf.mightContain("test" + to_string(i))) {
+        if (bf.mightContain("test" + std::to_string(i))) {
             falsePositives++;
         }
     }
-    cout << "False positive rate (empirical): "
-         << (double)falsePositives / tests * 100 << "%\n";
+    std::cout << "False positive rate (empirical): "
+              << static_cast<double>(falsePositives) / tests * 100 << "%" << std::endl;
 
-    cout << "False positive rate (estimated): "
-         << bf.estimateFalsePositiveRate(3) * 100 << "%\n";
+    std::cout << "False positive rate (estimated): "
+              << bf.estimateFalsePositiveRate(3) * 100 << "%" << std::endl;
 
-    return 0;
+    std::cout << "\nBloom filter tests completed!" << std::endl;
 }
+
+} // namespace Solution
+
+void runTests() {
+    Solution::runSolutionTests();
+}
+
+} // namespace BloomFilterImpl

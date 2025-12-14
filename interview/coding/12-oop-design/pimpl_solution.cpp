@@ -1,275 +1,220 @@
 /**
  * @file pimpl_solution.cpp
- * @brief Pimpl 惯用法实现 - 解答
+ * @brief Pimpl 惯用法实现 - 参考答案
  */
 
-#include <memory>
-#include <string>
+#include "pimpl.h"
 #include <iostream>
+#include <cassert>
 #include <utility>
+#include <stdexcept>
 
-/**
- * 题目1：基础 Pimpl - 数据库连接类
- */
+namespace PimplImpl {
 
-// ===== DatabaseConnection.h =====
+namespace Solution {
+
+// ==================== DatabaseConnection ====================
+
 class DatabaseConnection {
 public:
-    DatabaseConnection();
-    ~DatabaseConnection();
+    DatabaseConnection() : pImpl_(std::make_unique<Impl>()) {}
+    ~DatabaseConnection() = default;
 
-    DatabaseConnection(DatabaseConnection&& other) noexcept;
-    DatabaseConnection& operator=(DatabaseConnection&& other) noexcept;
+    DatabaseConnection(DatabaseConnection&& other) noexcept = default;
+    DatabaseConnection& operator=(DatabaseConnection&& other) noexcept = default;
 
     DatabaseConnection(const DatabaseConnection&) = delete;
     DatabaseConnection& operator=(const DatabaseConnection&) = delete;
 
-    void connect(const std::string& connectionString);
-    void disconnect();
-    bool isConnected() const;
-    void execute(const std::string& sql);
-
-private:
-    class Impl;
-    std::unique_ptr<Impl> pImpl_;
-};
-
-// ===== DatabaseConnection.cpp =====
-class DatabaseConnection::Impl {
-public:
-    Impl() : connected_(false) {}
-
-    void connect(const std::string& connStr) {
-        connectionString_ = connStr;
-        connected_ = true;
-        std::cout << "Connected to: " << connStr << "\n";
+    void connect(const std::string& connectionString) {
+        pImpl_->connect(connectionString);
     }
 
     void disconnect() {
-        if (connected_) {
-            std::cout << "Disconnected from: " << connectionString_ << "\n";
-            connected_ = false;
-        }
+        pImpl_->disconnect();
     }
 
-    bool isConnected() const { return connected_; }
+    bool isConnected() const {
+        return pImpl_->isConnected();
+    }
 
     void execute(const std::string& sql) {
-        if (!connected_) {
-            throw std::runtime_error("Not connected");
-        }
-        std::cout << "Executing: " << sql << "\n";
+        pImpl_->execute(sql);
     }
 
 private:
-    std::string connectionString_;
-    bool connected_;
-};
+    class Impl {
+    public:
+        Impl() : connected_(false) {}
 
-DatabaseConnection::DatabaseConnection()
-    : pImpl_(std::make_unique<Impl>()) {}
+        void connect(const std::string& connStr) {
+            connectionString_ = connStr;
+            connected_ = true;
+        }
 
-DatabaseConnection::~DatabaseConnection() = default;
+        void disconnect() {
+            if (connected_) {
+                connected_ = false;
+            }
+        }
 
-DatabaseConnection::DatabaseConnection(DatabaseConnection&& other) noexcept = default;
-DatabaseConnection& DatabaseConnection::operator=(DatabaseConnection&& other) noexcept = default;
+        bool isConnected() const { return connected_; }
 
-void DatabaseConnection::connect(const std::string& connectionString) {
-    pImpl_->connect(connectionString);
-}
+        void execute(const std::string& sql) {
+            if (!connected_) {
+                throw std::runtime_error("Not connected");
+            }
+            lastQuery_ = sql;
+        }
 
-void DatabaseConnection::disconnect() {
-    pImpl_->disconnect();
-}
+    private:
+        std::string connectionString_;
+        std::string lastQuery_;
+        bool connected_;
+    };
 
-bool DatabaseConnection::isConnected() const {
-    return pImpl_->isConnected();
-}
-
-void DatabaseConnection::execute(const std::string& sql) {
-    pImpl_->execute(sql);
-}
-
-/**
- * 题目2：支持拷贝的 Pimpl
- */
-
-// ===== Widget.h =====
-class Widget {
-public:
-    Widget();
-    ~Widget();
-
-    Widget(const Widget& other);
-    Widget& operator=(const Widget& other);
-
-    Widget(Widget&& other) noexcept;
-    Widget& operator=(Widget&& other) noexcept;
-
-    void setData(const std::string& data);
-    std::string getData() const;
-
-private:
-    class Impl;
     std::unique_ptr<Impl> pImpl_;
 };
 
-// ===== Widget.cpp =====
-class Widget::Impl {
+// ==================== Widget (支持拷贝) ====================
+
+class Widget {
 public:
-    std::string data;
+    Widget() : pImpl_(std::make_unique<Impl>()) {}
+    ~Widget() = default;
 
-    Impl() = default;
-    Impl(const Impl& other) : data(other.data) {}
-};
+    Widget(const Widget& other)
+        : pImpl_(std::make_unique<Impl>(*other.pImpl_)) {}
 
-Widget::Widget() : pImpl_(std::make_unique<Impl>()) {}
-
-Widget::~Widget() = default;
-
-Widget::Widget(const Widget& other)
-    : pImpl_(std::make_unique<Impl>(*other.pImpl_)) {}
-
-Widget& Widget::operator=(const Widget& other) {
-    if (this != &other) {
-        pImpl_ = std::make_unique<Impl>(*other.pImpl_);
+    Widget& operator=(const Widget& other) {
+        if (this != &other) {
+            pImpl_ = std::make_unique<Impl>(*other.pImpl_);
+        }
+        return *this;
     }
-    return *this;
-}
 
-Widget::Widget(Widget&& other) noexcept = default;
-Widget& Widget::operator=(Widget&& other) noexcept = default;
+    Widget(Widget&& other) noexcept = default;
+    Widget& operator=(Widget&& other) noexcept = default;
 
-void Widget::setData(const std::string& data) {
-    pImpl_->data = data;
-}
+    void setData(const std::string& data) {
+        pImpl_->data = data;
+    }
 
-std::string Widget::getData() const {
-    return pImpl_->data;
-}
-
-/**
- * 题目3：Copy-on-Write Pimpl
- */
-
-// ===== Document.h =====
-class Document {
-public:
-    Document();
-    ~Document();
-
-    Document(const Document& other);
-    Document& operator=(const Document& other);
-
-    void write(const std::string& content);
-    std::string read() const;
-
-    // 调试用
-    long useCount() const;
+    std::string getData() const {
+        return pImpl_->data;
+    }
 
 private:
-    class Impl;
+    class Impl {
+    public:
+        std::string data;
+        Impl() = default;
+        Impl(const Impl& other) : data(other.data) {}
+    };
+
+    std::unique_ptr<Impl> pImpl_;
+};
+
+// ==================== Document (Copy-on-Write) ====================
+
+class Document {
+public:
+    Document() : pImpl_(std::make_shared<Impl>()) {}
+    ~Document() = default;
+
+    Document(const Document& other) : pImpl_(other.pImpl_) {}
+
+    Document& operator=(const Document& other) {
+        if (this != &other) {
+            pImpl_ = other.pImpl_;
+        }
+        return *this;
+    }
+
+    void write(const std::string& content) {
+        detach();
+        pImpl_->content = content;
+    }
+
+    std::string read() const {
+        return pImpl_->content;
+    }
+
+    long useCount() const {
+        return pImpl_.use_count();
+    }
+
+private:
+    class Impl {
+    public:
+        std::string content;
+        Impl() = default;
+        Impl(const Impl& other) : content(other.content) {}
+    };
+
     std::shared_ptr<Impl> pImpl_;
 
-    void detach();
+    void detach() {
+        if (pImpl_.use_count() > 1) {
+            pImpl_ = std::make_shared<Impl>(*pImpl_);
+        }
+    }
 };
 
-// ===== Document.cpp =====
-class Document::Impl {
-public:
-    std::string content;
+// ==================== Base / Derived (继承) ====================
 
-    Impl() = default;
-    Impl(const Impl& other) : content(other.content) {}
-};
-
-Document::Document() : pImpl_(std::make_shared<Impl>()) {}
-Document::~Document() = default;
-
-Document::Document(const Document& other) : pImpl_(other.pImpl_) {}
-
-Document& Document::operator=(const Document& other) {
-    if (this != &other) {
-        pImpl_ = other.pImpl_;
-    }
-    return *this;
-}
-
-void Document::detach() {
-    if (pImpl_.use_count() > 1) {
-        pImpl_ = std::make_shared<Impl>(*pImpl_);
-    }
-}
-
-void Document::write(const std::string& content) {
-    detach();  // 写入前分离
-    pImpl_->content = content;
-}
-
-std::string Document::read() const {
-    return pImpl_->content;
-}
-
-long Document::useCount() const {
-    return pImpl_.use_count();
-}
-
-/**
- * 题目4：Pimpl 与继承
- */
-
-// ===== Base =====
 class Base {
 public:
-    Base();
-    virtual ~Base();
+    Base() : pImpl_(std::make_unique<BaseImpl>()) {}
+    virtual ~Base() = default;
 
-    virtual void doSomething();
+    virtual int doSomething() {
+        return pImpl_->doSomethingImpl();
+    }
 
 protected:
     class BaseImpl {
     public:
         int baseData = 0;
         virtual ~BaseImpl() = default;
-        virtual void doSomethingImpl() {
-            std::cout << "Base::doSomething, data=" << baseData << "\n";
+        virtual int doSomethingImpl() {
+            return baseData;
         }
     };
 
     std::unique_ptr<BaseImpl> pImpl_;
 
-    explicit Base(std::unique_ptr<BaseImpl> impl);
+    explicit Base(std::unique_ptr<BaseImpl> impl) : pImpl_(std::move(impl)) {}
 };
 
-Base::Base() : pImpl_(std::make_unique<BaseImpl>()) {}
-Base::Base(std::unique_ptr<BaseImpl> impl) : pImpl_(std::move(impl)) {}
-Base::~Base() = default;
-
-void Base::doSomething() {
-    pImpl_->doSomethingImpl();
-}
-
-// ===== Derived =====
 class Derived : public Base {
 public:
-    Derived();
-    ~Derived() override;
+    Derived() : Base(std::make_unique<DerivedImpl>()) {}
+    ~Derived() override = default;
 
-    void doSomething() override;
-    void doExtra();
+    int doSomething() override {
+        return getDerivedImpl()->doSomethingImpl();
+    }
+
+    int doExtra() {
+        return getDerivedImpl()->doExtraImpl();
+    }
+
+    void setDerivedData(int value) {
+        getDerivedImpl()->derivedData = value;
+    }
 
 private:
     class DerivedImpl : public BaseImpl {
     public:
         int derivedData = 0;
 
-        void doSomethingImpl() override {
-            std::cout << "Derived::doSomething, baseData=" << baseData
-                      << ", derivedData=" << derivedData << "\n";
+        int doSomethingImpl() override {
+            return baseData + derivedData;
         }
 
-        void doExtraImpl() {
-            std::cout << "Derived::doExtra, derivedData=" << derivedData << "\n";
+        int doExtraImpl() {
+            return derivedData * 2;
         }
     };
 
@@ -278,22 +223,8 @@ private:
     }
 };
 
-Derived::Derived() : Base(std::make_unique<DerivedImpl>()) {}
-Derived::~Derived() = default;
+// ==================== Fast Pimpl ====================
 
-void Derived::doSomething() {
-    getDerivedImpl()->doSomethingImpl();
-}
-
-void Derived::doExtra() {
-    getDerivedImpl()->doExtraImpl();
-}
-
-/**
- * 扩展：使用 fast-pimpl 减少堆分配
- *
- * 在对象内部预留空间，避免小对象的堆分配
- */
 template <size_t Size, size_t Alignment = alignof(std::max_align_t)>
 class FastPimpl {
 public:
@@ -323,7 +254,6 @@ private:
     alignas(Alignment) char buffer_[Size];
 };
 
-// 使用 FastPimpl 的类
 class FastWidget {
 public:
     FastWidget() {
@@ -345,64 +275,98 @@ private:
     FastPimpl<sizeof(Impl), alignof(Impl)> storage_;
 };
 
-int main() {
-    std::cout << "=== 基础 Pimpl: DatabaseConnection ===\n";
-    {
-        DatabaseConnection db;
-        db.connect("mysql://localhost:3306/test");
-        db.execute("SELECT * FROM users");
-        db.disconnect();
-    }
+} // namespace Solution
 
-    std::cout << "\n=== 可拷贝 Pimpl: Widget ===\n";
+// ==================== 测试函数 ====================
+
+void runTests() {
+    std::cout << "=== Pimpl Tests ===" << std::endl;
+
+    // 测试基础 Pimpl
     {
-        Widget w1;
+        Solution::DatabaseConnection db;
+        assert(!db.isConnected());
+
+        db.connect("mysql://localhost:3306/test");
+        assert(db.isConnected());
+
+        db.execute("SELECT * FROM users");
+
+        db.disconnect();
+        assert(!db.isConnected());
+
+        // 测试移动
+        Solution::DatabaseConnection db2;
+        db2.connect("postgres://localhost/db");
+        Solution::DatabaseConnection db3 = std::move(db2);
+        assert(db3.isConnected());
+    }
+    std::cout << "  DatabaseConnection: PASSED" << std::endl;
+
+    // 测试可拷贝 Pimpl
+    {
+        Solution::Widget w1;
         w1.setData("Hello");
 
-        Widget w2 = w1;  // 深拷贝
+        Solution::Widget w2 = w1;  // 深拷贝
+        assert(w2.getData() == "Hello");
+
         w2.setData("World");
+        assert(w1.getData() == "Hello");  // w1 不受影响
+        assert(w2.getData() == "World");
 
-        std::cout << "w1: " << w1.getData() << "\n";
-        std::cout << "w2: " << w2.getData() << "\n";
+        Solution::Widget w3;
+        w3 = w1;  // 赋值
+        assert(w3.getData() == "Hello");
     }
+    std::cout << "  Widget (copyable): PASSED" << std::endl;
 
-    std::cout << "\n=== Copy-on-Write Pimpl: Document ===\n";
+    // 测试 Copy-on-Write Pimpl
     {
-        Document d1;
+        Solution::Document d1;
         d1.write("Original content");
 
-        Document d2 = d1;  // 浅拷贝，共享 Impl
-        std::cout << "After copy: d1 use_count=" << d1.useCount()
-                  << ", d2 use_count=" << d2.useCount() << "\n";
+        Solution::Document d2 = d1;  // 浅拷贝，共享 Impl
+        assert(d1.useCount() == 2);
+        assert(d2.useCount() == 2);
+        assert(d2.read() == "Original content");
 
         d2.write("Modified content");  // 触发 COW
-        std::cout << "After write: d1 use_count=" << d1.useCount()
-                  << ", d2 use_count=" << d2.useCount() << "\n";
-
-        std::cout << "d1: " << d1.read() << "\n";
-        std::cout << "d2: " << d2.read() << "\n";
+        assert(d1.useCount() == 1);
+        assert(d2.useCount() == 1);
+        assert(d1.read() == "Original content");
+        assert(d2.read() == "Modified content");
     }
+    std::cout << "  Document (COW): PASSED" << std::endl;
 
-    std::cout << "\n=== Pimpl 与继承 ===\n";
+    // 测试 Pimpl 与继承
     {
-        Base base;
-        base.doSomething();
+        Solution::Base base;
+        assert(base.doSomething() == 0);
 
-        Derived derived;
-        derived.doSomething();
-        derived.doExtra();
+        Solution::Derived derived;
+        derived.setDerivedData(10);
+        assert(derived.doSomething() == 10);
+        assert(derived.doExtra() == 20);
 
-        Base* polyBase = new Derived();
-        polyBase->doSomething();  // 多态调用
+        // 多态
+        Solution::Base* polyBase = new Solution::Derived();
+        Solution::Derived* derivedPtr = dynamic_cast<Solution::Derived*>(polyBase);
+        derivedPtr->setDerivedData(5);
+        assert(polyBase->doSomething() == 5);
         delete polyBase;
     }
+    std::cout << "  Inheritance Pimpl: PASSED" << std::endl;
 
-    std::cout << "\n=== FastPimpl ===\n";
+    // 测试 FastPimpl
     {
-        FastWidget fw;
-        fw.setValue(42);
-        std::cout << "FastWidget value: " << fw.getValue() << "\n";
-    }
+        Solution::FastWidget fw;
+        assert(fw.getValue() == 0);
 
-    return 0;
+        fw.setValue(42);
+        assert(fw.getValue() == 42);
+    }
+    std::cout << "  FastWidget: PASSED" << std::endl;
 }
+
+} // namespace PimplImpl

@@ -1,13 +1,34 @@
 /**
  * @file weak_ptr_solution.cpp
- * @brief weak_ptr 实现 - 解答
+ * @brief weak_ptr 实现 - 参考答案
  */
 
+#include "weak_ptr.h"
 #include <iostream>
-#include <atomic>
-#include <utility>
+#include <cassert>
 
-// 控制块
+namespace WeakPtrImpl {
+
+// ==================== 测试类 ====================
+
+struct TestClass {
+    int value;
+    static int instanceCount;
+
+    TestClass(int v = 0) : value(v) {
+        ++instanceCount;
+    }
+    ~TestClass() {
+        --instanceCount;
+    }
+};
+
+int TestClass::instanceCount = 0;
+
+namespace Solution {
+
+// ==================== ControlBlock ====================
+
 template <typename T>
 struct ControlBlock {
     T* ptr;
@@ -63,9 +84,8 @@ struct ControlBlock {
 // 前向声明
 template <typename T> class WeakPtr;
 
-/**
- * SharedPtr（支持 WeakPtr）
- */
+// ==================== SharedPtr（支持 WeakPtr） ====================
+
 template <typename T>
 class SharedPtr {
 public:
@@ -75,8 +95,8 @@ public:
 
     explicit SharedPtr(T* ptr) : cb_(ptr ? new ControlBlock<T>(ptr) : nullptr) {}
 
-    // 从 WeakPtr 构造（私有，由 lock 调用）
-    SharedPtr(ControlBlock<T>* cb) : cb_(cb) {}
+    // 从控制块构造（用于 lock）
+    explicit SharedPtr(ControlBlock<T>* cb) : cb_(cb) {}
 
     ~SharedPtr() {
         if (cb_ && cb_->release_strong()) {
@@ -123,13 +143,8 @@ private:
     ControlBlock<T>* cb_;
 };
 
-/**
- * 题目1：实现 WeakPtr
- *
- * 关键点：
- * 1. 不增加强引用计数
- * 2. lock() 时检查并安全地增加强引用
- */
+// ==================== WeakPtr ====================
+
 template <typename T>
 class WeakPtr {
 public:
@@ -208,43 +223,26 @@ private:
     ControlBlock<T>* cb_;
 };
 
-/**
- * 题目2：解决循环引用问题
- *
- * 场景演示：使用 weak_ptr 打破循环
- */
-struct NodeWeak {
-    int value;
-    SharedPtr<NodeWeak> next;      // 强引用向前
-    WeakPtr<NodeWeak> prev;        // 弱引用向后，打破循环
+// ==================== NodeWithCycle ====================
 
-    NodeWeak(int v) : value(v) {
-        std::cout << "NodeWeak(" << value << ") constructed\n";
+struct NodeWithCycle {
+    int value;
+    SharedPtr<NodeWithCycle> next;      // 强引用向前
+    WeakPtr<NodeWithCycle> prev;        // 弱引用向后，打破循环
+    static int instanceCount;
+
+    NodeWithCycle(int v) : value(v) {
+        ++instanceCount;
     }
-    ~NodeWeak() {
-        std::cout << "NodeWeak(" << value << ") destroyed\n";
+    ~NodeWithCycle() {
+        --instanceCount;
     }
 };
 
-// 错误示例：会导致内存泄漏
-struct NodeBad {
-    int value;
-    SharedPtr<NodeBad> next;
-    SharedPtr<NodeBad> prev;  // 双向强引用 -> 循环引用!
+int NodeWithCycle::instanceCount = 0;
 
-    NodeBad(int v) : value(v) {
-        std::cout << "NodeBad(" << value << ") constructed\n";
-    }
-    ~NodeBad() {
-        std::cout << "NodeBad(" << value << ") destroyed\n";
-    }
-};
+// ==================== EnableSharedFromThis ====================
 
-/**
- * 题目3：实现 enable_shared_from_this
- *
- * 允许从成员函数安全地获取 shared_ptr<this>
- */
 template <typename T>
 class EnableSharedFromThis {
 public:
@@ -263,86 +261,108 @@ protected:
     ~EnableSharedFromThis() = default;
 
 private:
-    template <typename U> friend class SharedPtrESFT;
     mutable WeakPtr<T> weak_this_;
 };
 
-// 支持 enable_shared_from_this 的 SharedPtr
-template <typename T>
-class SharedPtrESFT {
-public:
-    explicit SharedPtrESFT(T* ptr) : ptr_(ptr) {
-        if constexpr (std::is_base_of_v<EnableSharedFromThis<T>, T>) {
-            // 初始化 weak_this_
-            // 实际实现需要更复杂的处理
-        }
-    }
-    // ... 其他实现
-private:
-    SharedPtr<T> ptr_;
-};
+} // namespace Solution
 
-int main() {
-    std::cout << "=== 测试 WeakPtr ===\n";
+// ==================== 测试函数 ====================
+
+void testWeakPtrSolution() {
+    std::cout << "=== Weak Ptr Tests (Solution) ===" << std::endl;
+
+    // 测试 WeakPtr 基本功能
+    TestClass::instanceCount = 0;
     {
-        SharedPtr<int> sp(new int(42));
-        WeakPtr<int> wp(sp);
+        Solution::SharedPtr<TestClass> sp(new TestClass(42));
+        Solution::WeakPtr<TestClass> wp(sp);
 
-        std::cout << "sp use_count: " << sp.use_count() << "\n";
-        std::cout << "wp expired: " << (wp.expired() ? "yes" : "no") << "\n";
+        assert(sp.use_count() == 1);
+        assert(!wp.expired());
 
         if (auto locked = wp.lock()) {
-            std::cout << "Locked value: " << *locked << "\n";
-            std::cout << "After lock, use_count: " << sp.use_count() << "\n";
+            assert(locked->value == 42);
+            assert(sp.use_count() == 2);
         }
+        assert(sp.use_count() == 1);
     }
+    assert(TestClass::instanceCount == 0);
+    std::cout << "  WeakPtr basic: PASSED" << std::endl;
 
-    std::cout << "\n=== 测试 WeakPtr 过期 ===\n";
+    // 测试 WeakPtr 过期
     {
-        WeakPtr<int> wp;
+        Solution::WeakPtr<TestClass> wp;
         {
-            SharedPtr<int> sp(new int(100));
+            Solution::SharedPtr<TestClass> sp(new TestClass(100));
             wp = sp;
-            std::cout << "Inside: expired = " << (wp.expired() ? "yes" : "no") << "\n";
+            assert(!wp.expired());
         }
-        std::cout << "Outside: expired = " << (wp.expired() ? "yes" : "no") << "\n";
-
+        assert(wp.expired());
         auto locked = wp.lock();
-        std::cout << "Lock result: " << (locked ? "success" : "failed") << "\n";
+        assert(!locked);
     }
+    std::cout << "  WeakPtr expiration: PASSED" << std::endl;
 
-    std::cout << "\n=== 正确使用 WeakPtr 打破循环引用 ===\n";
+    // 测试打破循环引用
+    Solution::NodeWithCycle::instanceCount = 0;
     {
-        SharedPtr<NodeWeak> n1(new NodeWeak(1));
-        SharedPtr<NodeWeak> n2(new NodeWeak(2));
+        Solution::SharedPtr<Solution::NodeWithCycle> n1(new Solution::NodeWithCycle(1));
+        Solution::SharedPtr<Solution::NodeWithCycle> n2(new Solution::NodeWithCycle(2));
 
         n1->next = n2;
         n2->prev = n1;  // weak_ptr，不增加引用计数
 
-        std::cout << "n1 use_count: " << n1.use_count() << "\n";
-        std::cout << "n2 use_count: " << n2.use_count() << "\n";
+        assert(n1.use_count() == 1);
+        assert(n2.use_count() == 2);
 
         // 访问 prev
         if (auto prev = n2->prev.lock()) {
-            std::cout << "n2's prev value: " << prev->value << "\n";
+            assert(prev->value == 1);
         }
     }
-    std::cout << "Nodes should be destroyed above\n";
+    assert(Solution::NodeWithCycle::instanceCount == 0);
+    std::cout << "  WeakPtr break cycle: PASSED" << std::endl;
 
-    std::cout << "\n=== 循环引用导致内存泄漏（演示）===\n";
-    std::cout << "(Commented out to avoid leak)\n";
-    /*
+    // 测试 lock 的线程安全性（CAS）
     {
-        SharedPtr<NodeBad> n1(new NodeBad(1));
-        SharedPtr<NodeBad> n2(new NodeBad(2));
+        Solution::SharedPtr<TestClass> sp(new TestClass(5));
+        Solution::WeakPtr<TestClass> wp(sp);
 
-        n1->next = n2;
-        n2->prev = n1;  // 循环引用!
-
-        // 离开作用域时，n1 和 n2 的引用计数仍为 1
-        // 导致内存泄漏
+        // 模拟多次 lock
+        for (int i = 0; i < 10; ++i) {
+            auto locked = wp.lock();
+            assert(locked);
+            assert(locked->value == 5);
+        }
+        assert(sp.use_count() == 1);
     }
-    */
+    std::cout << "  WeakPtr lock CAS: PASSED" << std::endl;
 
-    return 0;
+    // 测试 WeakPtr 拷贝和移动
+    {
+        Solution::SharedPtr<TestClass> sp(new TestClass(7));
+        Solution::WeakPtr<TestClass> wp1(sp);
+        Solution::WeakPtr<TestClass> wp2 = wp1;  // 拷贝
+
+        assert(!wp1.expired());
+        assert(!wp2.expired());
+
+        Solution::WeakPtr<TestClass> wp3 = std::move(wp1);  // 移动
+        assert(!wp3.expired());
+    }
+    std::cout << "  WeakPtr copy/move: PASSED" << std::endl;
+
+    // 测试 WeakPtr reset
+    {
+        Solution::SharedPtr<TestClass> sp(new TestClass(8));
+        Solution::WeakPtr<TestClass> wp(sp);
+        assert(!wp.expired());
+
+        wp.reset();
+        assert(wp.expired());
+        assert(wp.use_count() == 0);
+    }
+    std::cout << "  WeakPtr reset: PASSED" << std::endl;
 }
+
+} // namespace WeakPtrImpl

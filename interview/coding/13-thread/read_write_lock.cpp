@@ -1,18 +1,28 @@
 /**
  * @file read_write_lock.cpp
- * @brief 读写锁 - 面试题
+ * @brief 读写锁 - 面试题实现
  */
-#include <mutex>
-#include <condition_variable>
-#include <shared_mutex>
 
-// 题目: 实现读写锁 (多读单写)
-class ReadWriteLock {
-public:
-    void lock_read() { /* TODO */ }
-    void unlock_read() { /* TODO */ }
-    void lock_write() { /* TODO */ }
-    void unlock_write() { /* TODO */ }
-};
+#include "read_write_lock.h"
 
-int main() { return 0; }
+namespace ReadWriteLock {
+
+// ==================== 面试者实现 ====================
+
+void ReadWriteLock::lock_read() {
+    // TODO
+}
+
+void ReadWriteLock::unlock_read() {
+    // TODO
+}
+
+void ReadWriteLock::lock_write() {
+    // TODO
+}
+
+void ReadWriteLock::unlock_write() {
+    // TODO
+}
+
+} // namespace ReadWriteLock

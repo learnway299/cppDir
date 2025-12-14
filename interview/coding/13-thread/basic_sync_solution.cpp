@@ -1,271 +1,198 @@
 /**
  * @file basic_sync_solution.cpp
- * @brief 基础同步原语 - 解答
+ * @brief 基础同步原语 - 参考答案
  */
 
-#include <iostream>
-#include <thread>
-#include <mutex>
-#include <condition_variable>
-#include <atomic>
-#include <vector>
-#include <chrono>
+#include "basic_sync.h"
+#include <cassert>
 
-/**
- * 题目1：线程安全计数器
- */
-class Counter {
-public:
-    void increment() {
-        std::lock_guard<std::mutex> lock(mutex_);
-        ++value_;
-    }
+namespace BasicSync {
 
-    void decrement() {
-        std::lock_guard<std::mutex> lock(mutex_);
-        --value_;
-    }
+// ==================== 参考答案实现 ====================
 
-    int getValue() const {
-        std::lock_guard<std::mutex> lock(mutex_);
-        return value_;
-    }
+// 题目1: 线程安全计数器
+void CounterSolution::increment() {
+    std::lock_guard<std::mutex> lock(mutex_);
+    ++value_;
+}
 
-    // 原子操作版本（更高效）
-    void incrementAtomic() {
-        atomicValue_.fetch_add(1, std::memory_order_relaxed);
-    }
+void CounterSolution::decrement() {
+    std::lock_guard<std::mutex> lock(mutex_);
+    --value_;
+}
 
-    int getAtomicValue() const {
-        return atomicValue_.load(std::memory_order_relaxed);
-    }
+int CounterSolution::getValue() const {
+    std::lock_guard<std::mutex> lock(mutex_);
+    return value_;
+}
 
-private:
-    int value_ = 0;
-    mutable std::mutex mutex_;
-    std::atomic<int> atomicValue_{0};
-};
+void CounterSolution::incrementAtomic() {
+    atomicValue_.fetch_add(1, std::memory_order_relaxed);
+}
 
-/**
- * 题目2：事件（条件变量封装）
- */
-class Event {
-public:
-    void wait() {
-        std::unique_lock<std::mutex> lock(mutex_);
-        cv_.wait(lock, [this] { return signaled_; });
-    }
+int CounterSolution::getAtomicValue() const {
+    return atomicValue_.load(std::memory_order_relaxed);
+}
 
-    template <typename Rep, typename Period>
-    bool waitFor(const std::chrono::duration<Rep, Period>& timeout) {
-        std::unique_lock<std::mutex> lock(mutex_);
-        return cv_.wait_for(lock, timeout, [this] { return signaled_; });
-    }
+void CounterSolution::reset() {
+    std::lock_guard<std::mutex> lock(mutex_);
+    value_ = 0;
+    atomicValue_.store(0, std::memory_order_relaxed);
+}
 
-    void signal() {
-        {
-            std::lock_guard<std::mutex> lock(mutex_);
-            signaled_ = true;
-        }
-        cv_.notify_one();
-    }
+// 题目2: 事件
+void EventSolution::wait() {
+    std::unique_lock<std::mutex> lock(mutex_);
+    cv_.wait(lock, [this] { return signaled_; });
+}
 
-    void signalAll() {
-        {
-            std::lock_guard<std::mutex> lock(mutex_);
-            signaled_ = true;
-        }
-        cv_.notify_all();
-    }
+template <typename Rep, typename Period>
+bool EventSolution::waitFor(const std::chrono::duration<Rep, Period>& timeout) {
+    std::unique_lock<std::mutex> lock(mutex_);
+    return cv_.wait_for(lock, timeout, [this] { return signaled_; });
+}
 
-    void reset() {
-        std::lock_guard<std::mutex> lock(mutex_);
-        signaled_ = false;
-    }
-
-    bool isSignaled() const {
-        std::lock_guard<std::mutex> lock(mutex_);
-        return signaled_;
-    }
-
-private:
-    bool signaled_ = false;
-    mutable std::mutex mutex_;
-    std::condition_variable cv_;
-};
-
-/**
- * 题目3：自旋锁
- *
- * 适用场景：锁持有时间很短，不想进入内核
- */
-class SpinLock {
-public:
-    void lock() {
-        while (flag_.test_and_set(std::memory_order_acquire)) {
-            // 自旋等待
-            // 可添加 yield 或 pause 指令优化
-        }
-    }
-
-    void unlock() {
-        flag_.clear(std::memory_order_release);
-    }
-
-    bool try_lock() {
-        return !flag_.test_and_set(std::memory_order_acquire);
-    }
-
-private:
-    std::atomic_flag flag_ = ATOMIC_FLAG_INIT;
-};
-
-// 带退避的自旋锁（更高效）
-class SpinLockWithBackoff {
-public:
-    void lock() {
-        int backoff = 1;
-        while (flag_.test_and_set(std::memory_order_acquire)) {
-            for (int i = 0; i < backoff; ++i) {
-                // CPU pause 指令（减少功耗和争用）
-                #if defined(__x86_64__) || defined(_M_X64)
-                __builtin_ia32_pause();
-                #endif
-            }
-            backoff = std::min(backoff * 2, 1024);
-        }
-    }
-
-    void unlock() {
-        flag_.clear(std::memory_order_release);
-    }
-
-private:
-    std::atomic_flag flag_ = ATOMIC_FLAG_INIT;
-};
-
-/**
- * 题目4：计数信号量
- */
-class Semaphore {
-public:
-    explicit Semaphore(int count = 0) : count_(count) {}
-
-    void acquire() {
-        std::unique_lock<std::mutex> lock(mutex_);
-        cv_.wait(lock, [this] { return count_ > 0; });
-        --count_;
-    }
-
-    void release() {
-        {
-            std::lock_guard<std::mutex> lock(mutex_);
-            ++count_;
-        }
-        cv_.notify_one();
-    }
-
-    bool try_acquire() {
-        std::lock_guard<std::mutex> lock(mutex_);
-        if (count_ > 0) {
-            --count_;
-            return true;
-        }
-        return false;
-    }
-
-    template <typename Rep, typename Period>
-    bool try_acquire_for(const std::chrono::duration<Rep, Period>& timeout) {
-        std::unique_lock<std::mutex> lock(mutex_);
-        if (cv_.wait_for(lock, timeout, [this] { return count_ > 0; })) {
-            --count_;
-            return true;
-        }
-        return false;
-    }
-
-private:
-    int count_;
-    std::mutex mutex_;
-    std::condition_variable cv_;
-};
-
-// 二元信号量（等价于 mutex）
-class BinarySemaphore {
-public:
-    BinarySemaphore(bool initial = true) : available_(initial) {}
-
-    void acquire() {
-        std::unique_lock<std::mutex> lock(mutex_);
-        cv_.wait(lock, [this] { return available_; });
-        available_ = false;
-    }
-
-    void release() {
-        {
-            std::lock_guard<std::mutex> lock(mutex_);
-            available_ = true;
-        }
-        cv_.notify_one();
-    }
-
-private:
-    bool available_;
-    std::mutex mutex_;
-    std::condition_variable cv_;
-};
-
-/**
- * 题目5：限时锁
- */
-class TimedLock {
-public:
-    template <typename Rep, typename Period>
-    bool try_lock_for(const std::chrono::duration<Rep, Period>& timeout) {
-        return mutex_.try_lock_for(timeout);
-    }
-
-    void lock() {
-        mutex_.lock();
-    }
-
-    void unlock() {
-        mutex_.unlock();
-    }
-
-    bool try_lock() {
-        return mutex_.try_lock();
-    }
-
-private:
-    std::timed_mutex mutex_;
-};
-
-/**
- * 扩展：RAII 锁守卫
- */
-template <typename Lockable>
-class LockGuard {
-public:
-    explicit LockGuard(Lockable& lock) : lock_(lock) {
-        lock_.lock();
-    }
-
-    ~LockGuard() {
-        lock_.unlock();
-    }
-
-    LockGuard(const LockGuard&) = delete;
-    LockGuard& operator=(const LockGuard&) = delete;
-
-private:
-    Lockable& lock_;
-};
-
-int main() {
-    std::cout << "=== 测试线程安全计数器 ===\n";
+void EventSolution::signal() {
     {
-        Counter counter;
+        std::lock_guard<std::mutex> lock(mutex_);
+        signaled_ = true;
+    }
+    cv_.notify_one();
+}
+
+void EventSolution::signalAll() {
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        signaled_ = true;
+    }
+    cv_.notify_all();
+}
+
+void EventSolution::reset() {
+    std::lock_guard<std::mutex> lock(mutex_);
+    signaled_ = false;
+}
+
+bool EventSolution::isSignaled() const {
+    std::lock_guard<std::mutex> lock(mutex_);
+    return signaled_;
+}
+
+// 题目3: 自旋锁
+void SpinLockSolution::lock() {
+    while (flag_.test_and_set(std::memory_order_acquire)) {
+        // 自旋等待
+    }
+}
+
+void SpinLockSolution::unlock() {
+    flag_.clear(std::memory_order_release);
+}
+
+bool SpinLockSolution::try_lock() {
+    return !flag_.test_and_set(std::memory_order_acquire);
+}
+
+// 题目4: 计数信号量
+SemaphoreSolution::SemaphoreSolution(int count) : count_(count) {}
+
+void SemaphoreSolution::acquire() {
+    std::unique_lock<std::mutex> lock(mutex_);
+    cv_.wait(lock, [this] { return count_ > 0; });
+    --count_;
+}
+
+void SemaphoreSolution::release() {
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        ++count_;
+    }
+    cv_.notify_one();
+}
+
+bool SemaphoreSolution::try_acquire() {
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (count_ > 0) {
+        --count_;
+        return true;
+    }
+    return false;
+}
+
+template <typename Rep, typename Period>
+bool SemaphoreSolution::try_acquire_for(const std::chrono::duration<Rep, Period>& timeout) {
+    std::unique_lock<std::mutex> lock(mutex_);
+    if (cv_.wait_for(lock, timeout, [this] { return count_ > 0; })) {
+        --count_;
+        return true;
+    }
+    return false;
+}
+
+int SemaphoreSolution::getCount() const {
+    std::lock_guard<std::mutex> lock(mutex_);
+    return count_;
+}
+
+// 二元信号量
+BinarySemaphoreSolution::BinarySemaphoreSolution(bool initial) : available_(initial) {}
+
+void BinarySemaphoreSolution::acquire() {
+    std::unique_lock<std::mutex> lock(mutex_);
+    cv_.wait(lock, [this] { return available_; });
+    available_ = false;
+}
+
+void BinarySemaphoreSolution::release() {
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        available_ = true;
+    }
+    cv_.notify_one();
+}
+
+bool BinarySemaphoreSolution::isAvailable() const {
+    std::lock_guard<std::mutex> lock(mutex_);
+    return available_;
+}
+
+// 题目5: 限时锁
+template <typename Rep, typename Period>
+bool TimedLockSolution::try_lock_for(const std::chrono::duration<Rep, Period>& timeout) {
+    return mutex_.try_lock_for(timeout);
+}
+
+void TimedLockSolution::lock() {
+    mutex_.lock();
+}
+
+void TimedLockSolution::unlock() {
+    mutex_.unlock();
+}
+
+bool TimedLockSolution::try_lock() {
+    return mutex_.try_lock();
+}
+
+// RAII 锁守卫
+template <typename Lockable>
+LockGuard<Lockable>::LockGuard(Lockable& lock) : lock_(lock) {
+    lock_.lock();
+}
+
+template <typename Lockable>
+LockGuard<Lockable>::~LockGuard() {
+    lock_.unlock();
+}
+
+// ==================== 测试函数 ====================
+
+void runTests() {
+    std::cout << "=== Basic Sync Tests ===" << std::endl;
+
+    // 测试线程安全计数器
+    {
+        CounterSolution counter;
         std::vector<std::thread> threads;
 
         for (int i = 0; i < 10; ++i) {
@@ -277,98 +204,110 @@ int main() {
         }
 
         for (auto& t : threads) t.join();
-        std::cout << "Counter value: " << counter.getValue() << " (expected 10000)\n";
+        assert(counter.getValue() == 10000);
     }
+    std::cout << "  Counter: PASSED" << std::endl;
 
-    std::cout << "\n=== 测试事件 ===\n";
+    // 测试事件
     {
-        Event event;
+        EventSolution event;
+        bool received = false;
 
-        std::thread waiter([&event] {
-            std::cout << "Waiter: waiting for event...\n";
+        std::thread waiter([&event, &received] {
             event.wait();
-            std::cout << "Waiter: event received!\n";
+            received = true;
         });
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        std::cout << "Main: signaling event\n";
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        assert(!received);
+
         event.signal();
-
         waiter.join();
-    }
+        assert(received);
+        assert(event.isSignaled());
 
-    std::cout << "\n=== 测试自旋锁 ===\n";
+        event.reset();
+        assert(!event.isSignaled());
+    }
+    std::cout << "  Event: PASSED" << std::endl;
+
+    // 测试自旋锁
     {
-        SpinLock spinlock;
+        SpinLockSolution spinlock;
         int sharedData = 0;
         std::vector<std::thread> threads;
 
         for (int i = 0; i < 10; ++i) {
             threads.emplace_back([&spinlock, &sharedData] {
                 for (int j = 0; j < 1000; ++j) {
-                    LockGuard<SpinLock> guard(spinlock);
+                    LockGuard<SpinLockSolution> guard(spinlock);
                     ++sharedData;
                 }
             });
         }
 
         for (auto& t : threads) t.join();
-        std::cout << "SpinLock result: " << sharedData << " (expected 10000)\n";
+        assert(sharedData == 10000);
     }
+    std::cout << "  SpinLock: PASSED" << std::endl;
 
-    std::cout << "\n=== 测试信号量 ===\n";
+    // 测试信号量
     {
-        Semaphore sem(3);  // 最多 3 个并发
-        std::atomic<int> concurrent{0};
+        SemaphoreSolution sem(3);
         std::atomic<int> maxConcurrent{0};
-
+        std::atomic<int> concurrent{0};
         std::vector<std::thread> threads;
-        for (int i = 0; i < 10; ++i) {
-            threads.emplace_back([&sem, &concurrent, &maxConcurrent, i] {
+
+        for (int i = 0; i < 6; ++i) {
+            threads.emplace_back([&sem, &concurrent, &maxConcurrent] {
                 sem.acquire();
                 int c = ++concurrent;
                 int expected = maxConcurrent.load();
                 while (c > expected && !maxConcurrent.compare_exchange_weak(expected, c));
-
-                std::cout << "Thread " << i << " acquired (concurrent: " << c << ")\n";
-                std::this_thread::sleep_for(std::chrono::milliseconds(50));
-
+                std::this_thread::sleep_for(std::chrono::milliseconds(10));
                 --concurrent;
                 sem.release();
             });
         }
 
         for (auto& t : threads) t.join();
-        std::cout << "Max concurrent: " << maxConcurrent << " (expected <= 3)\n";
+        assert(maxConcurrent <= 3);
     }
+    std::cout << "  Semaphore: PASSED" << std::endl;
 
-    std::cout << "\n=== 测试限时锁 ===\n";
+    // 测试二元信号量
     {
-        TimedLock lock;
+        BinarySemaphoreSolution bsem(true);
+        assert(bsem.isAvailable());
 
-        std::thread holder([&lock] {
-            lock.lock();
-            std::cout << "Holder: acquired lock\n";
-            std::this_thread::sleep_for(std::chrono::milliseconds(200));
-            lock.unlock();
-            std::cout << "Holder: released lock\n";
-        });
+        bsem.acquire();
+        assert(!bsem.isAvailable());
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(50));
-
-        std::thread tryLocker([&lock] {
-            std::cout << "TryLocker: trying to acquire...\n";
-            if (lock.try_lock_for(std::chrono::milliseconds(100))) {
-                std::cout << "TryLocker: acquired!\n";
-                lock.unlock();
-            } else {
-                std::cout << "TryLocker: timeout!\n";
-            }
-        });
-
-        holder.join();
-        tryLocker.join();
+        bsem.release();
+        assert(bsem.isAvailable());
     }
+    std::cout << "  BinarySemaphore: PASSED" << std::endl;
 
-    return 0;
+    // 测试限时锁
+    {
+        TimedLockSolution lock;
+        lock.lock();
+
+        std::atomic<bool> acquired{false};
+        std::thread tryLocker([&lock, &acquired] {
+            acquired = lock.try_lock_for(std::chrono::milliseconds(10));
+        });
+
+        tryLocker.join();
+        assert(!acquired);
+
+        lock.unlock();
+
+        bool success = lock.try_lock_for(std::chrono::milliseconds(100));
+        assert(success);
+        lock.unlock();
+    }
+    std::cout << "  TimedLock: PASSED" << std::endl;
 }
+
+} // namespace BasicSync

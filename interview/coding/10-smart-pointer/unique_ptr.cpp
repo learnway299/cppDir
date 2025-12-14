@@ -1,132 +1,231 @@
 /**
  * @file unique_ptr.cpp
- * @brief unique_ptr 实现 - 面试题
- *
- * 实现一个简化版的 unique_ptr，支持：
- * 1. 独占所有权语义
- * 2. 移动语义
- * 3. 自定义删除器
- * 4. 数组特化
+ * @brief unique_ptr 实现 - 面试者实现文件
  */
 
+#include "unique_ptr.h"
 #include <iostream>
-#include <utility>
 
-/**
- * 题目1：实现基础 UniquePtr
- *
- * 要求：
- * 1. 禁止拷贝构造和拷贝赋值
- * 2. 支持移动构造和移动赋值
- * 3. 析构时自动释放资源
- * 4. 支持 get()、release()、reset() 操作
- * 5. 支持 operator* 和 operator->
- */
+namespace SmartPointer {
+
+// ==================== TestClass 实现 ====================
+
+int TestClass::instanceCount = 0;
+
+TestClass::TestClass(int v) : value(v) {
+    ++instanceCount;
+}
+
+TestClass::~TestClass() {
+    --instanceCount;
+}
+
+// ==================== UniquePtr 实现 ====================
+
 template <typename T>
-class UniquePtr {
-public:
-    // TODO: 实现构造函数
-    explicit UniquePtr(T* ptr = nullptr) {
-    }
+UniquePtr<T>::UniquePtr(T* ptr) noexcept : ptr_(ptr) {
+    // TODO: 已实现基本构造
+}
 
-    // TODO: 实现析构函数
-    ~UniquePtr() {
-    }
+template <typename T>
+UniquePtr<T>::~UniquePtr() {
+    // TODO: 实现析构函数，释放资源
+}
 
-    // TODO: 禁止拷贝
-    UniquePtr(const UniquePtr&) = delete;
-    UniquePtr& operator=(const UniquePtr&) = delete;
-
+template <typename T>
+UniquePtr<T>::UniquePtr(UniquePtr&& other) noexcept : ptr_(nullptr) {
     // TODO: 实现移动构造
-    UniquePtr(UniquePtr&& other) noexcept {
-    }
+}
 
-    // TODO: 实现移动赋值
-    UniquePtr& operator=(UniquePtr&& other) noexcept {
-        return *this;
-    }
-
-    // TODO: 实现 get()
-    T* get() const noexcept {
-        return nullptr;
-    }
-
-    // TODO: 实现 release()
-    T* release() noexcept {
-        return nullptr;
-    }
-
-    // TODO: 实现 reset()
-    void reset(T* ptr = nullptr) noexcept {
-    }
-
-    // TODO: 实现 operator*
-    T& operator*() const {
-        return *get();
-    }
-
-    // TODO: 实现 operator->
-    T* operator->() const noexcept {
-        return get();
-    }
-
-    // TODO: 实现 operator bool
-    explicit operator bool() const noexcept {
-        return false;
-    }
-
-private:
-    T* ptr_;
-};
-
-/**
- * 题目2：实现带自定义删除器的 UniquePtr
- *
- * 要求：
- * 1. 支持自定义删除器类型作为模板参数
- * 2. 删除器可以是函数指针、lambda、仿函数
- */
-template <typename T, typename Deleter>
-class UniquePtrWithDeleter {
-public:
-    // TODO: 实现
-};
-
-/**
- * 题目3：实现数组特化版本
- *
- * 要求：
- * 1. 支持 operator[]
- * 2. 使用 delete[] 释放
- */
 template <typename T>
-class UniquePtrArray {
-public:
-    // TODO: 实现数组版本
-    explicit UniquePtrArray(T* ptr = nullptr) {
-    }
+UniquePtr<T>& UniquePtr<T>::operator=(UniquePtr&& other) noexcept {
+    // TODO: 实现移动赋值
+    return *this;
+}
 
-    ~UniquePtrArray() {
-    }
+template <typename T>
+UniquePtr<T>& UniquePtr<T>::operator=(std::nullptr_t) noexcept {
+    // TODO: 实现 nullptr 赋值
+    return *this;
+}
 
-    T& operator[](size_t index) const {
-        return ptr_[index];
-    }
+template <typename T>
+T* UniquePtr<T>::get() const noexcept {
+    // TODO: 返回原始指针
+    return nullptr;
+}
 
-private:
-    T* ptr_;
-};
+template <typename T>
+T* UniquePtr<T>::release() noexcept {
+    // TODO: 释放所有权并返回指针
+    return nullptr;
+}
 
-/**
- * 题目4：实现 make_unique
- */
+template <typename T>
+void UniquePtr<T>::reset(T* ptr) noexcept {
+    // TODO: 重置指针
+}
+
+template <typename T>
+void UniquePtr<T>::swap(UniquePtr& other) noexcept {
+    // TODO: 交换指针
+}
+
+template <typename T>
+T& UniquePtr<T>::operator*() const {
+    return *ptr_;
+}
+
+template <typename T>
+T* UniquePtr<T>::operator->() const noexcept {
+    return ptr_;
+}
+
+template <typename T>
+UniquePtr<T>::operator bool() const noexcept {
+    // TODO: 返回是否持有有效指针
+    return false;
+}
+
+// ==================== UniquePtrWithDeleter 实现 ====================
+
+template <typename T, typename Deleter>
+UniquePtrWithDeleter<T, Deleter>::UniquePtrWithDeleter(T* ptr, Deleter d)
+    : ptr_(ptr), deleter_(std::move(d)) {
+    // TODO: 基本实现
+}
+
+template <typename T, typename Deleter>
+UniquePtrWithDeleter<T, Deleter>::~UniquePtrWithDeleter() {
+    // TODO: 使用删除器释放资源
+}
+
+template <typename T, typename Deleter>
+UniquePtrWithDeleter<T, Deleter>::UniquePtrWithDeleter(UniquePtrWithDeleter&& other) noexcept
+    : ptr_(nullptr), deleter_(std::move(other.deleter_)) {
+    // TODO: 实现移动构造
+}
+
+template <typename T, typename Deleter>
+UniquePtrWithDeleter<T, Deleter>& UniquePtrWithDeleter<T, Deleter>::operator=(UniquePtrWithDeleter&& other) noexcept {
+    // TODO: 实现移动赋值
+    return *this;
+}
+
+template <typename T, typename Deleter>
+T* UniquePtrWithDeleter<T, Deleter>::get() const noexcept {
+    return ptr_;
+}
+
+template <typename T, typename Deleter>
+T* UniquePtrWithDeleter<T, Deleter>::release() noexcept {
+    // TODO: 实现
+    return nullptr;
+}
+
+template <typename T, typename Deleter>
+void UniquePtrWithDeleter<T, Deleter>::reset(T* ptr) noexcept {
+    // TODO: 实现
+}
+
+template <typename T, typename Deleter>
+Deleter& UniquePtrWithDeleter<T, Deleter>::get_deleter() noexcept {
+    return deleter_;
+}
+
+template <typename T, typename Deleter>
+const Deleter& UniquePtrWithDeleter<T, Deleter>::get_deleter() const noexcept {
+    return deleter_;
+}
+
+template <typename T, typename Deleter>
+T& UniquePtrWithDeleter<T, Deleter>::operator*() const {
+    return *ptr_;
+}
+
+template <typename T, typename Deleter>
+T* UniquePtrWithDeleter<T, Deleter>::operator->() const noexcept {
+    return ptr_;
+}
+
+template <typename T, typename Deleter>
+UniquePtrWithDeleter<T, Deleter>::operator bool() const noexcept {
+    return ptr_ != nullptr;
+}
+
+// ==================== UniquePtrArray 实现 ====================
+
+template <typename T>
+UniquePtrArray<T>::UniquePtrArray(T* ptr) noexcept : ptr_(ptr) {
+}
+
+template <typename T>
+UniquePtrArray<T>::~UniquePtrArray() {
+    // TODO: 使用 delete[] 释放
+}
+
+template <typename T>
+UniquePtrArray<T>::UniquePtrArray(UniquePtrArray&& other) noexcept : ptr_(nullptr) {
+    // TODO: 实现移动构造
+}
+
+template <typename T>
+UniquePtrArray<T>& UniquePtrArray<T>::operator=(UniquePtrArray&& other) noexcept {
+    // TODO: 实现移动赋值
+    return *this;
+}
+
+template <typename T>
+T* UniquePtrArray<T>::get() const noexcept {
+    return ptr_;
+}
+
+template <typename T>
+T* UniquePtrArray<T>::release() noexcept {
+    // TODO: 实现
+    return nullptr;
+}
+
+template <typename T>
+void UniquePtrArray<T>::reset(T* ptr) noexcept {
+    // TODO: 实现
+}
+
+template <typename T>
+T& UniquePtrArray<T>::operator[](size_t index) const {
+    return ptr_[index];
+}
+
+template <typename T>
+UniquePtrArray<T>::operator bool() const noexcept {
+    return ptr_ != nullptr;
+}
+
+// ==================== make_unique 实现 ====================
+
 template <typename T, typename... Args>
 UniquePtr<T> makeUnique(Args&&... args) {
     // TODO: 实现 make_unique
     return UniquePtr<T>(nullptr);
 }
 
-int main() {
-    // 测试代码
-    return 0;
+template <typename T>
+UniquePtrArray<T> makeUniqueArray(size_t size) {
+    // TODO: 实现数组版 make_unique
+    return UniquePtrArray<T>(nullptr);
 }
+
+// 显式实例化常用类型
+template class UniquePtr<TestClass>;
+template class UniquePtr<int>;
+template class UniquePtrArray<int>;
+
+// ==================== 测试函数 ====================
+
+void testUniquePtr() {
+    std::cout << "=== Unique Ptr Tests (User Implementation) ===\n";
+    // TODO: 添加面试者实现的测试
+    std::cout << "  (No tests yet - implement your solutions first)\n";
+}
+
+} // namespace SmartPointer

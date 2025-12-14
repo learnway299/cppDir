@@ -1,19 +1,20 @@
 /**
  * @file observer_solution.cpp
- * @brief 观察者模式实现 - 解答
+ * @brief 观察者模式实现 - 参考答案
  */
 
+#include "observer.h"
 #include <iostream>
-#include <vector>
-#include <memory>
-#include <string>
-#include <functional>
+#include <cassert>
 #include <algorithm>
-#include <unordered_map>
+#include <typeinfo>
 
-/**
- * 题目1：基础观察者模式
- */
+namespace ObserverImpl {
+
+namespace Solution {
+
+// ==================== 基础观察者模式 ====================
+
 class Observer {
 public:
     virtual ~Observer() = default;
@@ -53,6 +54,7 @@ public:
     }
 
     const std::string& getState() const { return state_; }
+    size_t observerCount() const { return observers_.size(); }
 
 private:
     std::vector<Observer*> observers_;
@@ -64,16 +66,19 @@ public:
     explicit ConcreteObserver(const std::string& name) : name_(name) {}
 
     void update(const std::string& message) override {
-        std::cout << "[" << name_ << "] Received: " << message << "\n";
+        lastMessage_ = message;
     }
+
+    const std::string& getLastMessage() const { return lastMessage_; }
+    const std::string& getName() const { return name_; }
 
 private:
     std::string name_;
+    std::string lastMessage_;
 };
 
-/**
- * 题目2：类型安全的观察者（使用模板）
- */
+// ==================== 类型安全的观察者 ====================
+
 template <typename EventType>
 class TypedObserver {
 public:
@@ -101,11 +106,12 @@ public:
         }
     }
 
+    size_t observerCount() const { return observers_.size(); }
+
 private:
     std::vector<TypedObserver<EventType>*> observers_;
 };
 
-// 事件类型示例
 struct PriceChangeEvent {
     std::string symbol;
     double oldPrice;
@@ -117,20 +123,18 @@ public:
     explicit PriceObserver(const std::string& name) : name_(name) {}
 
     void onEvent(const PriceChangeEvent& event) override {
-        std::cout << "[" << name_ << "] " << event.symbol
-                  << " price changed: " << event.oldPrice
-                  << " -> " << event.newPrice << "\n";
+        lastEvent_ = event;
     }
+
+    const PriceChangeEvent& getLastEvent() const { return lastEvent_; }
 
 private:
     std::string name_;
+    PriceChangeEvent lastEvent_;
 };
 
-/**
- * 题目3：基于函数的观察者（现代 C++ 风格）
- *
- * 类似于 Qt 的 Signal/Slot 或 Boost.Signals2
- */
+// ==================== Signal/Slot 模式 ====================
+
 template <typename... Args>
 class Signal {
 public:
@@ -177,11 +181,9 @@ public:
         }
     }
 
-    // 禁止拷贝
     ScopedConnection(const ScopedConnection&) = delete;
     ScopedConnection& operator=(const ScopedConnection&) = delete;
 
-    // 允许移动
     ScopedConnection(ScopedConnection&& other) noexcept
         : signal_(other.signal_), id_(other.id_) {
         other.signal_ = nullptr;
@@ -194,11 +196,8 @@ private:
     typename Signal<Args...>::SlotId id_;
 };
 
-/**
- * 题目4：弱引用观察者
- *
- * 避免循环引用，自动清理已销毁的观察者
- */
+// ==================== 弱引用观察者 ====================
+
 class WeakObserver : public std::enable_shared_from_this<WeakObserver> {
 public:
     virtual ~WeakObserver() = default;
@@ -212,14 +211,12 @@ public:
     }
 
     void notify(const std::string& message) {
-        // 清理已销毁的观察者并通知存活的
         auto it = observers_.begin();
         while (it != observers_.end()) {
             if (auto observer = it->lock()) {
                 observer->update(message);
                 ++it;
             } else {
-                // 观察者已销毁，移除
                 it = observers_.erase(it);
             }
         }
@@ -239,25 +236,21 @@ private:
 
 class ConcreteWeakObserver : public WeakObserver {
 public:
-    explicit ConcreteWeakObserver(const std::string& name) : name_(name) {
-        std::cout << name_ << " created\n";
-    }
-
-    ~ConcreteWeakObserver() {
-        std::cout << name_ << " destroyed\n";
-    }
+    explicit ConcreteWeakObserver(const std::string& name) : name_(name) {}
 
     void update(const std::string& message) override {
-        std::cout << "[" << name_ << "] Received: " << message << "\n";
+        lastMessage_ = message;
     }
+
+    const std::string& getLastMessage() const { return lastMessage_; }
 
 private:
     std::string name_;
+    std::string lastMessage_;
 };
 
-/**
- * 扩展：事件总线（全局事件系统）
- */
+// ==================== 事件总线 ====================
+
 class EventBus {
 public:
     static EventBus& getInstance() {
@@ -283,111 +276,161 @@ public:
         }
     }
 
+    void clear() {
+        handlers_.clear();
+    }
+
 private:
     EventBus() = default;
     std::unordered_map<std::string, std::vector<std::function<void(const void*)>>> handlers_;
 };
 
-int main() {
-    std::cout << "=== 基础观察者模式 ===\n";
+} // namespace Solution
+
+// ==================== 测试函数 ====================
+
+void runTests() {
+    std::cout << "=== Observer Tests ===" << std::endl;
+
+    // 测试基础观察者模式
     {
-        ConcreteSubject subject;
-        ConcreteObserver obs1("Observer1");
-        ConcreteObserver obs2("Observer2");
+        Solution::ConcreteSubject subject;
+        Solution::ConcreteObserver obs1("Observer1");
+        Solution::ConcreteObserver obs2("Observer2");
 
         subject.attach(&obs1);
         subject.attach(&obs2);
+        assert(subject.observerCount() == 2);
 
         subject.setState("State A");
+        assert(obs1.getLastMessage() == "State A");
+        assert(obs2.getLastMessage() == "State A");
 
         subject.detach(&obs1);
-        subject.setState("State B");
-    }
+        assert(subject.observerCount() == 1);
 
-    std::cout << "\n=== 类型安全观察者 ===\n";
+        subject.setState("State B");
+        assert(obs1.getLastMessage() == "State A");  // obs1 未更新
+        assert(obs2.getLastMessage() == "State B");
+    }
+    std::cout << "  Basic Observer: PASSED" << std::endl;
+
+    // 测试类型安全观察者
     {
-        TypedSubject<PriceChangeEvent> stock;
-        PriceObserver trader1("Trader1");
-        PriceObserver trader2("Trader2");
+        Solution::TypedSubject<Solution::PriceChangeEvent> stock;
+        Solution::PriceObserver trader1("Trader1");
+        Solution::PriceObserver trader2("Trader2");
 
         stock.attach(&trader1);
         stock.attach(&trader2);
+        assert(stock.observerCount() == 2);
 
         stock.notify({"AAPL", 150.0, 155.0});
+        assert(trader1.getLastEvent().symbol == "AAPL");
+        assert(trader1.getLastEvent().newPrice == 155.0);
+
+        stock.detach(&trader1);
         stock.notify({"GOOGL", 2800.0, 2750.0});
+        assert(trader1.getLastEvent().symbol == "AAPL");  // 未更新
+        assert(trader2.getLastEvent().symbol == "GOOGL");
     }
+    std::cout << "  TypedObserver: PASSED" << std::endl;
 
-    std::cout << "\n=== Signal/Slot 模式 ===\n";
+    // 测试 Signal/Slot 模式
     {
-        Signal<int, std::string> signal;
+        Solution::Signal<int, std::string> signal;
+        int receivedCode = 0;
+        std::string receivedMsg;
 
-        auto id1 = signal.connect([](int code, const std::string& msg) {
-            std::cout << "Slot1: code=" << code << ", msg=" << msg << "\n";
+        auto id1 = signal.connect([&](int code, const std::string& msg) {
+            receivedCode = code;
+            receivedMsg = msg;
         });
-
-        auto id2 = signal.connect([](int code, const std::string& msg) {
-            std::cout << "Slot2: code=" << code << ", msg=" << msg << "\n";
-        });
+        assert(signal.slotCount() == 1);
 
         signal.emit(200, "OK");
+        assert(receivedCode == 200);
+        assert(receivedMsg == "OK");
 
         signal.disconnect(id1);
-        std::cout << "After disconnect:\n";
-        signal.emit(404, "Not Found");
-    }
+        assert(signal.slotCount() == 0);
 
-    std::cout << "\n=== RAII 连接管理 ===\n";
+        signal.emit(404, "Not Found");
+        assert(receivedCode == 200);  // 未更新
+    }
+    std::cout << "  Signal/Slot: PASSED" << std::endl;
+
+    // 测试 RAII 连接管理
     {
-        Signal<std::string> signal;
+        Solution::Signal<std::string> signal;
+        std::string received;
 
         {
-            ScopedConnection conn(signal, signal.connect([](const std::string& s) {
-                std::cout << "Scoped: " << s << "\n";
+            Solution::ScopedConnection conn(signal, signal.connect([&](const std::string& s) {
+                received = s;
             }));
 
             signal.emit("Hello");
-            std::cout << "Slots: " << signal.slotCount() << "\n";
+            assert(received == "Hello");
+            assert(signal.slotCount() == 1);
         }
 
-        std::cout << "After scope, slots: " << signal.slotCount() << "\n";
+        assert(signal.slotCount() == 0);
         signal.emit("World");
+        assert(received == "Hello");  // 未更新
     }
+    std::cout << "  ScopedConnection: PASSED" << std::endl;
 
-    std::cout << "\n=== 弱引用观察者 ===\n";
+    // 测试弱引用观察者
     {
-        WeakSubject subject;
+        Solution::WeakSubject subject;
 
-        auto obs1 = std::make_shared<ConcreteWeakObserver>("WeakObs1");
-        auto obs2 = std::make_shared<ConcreteWeakObserver>("WeakObs2");
+        auto obs1 = std::make_shared<Solution::ConcreteWeakObserver>("WeakObs1");
+        auto obs2 = std::make_shared<Solution::ConcreteWeakObserver>("WeakObs2");
 
         subject.attach(obs1);
         subject.attach(obs2);
+        assert(subject.observerCount() == 2);
 
-        std::cout << "Observer count: " << subject.observerCount() << "\n";
         subject.notify("First notification");
+        assert(obs1->getLastMessage() == "First notification");
+        assert(obs2->getLastMessage() == "First notification");
 
         obs1.reset();  // 销毁 obs1
-        std::cout << "After destroying obs1:\n";
-        std::cout << "Observer count: " << subject.observerCount() << "\n";
-        subject.notify("Second notification");
-    }
+        assert(subject.observerCount() == 1);
 
-    std::cout << "\n=== 事件总线 ===\n";
+        subject.notify("Second notification");
+        assert(obs2->getLastMessage() == "Second notification");
+    }
+    std::cout << "  WeakObserver: PASSED" << std::endl;
+
+    // 测试事件总线
     {
         struct UserLoggedIn { std::string username; };
         struct OrderPlaced { int orderId; double amount; };
 
-        EventBus::getInstance().subscribe<UserLoggedIn>([](const UserLoggedIn& e) {
-            std::cout << "User logged in: " << e.username << "\n";
+        Solution::EventBus::getInstance().clear();
+
+        std::string loggedUser;
+        int orderId = 0;
+
+        Solution::EventBus::getInstance().subscribe<UserLoggedIn>([&](const UserLoggedIn& e) {
+            loggedUser = e.username;
         });
 
-        EventBus::getInstance().subscribe<OrderPlaced>([](const OrderPlaced& e) {
-            std::cout << "Order placed: #" << e.orderId << ", $" << e.amount << "\n";
+        Solution::EventBus::getInstance().subscribe<OrderPlaced>([&](const OrderPlaced& e) {
+            orderId = e.orderId;
         });
 
-        EventBus::getInstance().publish(UserLoggedIn{"Alice"});
-        EventBus::getInstance().publish(OrderPlaced{12345, 99.99});
+        Solution::EventBus::getInstance().publish(UserLoggedIn{"Alice"});
+        assert(loggedUser == "Alice");
+
+        Solution::EventBus::getInstance().publish(OrderPlaced{12345, 99.99});
+        assert(orderId == 12345);
+
+        Solution::EventBus::getInstance().clear();
     }
-
-    return 0;
+    std::cout << "  EventBus: PASSED" << std::endl;
 }
+
+} // namespace ObserverImpl

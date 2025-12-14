@@ -1,13 +1,17 @@
 /**
  * @file variadic_templates_solution.cpp
- * @brief 变参模板 - 解答
+ * @brief 变参模板 - 参考答案
  */
-#include <iostream>
-#include <tuple>
-#include <utility>
-#include <type_traits>
+
+#include "variadic_templates.h"
+#include <cassert>
+
+namespace VariadicTemplatesImpl {
+
+namespace Solution {
 
 // ==================== 题目1: print 函数 ====================
+
 // 方法1: 递归展开
 void print_v1() {
     std::cout << "\n";
@@ -38,6 +42,7 @@ void print_v3(Args... args) {
 }
 
 // ==================== 题目2: sum 函数 ====================
+
 // 方法1: 递归
 template <typename T>
 T sum_v1(T value) {
@@ -62,36 +67,35 @@ auto sum_v3(Args... args) {
 }
 
 // ==================== 题目3: count_args ====================
+
 template <typename... Args>
 constexpr std::size_t count_args(Args...) {
     return sizeof...(Args);
 }
 
-// 或者不需要参数
 template <typename... Args>
 constexpr std::size_t count_types() {
     return sizeof...(Args);
 }
 
 // ==================== 题目4: make_tuple ====================
+
 template <typename... Args>
 auto my_make_tuple(Args&&... args) {
     return std::tuple<std::decay_t<Args>...>(std::forward<Args>(args)...);
 }
 
 // ==================== 题目5: apply ====================
-// 实现辅助：索引序列展开
-namespace detail {
-    template <typename F, typename Tuple, std::size_t... I>
-    auto apply_impl(F&& f, Tuple&& t, std::index_sequence<I...>) {
-        return std::forward<F>(f)(std::get<I>(std::forward<Tuple>(t))...);
-    }
+
+template <typename F, typename Tuple, std::size_t... I>
+auto apply_impl(F&& f, Tuple&& t, std::index_sequence<I...>) {
+    return std::forward<F>(f)(std::get<I>(std::forward<Tuple>(t))...);
 }
 
 template <typename F, typename Tuple>
 auto my_apply(F&& f, Tuple&& t) {
     constexpr auto size = std::tuple_size_v<std::decay_t<Tuple>>;
-    return detail::apply_impl(
+    return apply_impl(
         std::forward<F>(f),
         std::forward<Tuple>(t),
         std::make_index_sequence<size>{}
@@ -99,6 +103,7 @@ auto my_apply(F&& f, Tuple&& t) {
 }
 
 // ==================== 题目6: all_same ====================
+
 template <typename...>
 struct all_same : std::true_type {};
 
@@ -110,9 +115,10 @@ struct all_same<T, U, Rest...>
     : std::conditional_t<std::is_same_v<T, U>, all_same<T, Rest...>, std::false_type> {};
 
 template <typename... Types>
-inline constexpr bool all_same_v = all_same<Types...>::value;
+constexpr bool all_same_v = all_same<Types...>::value;
 
 // ==================== 题目7: contains_type ====================
+
 template <typename T, typename... List>
 struct contains_type : std::false_type {};
 
@@ -121,9 +127,10 @@ struct contains_type<T, First, Rest...>
     : std::conditional_t<std::is_same_v<T, First>, std::true_type, contains_type<T, Rest...>> {};
 
 template <typename T, typename... List>
-inline constexpr bool contains_type_v = contains_type<T, List...>::value;
+constexpr bool contains_type_v = contains_type<T, List...>::value;
 
 // ==================== 题目8: type_at ====================
+
 template <std::size_t I, typename T, typename... Rest>
 struct type_at_impl {
     using type = typename type_at_impl<I - 1, Rest...>::type;
@@ -163,62 +170,18 @@ struct push_back<T, std::tuple<Types...>> {
     using type = std::tuple<Types..., T>;
 };
 
-// reverse: 反转类型列表
-template <typename Tuple>
-struct reverse;
-
-template <>
-struct reverse<std::tuple<>> {
-    using type = std::tuple<>;
-};
-
-template <typename T, typename... Rest>
-struct reverse<std::tuple<T, Rest...>> {
-    using type = typename push_back<T, typename reverse<std::tuple<Rest...>>::type>::type;
-};
-
-// transform: 对每个类型应用元函数
-template <template <typename> class F, typename Tuple>
-struct transform;
-
-template <template <typename> class F, typename... Types>
-struct transform<F, std::tuple<Types...>> {
-    using type = std::tuple<typename F<Types>::type...>;
-};
-
-// filter: 过滤满足条件的类型
-template <template <typename> class Pred, typename Tuple>
-struct filter;
-
-template <template <typename> class Pred>
-struct filter<Pred, std::tuple<>> {
-    using type = std::tuple<>;
-};
-
-template <template <typename> class Pred, typename T, typename... Rest>
-struct filter<Pred, std::tuple<T, Rest...>> {
-    using rest_filtered = typename filter<Pred, std::tuple<Rest...>>::type;
-    using type = std::conditional_t<
-        Pred<T>::value,
-        typename push_front<T, rest_filtered>::type,
-        rest_filtered
-    >;
-};
-
 // ==================== 折叠表达式示例 (C++17) ====================
-// 全部为真
+
 template <typename... Args>
 constexpr bool all_true(Args... args) {
     return (... && args);
 }
 
-// 至少一个为真
 template <typename... Args>
 constexpr bool any_true(Args... args) {
     return (... || args);
 }
 
-// 打印带分隔符
 template <typename... Args>
 void print_with_separator(const char* sep, Args... args) {
     bool first = true;
@@ -226,64 +189,64 @@ void print_with_separator(const char* sep, Args... args) {
     std::cout << "\n";
 }
 
-// ==================== 测试代码 ====================
+// ==================== 测试辅助函数 ====================
+
 int add(int a, int b, int c) {
     return a + b + c;
 }
 
-int main() {
-    std::cout << "=== Variadic Templates Tests ===\n\n";
+} // namespace Solution
 
-    // print
-    std::cout << "print_v1: ";
-    print_v1(1, 2.5, "hello", 'a');
+// ==================== 测试函数 ====================
 
-    std::cout << "print_v2: ";
-    print_v2(1, 2.5, "hello", 'a');
+void runTests() {
+    std::cout << "=== Variadic Templates Tests ===" << std::endl;
 
     // sum
-    std::cout << "\nsum_v2(1, 2, 3, 4, 5) = " << sum_v2(1, 2, 3, 4, 5) << "\n";
-    std::cout << "sum_v2(1.5, 2.5, 3.0) = " << sum_v2(1.5, 2.5, 3.0) << "\n";
+    assert(Solution::sum_v2(1, 2, 3, 4, 5) == 15);
+    assert(Solution::sum_v1(1, 2, 3) == 6);
+    std::cout << "  sum: PASSED" << std::endl;
 
     // count_args
-    std::cout << "\ncount_args(1, 2, 3) = " << count_args(1, 2, 3) << "\n";
+    static_assert(Solution::count_args(1, 2, 3) == 3, "");
+    static_assert(Solution::count_types<int, double, char>() == 3, "");
+    std::cout << "  count_args: PASSED" << std::endl;
 
     // make_tuple
-    auto t = my_make_tuple(1, 2.5, std::string("hello"));
-    std::cout << "\nmy_make_tuple: " << std::get<0>(t) << ", "
-              << std::get<1>(t) << ", " << std::get<2>(t) << "\n";
+    auto t = Solution::my_make_tuple(1, 2.5, std::string("hello"));
+    assert(std::get<0>(t) == 1);
+    assert(std::get<1>(t) == 2.5);
+    assert(std::get<2>(t) == "hello");
+    std::cout << "  make_tuple: PASSED" << std::endl;
 
     // apply
-    auto result = my_apply(add, std::make_tuple(1, 2, 3));
-    std::cout << "my_apply(add, (1,2,3)) = " << result << "\n";
+    auto result = Solution::my_apply(Solution::add, std::make_tuple(1, 2, 3));
+    assert(result == 6);
+    std::cout << "  apply: PASSED" << std::endl;
 
     // all_same
-    std::cout << "\nall_same<int, int, int>: " << all_same_v<int, int, int> << "\n";
-    std::cout << "all_same<int, int, double>: " << all_same_v<int, int, double> << "\n";
+    static_assert(Solution::all_same_v<int, int, int>, "");
+    static_assert(!Solution::all_same_v<int, int, double>, "");
+    std::cout << "  all_same: PASSED" << std::endl;
 
     // contains_type
-    std::cout << "\ncontains_type<int, char, int, double>: "
-              << contains_type_v<int, char, int, double> << "\n";
-    std::cout << "contains_type<float, char, int, double>: "
-              << contains_type_v<float, char, int, double> << "\n";
+    static_assert(Solution::contains_type_v<int, char, int, double>, "");
+    static_assert(!Solution::contains_type_v<float, char, int, double>, "");
+    std::cout << "  contains_type: PASSED" << std::endl;
 
     // type_at
-    using T0 = type_at_t<0, int, double, char>;
-    using T2 = type_at_t<2, int, double, char>;
-    std::cout << "\ntype_at<0, int, double, char> is int: "
-              << std::is_same_v<T0, int> << "\n";
-    std::cout << "type_at<2, int, double, char> is char: "
-              << std::is_same_v<T2, char> << "\n";
+    static_assert(std::is_same_v<Solution::type_at_t<0, int, double, char>, int>, "");
+    static_assert(std::is_same_v<Solution::type_at_t<2, int, double, char>, char>, "");
+    std::cout << "  type_at: PASSED" << std::endl;
 
     // Fold expressions
-    std::cout << "\nall_true(true, true, true): " << all_true(true, true, true) << "\n";
-    std::cout << "any_true(false, true, false): " << any_true(false, true, false) << "\n";
-
-    std::cout << "\nprint_with_separator: ";
-    print_with_separator(", ", 1, 2, 3, 4, 5);
-
-    return 0;
+    static_assert(Solution::all_true(true, true, true), "");
+    static_assert(!Solution::all_true(true, false, true), "");
+    static_assert(Solution::any_true(false, true, false), "");
+    std::cout << "  fold expressions: PASSED" << std::endl;
 }
+
+} // namespace VariadicTemplatesImpl
 
 /**
  * 关键要点：

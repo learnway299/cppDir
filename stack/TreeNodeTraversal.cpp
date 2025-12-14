@@ -15,13 +15,13 @@ void TreeNodeTraversal::solution() {
     root->left->right = new TreeNode(4);
     std::vector<int> preorderResult = preorderTraversal(root);
     std::cout << "preorderTraversal" << std::endl;
-    Util::prntVec(preorderResult);
+    Util::printVector(preorderResult);
     std::vector<int> inorderResult = inorderTraversal(root);
     std::cout << "inorderTraversal" << std::endl;
-    Util::prntVec(inorderResult);
+    Util::printVector(inorderResult);
     std::vector<int> postorderResult = postorderTraversal(root);
     std::cout << "postorderTraversal" << std::endl;
-    Util::prntVec(postorderResult);
+    Util::printVector(postorderResult);
     delete root->left->right;
     delete root->left->left;
     delete root->right;

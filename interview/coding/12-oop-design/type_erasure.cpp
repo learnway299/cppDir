@@ -1,147 +1,219 @@
 /**
  * @file type_erasure.cpp
- * @brief 类型擦除实现 - 面试题
- *
- * 类型擦除：隐藏具体类型，提供统一接口
- * 结合了运行时多态的灵活性和值语义的安全性
+ * @brief 类型擦除实现 - 面试者实现文件
  */
 
-#include <iostream>
-#include <memory>
-#include <string>
-#include <vector>
+#include "type_erasure.h"
 
-/**
- * 题目1：实现简单的类型擦除容器
- *
- * 场景：存储任意可打印对象
- * 要求：
- * 1. 支持任意具有 print() 方法的类型
- * 2. 值语义（支持拷贝）
- */
-class Printable {
-public:
-    // TODO: 实现构造函数（接受任意可打印类型）
-    template <typename T>
-    Printable(T obj) {
-    }
+namespace TypeErasureImpl {
 
-    // TODO: 实现拷贝构造
-    Printable(const Printable& other) {
-    }
+// ==================== Printable 实现 ====================
 
+template <typename T>
+Printable::Printable(T obj) {
+    // TODO: 使用 Model<T> 创建 pImpl_
+}
+
+Printable::Printable(const Printable& other) {
+    // TODO: 克隆 pImpl_
+}
+
+Printable::Printable(Printable&& other) noexcept = default;
+
+Printable& Printable::operator=(const Printable& other) {
     // TODO: 实现拷贝赋值
-    Printable& operator=(const Printable& other) {
-        return *this;
-    }
+    return *this;
+}
 
-    // TODO: 实现打印
-    void print() const {
-    }
+Printable& Printable::operator=(Printable&& other) noexcept = default;
 
-private:
-    // TODO: 定义内部接口和模型
-    struct Concept {
-        virtual ~Concept() = default;
-        virtual void print() const = 0;
-        virtual std::unique_ptr<Concept> clone() const = 0;
-    };
+std::string Printable::print() const {
+    // TODO: 调用 pImpl_->print()
+    return "";
+}
 
-    template <typename T>
-    struct Model : Concept {
-        // TODO: 实现
-    };
+// ==================== Document / Image 实现 ====================
 
-    std::unique_ptr<Concept> pImpl_;
-};
+std::string Document::print() const {
+    // TODO: 返回 "Document: " + content
+    return "";
+}
 
-/**
- * 题目2：实现 std::function 风格的类型擦除
- *
- * 要求：
- * 1. 可以存储任意可调用对象
- * 2. 支持 lambda、函数指针、仿函数
- */
-template <typename Signature>
-class Function;
+std::string Image::print() const {
+    // TODO: 返回 "Image: widthxheight"
+    return "";
+}
+
+// ==================== Function 实现 ====================
 
 template <typename R, typename... Args>
-class Function<R(Args...)> {
-public:
-    Function() = default;
+template <typename F>
+Function<R(Args...)>::Function(F f) {
+    // TODO: 使用 Model<F> 创建 pImpl_
+}
 
-    // TODO: 接受任意可调用对象
-    template <typename F>
-    Function(F f) {
+template <typename R, typename... Args>
+Function<R(Args...)>::Function(const Function& other) {
+    // TODO: 克隆 pImpl_
+}
+
+template <typename R, typename... Args>
+Function<R(Args...)>& Function<R(Args...)>::operator=(const Function& other) {
+    // TODO: 实现拷贝赋值
+    return *this;
+}
+
+template <typename R, typename... Args>
+R Function<R(Args...)>::operator()(Args... args) const {
+    // TODO: 调用 pImpl_->invoke(args...)
+    if (!pImpl_) {
+        throw std::bad_function_call();
     }
+    return R();
+}
 
-    // TODO: 实现调用
-    R operator()(Args... args) const {
-        return R();
-    }
+template <typename R, typename... Args>
+Function<R(Args...)>::operator bool() const {
+    return pImpl_ != nullptr;
+}
 
-    // TODO: 实现 bool 转换
-    explicit operator bool() const {
-        return false;
-    }
+// ==================== Any 实现 ====================
 
-private:
-    // TODO: 定义内部结构
-};
+template <typename T>
+Any::Any(T value) {
+    // TODO: 使用 Model<decay_t<T>> 创建 pImpl_
+}
 
-/**
- * 题目3：实现 std::any 风格的类型擦除
- *
- * 要求：
- * 1. 可以存储任意类型
- * 2. 支持类型安全的取值
- */
-class Any {
-public:
-    Any() = default;
+Any::Any(const Any& other) {
+    // TODO: 克隆 pImpl_
+}
 
-    // TODO: 接受任意类型
-    template <typename T>
-    Any(T value) {
-    }
+Any& Any::operator=(const Any& other) {
+    // TODO: 实现拷贝赋值
+    return *this;
+}
 
-    // TODO: 判断是否有值
-    bool hasValue() const {
-        return false;
-    }
+template <typename T>
+Any& Any::operator=(T value) {
+    // TODO: 创建新的 Model<T>
+    return *this;
+}
 
-    // TODO: 获取类型信息
-    const std::type_info& type() const {
-        return typeid(void);
-    }
+bool Any::hasValue() const {
+    return pImpl_ != nullptr;
+}
 
-    // TODO: 类型安全的取值
-    template <typename T>
-    T& get() {
+const std::type_info& Any::type() const {
+    return pImpl_ ? pImpl_->type() : typeid(void);
+}
+
+template <typename T>
+T* Any::tryGet() {
+    // TODO: 类型检查后返回指针
+    return nullptr;
+}
+
+template <typename T>
+T& Any::get() {
+    T* ptr = tryGet<T>();
+    if (!ptr) {
         throw std::bad_cast();
     }
-
-private:
-    // TODO: 定义内部结构
-};
-
-/**
- * 题目4：实现小对象优化（SBO）的类型擦除
- *
- * 要求：
- * 1. 小对象存储在栈上
- * 2. 大对象存储在堆上
- */
-class AnyWithSBO {
-public:
-    // TODO: 实现带小对象优化的 Any
-
-private:
-    static constexpr size_t BufferSize = 32;
-    alignas(std::max_align_t) char buffer_[BufferSize];
-    // TODO: 其他成员
-};
-
-int main() {
-    return 0;
+    return *ptr;
 }
+
+template <typename T>
+const T& Any::get() const {
+    return const_cast<Any*>(this)->get<T>();
+}
+
+void Any::reset() {
+    pImpl_.reset();
+}
+
+template <typename T>
+T any_cast(Any& a) {
+    return a.get<std::remove_reference_t<T>>();
+}
+
+template <typename T>
+T any_cast(const Any& a) {
+    return a.get<std::remove_reference_t<T>>();
+}
+
+// ==================== AnyWithSBO 实现 ====================
+
+AnyWithSBO::AnyWithSBO() : vtable_(nullptr) {}
+
+template <typename T>
+AnyWithSBO::AnyWithSBO(T value) {
+    // TODO: 根据对象大小决定栈存储还是堆存储
+    // 小对象：placement new 在 buffer_ 中
+    // 大对象：new T 存储指针
+}
+
+AnyWithSBO::~AnyWithSBO() {
+    // TODO: 调用 vtable_->destroy
+}
+
+AnyWithSBO::AnyWithSBO(const AnyWithSBO& other) : vtable_(other.vtable_) {
+    // TODO: 调用 vtable_->copy
+}
+
+AnyWithSBO::AnyWithSBO(AnyWithSBO&& other) noexcept : vtable_(other.vtable_) {
+    // TODO: 调用 vtable_->move
+}
+
+AnyWithSBO& AnyWithSBO::operator=(const AnyWithSBO& other) {
+    // TODO: 实现拷贝赋值（使用 copy-and-swap）
+    return *this;
+}
+
+AnyWithSBO& AnyWithSBO::operator=(AnyWithSBO&& other) noexcept {
+    // TODO: 实现移动赋值
+    return *this;
+}
+
+void AnyWithSBO::swap(AnyWithSBO& other) noexcept {
+    std::swap(vtable_, other.vtable_);
+    std::swap(buffer_, other.buffer_);
+}
+
+bool AnyWithSBO::hasValue() const {
+    return vtable_ != nullptr;
+}
+
+const std::type_info& AnyWithSBO::type() const {
+    return vtable_ ? vtable_->type() : typeid(void);
+}
+
+template <typename T>
+T* AnyWithSBO::tryGet() {
+    // TODO: 根据 isSmall 决定如何获取指针
+    return nullptr;
+}
+
+template <typename T, bool IsSmall>
+const AnyWithSBO::VTable& AnyWithSBO::getVTable() {
+    // TODO: 实现 VTable 静态实例
+    static const VTable vtable = {
+        []() -> const std::type_info& { return typeid(T); },
+        [](char*) {},
+        [](const char*, char*) {},
+        [](char*, char*) {},
+        IsSmall
+    };
+    return vtable;
+}
+
+// 显式模板实例化
+template class Function<int(int, int)>;
+template class Function<void()>;
+template Any::Any(int);
+template Any::Any(std::string);
+template int& Any::get<int>();
+template std::string& Any::get<std::string>();
+template int any_cast<int>(Any&);
+template std::string any_cast<std::string>(Any&);
+
+} // namespace TypeErasureImpl

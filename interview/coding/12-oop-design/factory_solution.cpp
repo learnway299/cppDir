@@ -1,53 +1,48 @@
 /**
  * @file factory_solution.cpp
- * @brief 工厂模式实现 - 解答
+ * @brief 工厂模式实现 - 参考答案
  */
 
+#include "factory.h"
 #include <iostream>
-#include <memory>
-#include <string>
-#include <unordered_map>
-#include <functional>
+#include <cassert>
 #include <stdexcept>
 
-// ============ 产品基类 ============
-class Product {
-public:
-    virtual ~Product() = default;
-    virtual void use() = 0;
-    virtual std::string getName() const = 0;
-};
+namespace FactoryImpl {
+
+namespace Solution {
+
+// ==================== Product 实现 ====================
 
 class ProductA : public Product {
 public:
-    void use() override {
-        std::cout << "Using ProductA\n";
-    }
+    void use() override { used_ = true; }
     std::string getName() const override { return "ProductA"; }
+    bool wasUsed() const { return used_; }
+private:
+    bool used_ = false;
 };
 
 class ProductB : public Product {
 public:
-    void use() override {
-        std::cout << "Using ProductB\n";
-    }
+    void use() override { used_ = true; }
     std::string getName() const override { return "ProductB"; }
+    bool wasUsed() const { return used_; }
+private:
+    bool used_ = false;
 };
 
 class ProductC : public Product {
 public:
-    void use() override {
-        std::cout << "Using ProductC\n";
-    }
+    void use() override { used_ = true; }
     std::string getName() const override { return "ProductC"; }
+    bool wasUsed() const { return used_; }
+private:
+    bool used_ = false;
 };
 
-/**
- * 题目1：简单工厂
- *
- * 优点：创建逻辑集中
- * 缺点：新增产品需要修改工厂类（违反开闭原则）
- */
+// ==================== 简单工厂 ====================
+
 class SimpleFactory {
 public:
     enum class ProductType { A, B, C };
@@ -65,7 +60,6 @@ public:
         }
     }
 
-    // 字符串版本
     static std::unique_ptr<Product> create(const std::string& typeName) {
         if (typeName == "A") return std::make_unique<ProductA>();
         if (typeName == "B") return std::make_unique<ProductB>();
@@ -74,22 +68,18 @@ public:
     }
 };
 
-/**
- * 题目2：工厂方法模式
- *
- * 优点：遵循开闭原则，新增产品只需新增工厂类
- * 缺点：类数量增多
- */
+// ==================== 工厂方法模式 ====================
+
 class Factory {
 public:
     virtual ~Factory() = default;
     virtual std::unique_ptr<Product> createProduct() = 0;
 
-    // 模板方法：使用产品
-    void doWork() {
+    std::string doWork() {
         auto product = createProduct();
-        std::cout << "Working with " << product->getName() << "\n";
+        std::string name = product->getName();
         product->use();
+        return name;
     }
 };
 
@@ -114,56 +104,40 @@ public:
     }
 };
 
-/**
- * 题目3：抽象工厂模式
- *
- * 用于创建相关产品的家族
- */
+// ==================== 抽象工厂模式 ====================
 
-// ---- 抽象产品 ----
 class Button {
 public:
     virtual ~Button() = default;
-    virtual void render() = 0;
+    virtual std::string render() = 0;
 };
 
 class TextBox {
 public:
     virtual ~TextBox() = default;
-    virtual void render() = 0;
+    virtual std::string render() = 0;
 };
 
-// ---- Windows 风格产品 ----
 class WindowsButton : public Button {
 public:
-    void render() override {
-        std::cout << "[Windows Button] Rendering...\n";
-    }
+    std::string render() override { return "Windows Button"; }
 };
 
 class WindowsTextBox : public TextBox {
 public:
-    void render() override {
-        std::cout << "[Windows TextBox] Rendering...\n";
-    }
+    std::string render() override { return "Windows TextBox"; }
 };
 
-// ---- Mac 风格产品 ----
 class MacButton : public Button {
 public:
-    void render() override {
-        std::cout << "[Mac Button] Rendering...\n";
-    }
+    std::string render() override { return "Mac Button"; }
 };
 
 class MacTextBox : public TextBox {
 public:
-    void render() override {
-        std::cout << "[Mac TextBox] Rendering...\n";
-    }
+    std::string render() override { return "Mac TextBox"; }
 };
 
-// ---- 抽象工厂 ----
 class GUIFactory {
 public:
     virtual ~GUIFactory() = default;
@@ -191,19 +165,8 @@ public:
     }
 };
 
-// 客户端代码
-void createUI(GUIFactory& factory) {
-    auto button = factory.createButton();
-    auto textBox = factory.createTextBox();
-    button->render();
-    textBox->render();
-}
+// ==================== 注册式工厂 ====================
 
-/**
- * 题目4：注册式工厂
- *
- * 支持运行时动态注册新类型
- */
 template <typename Base>
 class RegisterFactory {
 public:
@@ -234,6 +197,10 @@ public:
         return types;
     }
 
+    static void clear() {
+        getRegistry().clear();
+    }
+
 private:
     static std::unordered_map<std::string, Creator>& getRegistry() {
         static std::unordered_map<std::string, Creator> registry;
@@ -241,25 +208,8 @@ private:
     }
 };
 
-// 自动注册辅助宏
-#define REGISTER_TYPE(Base, Derived, TypeName) \
-    namespace { \
-        bool _registered_##Derived = []() { \
-            RegisterFactory<Base>::registerType(TypeName, []() { \
-                return std::make_unique<Derived>(); \
-            }); \
-            return true; \
-        }(); \
-    }
+// ==================== 带参数的工厂 ====================
 
-// 注册产品
-REGISTER_TYPE(Product, ProductA, "ProductA")
-REGISTER_TYPE(Product, ProductB, "ProductB")
-REGISTER_TYPE(Product, ProductC, "ProductC")
-
-/**
- * 扩展：带参数的工厂
- */
 template <typename Base, typename... Args>
 class ParameterizedFactory {
 public:
@@ -278,6 +228,10 @@ public:
         return it->second(std::forward<Args>(args)...);
     }
 
+    static void clear() {
+        getRegistry().clear();
+    }
+
 private:
     static std::unordered_map<std::string, Creator>& getRegistry() {
         static std::unordered_map<std::string, Creator> registry;
@@ -285,49 +239,94 @@ private:
     }
 };
 
-int main() {
-    std::cout << "=== 简单工厂 ===\n";
+} // namespace Solution
+
+// ==================== 测试函数 ====================
+
+void testFactorySolution() {
+    std::cout << "=== Factory Tests (Solution) ===" << std::endl;
+
+    // 测试简单工厂
     {
-        auto a = SimpleFactory::create(SimpleFactory::ProductType::A);
-        auto b = SimpleFactory::create("B");
+        auto a = Solution::SimpleFactory::create(Solution::SimpleFactory::ProductType::A);
+        auto b = Solution::SimpleFactory::create("B");
+        assert(a->getName() == "ProductA");
+        assert(b->getName() == "ProductB");
+
         a->use();
         b->use();
     }
+    std::cout << "  SimpleFactory: PASSED" << std::endl;
 
-    std::cout << "\n=== 工厂方法 ===\n";
+    // 测试工厂方法
     {
-        std::unique_ptr<Factory> factory = std::make_unique<FactoryA>();
-        factory->doWork();
+        std::unique_ptr<Solution::Factory> factory = std::make_unique<Solution::FactoryA>();
+        assert(factory->doWork() == "ProductA");
 
-        factory = std::make_unique<FactoryB>();
-        factory->doWork();
+        factory = std::make_unique<Solution::FactoryB>();
+        assert(factory->doWork() == "ProductB");
+
+        factory = std::make_unique<Solution::FactoryC>();
+        assert(factory->doWork() == "ProductC");
     }
+    std::cout << "  FactoryMethod: PASSED" << std::endl;
 
-    std::cout << "\n=== 抽象工厂 ===\n";
+    // 测试抽象工厂
     {
-        std::cout << "Windows UI:\n";
-        WindowsFactory winFactory;
-        createUI(winFactory);
+        Solution::WindowsFactory winFactory;
+        auto winBtn = winFactory.createButton();
+        auto winTxt = winFactory.createTextBox();
+        assert(winBtn->render() == "Windows Button");
+        assert(winTxt->render() == "Windows TextBox");
 
-        std::cout << "\nMac UI:\n";
-        MacFactory macFactory;
-        createUI(macFactory);
+        Solution::MacFactory macFactory;
+        auto macBtn = macFactory.createButton();
+        auto macTxt = macFactory.createTextBox();
+        assert(macBtn->render() == "Mac Button");
+        assert(macTxt->render() == "Mac TextBox");
     }
+    std::cout << "  AbstractFactory: PASSED" << std::endl;
 
-    std::cout << "\n=== 注册式工厂 ===\n";
+    // 测试注册式工厂
     {
-        std::cout << "Registered types: ";
-        for (const auto& type : RegisterFactory<Product>::getRegisteredTypes()) {
-            std::cout << type << " ";
-        }
-        std::cout << "\n";
+        Solution::RegisterFactory<Product>::clear();
 
-        auto product = RegisterFactory<Product>::create("ProductA");
-        product->use();
+        Solution::RegisterFactory<Product>::registerType("ProductA", []() {
+            return std::make_unique<Solution::ProductA>();
+        });
+        Solution::RegisterFactory<Product>::registerType("ProductB", []() {
+            return std::make_unique<Solution::ProductB>();
+        });
 
-        product = RegisterFactory<Product>::create("ProductB");
-        product->use();
+        assert(Solution::RegisterFactory<Product>::hasType("ProductA"));
+        assert(Solution::RegisterFactory<Product>::hasType("ProductB"));
+        assert(!Solution::RegisterFactory<Product>::hasType("ProductZ"));
+
+        auto productA = Solution::RegisterFactory<Product>::create("ProductA");
+        assert(productA->getName() == "ProductA");
+
+        auto productB = Solution::RegisterFactory<Product>::create("ProductB");
+        assert(productB->getName() == "ProductB");
+
+        Solution::RegisterFactory<Product>::clear();
     }
+    std::cout << "  RegisterFactory: PASSED" << std::endl;
 
-    return 0;
+    // 测试带参数的工厂
+    {
+        using IntFactory = Solution::ParameterizedFactory<Product, int>;
+        IntFactory::clear();
+
+        IntFactory::registerType("ProductA", [](int) {
+            return std::make_unique<Solution::ProductA>();
+        });
+
+        auto product = IntFactory::create("ProductA", 42);
+        assert(product->getName() == "ProductA");
+
+        IntFactory::clear();
+    }
+    std::cout << "  ParameterizedFactory: PASSED" << std::endl;
 }
+
+} // namespace FactoryImpl

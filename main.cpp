@@ -9,7 +9,7 @@
 #include "thread/AlternatePrint.h"
 
 // 面试编程题测试
-#include "interview/coding/test_runner.cpp"
+#include "interview/coding/test_runner.h"
 
 void solution() {
     SubSet::solution();
@@ -27,7 +27,7 @@ int main() {
     // solution();
 
     // 运行面试编程题测试
-    runInterviewTests();
+    interview::runAllTests();
 
     return 0;
 }

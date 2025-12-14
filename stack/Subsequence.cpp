@@ -3,7 +3,7 @@
 //
 
 #include "Subsequence.h"
-#include "../sort/util/Util.h"
+#include "../util/Util.h"
 
 namespace {
     void backTrack(std::vector<int> &nums, std::vector<std::vector<int> > &result,
@@ -28,10 +28,10 @@ namespace {
 void Subsequence::solution() {
     std::cout << "Subsequence::solution";
     std::vector<int> input{1, 3, 5, 4, 6};
-    Util::prntVec(input);
+    Util::printVector(input);
     std::vector<std::vector<int> > result = getSubsequence(input);
     for (auto item : result) {
-        Util::prntVec(item);
+        Util::printVector(item);
     }
 }
 

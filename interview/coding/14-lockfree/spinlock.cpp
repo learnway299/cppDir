@@ -1,70 +1,56 @@
 /**
  * @file spinlock.cpp
- * @brief 自旋锁 - 面试题
- *
- * 自旋锁是无锁编程的基础，适用于临界区很短的场景。
+ * @brief 自旋锁 - 面试题实现
  */
-#include <atomic>
-#include <thread>
+#include "spinlock.h"
+
+namespace Spinlock {
+
+// ==================== 面试者实现区域 ====================
 
 // 题目1: 实现基本的自旋锁
-// 使用 atomic_flag 实现 TAS (Test-And-Set) 自旋锁
-class SpinLock {
-public:
-    void lock() { /* TODO */ }
-    void unlock() { /* TODO */ }
+void SpinLock::lock() {
+    // TODO: 使用 atomic_flag 实现 TAS 自旋锁
+}
 
-private:
-    std::atomic_flag flag_ = ATOMIC_FLAG_INIT;
-};
+void SpinLock::unlock() {
+    // TODO: 释放锁
+}
 
-// 题目2: 实现 TTAS (Test-Test-And-Set) 自旋锁
-// 先检查再 TAS，减少缓存一致性流量
-class TTASSpinLock {
-public:
-    void lock() { /* TODO */ }
-    void unlock() { /* TODO */ }
+// 题目2: 实现 TTAS 自旋锁
+void TTASSpinLock::lock() {
+    // TODO: 先测试再 TAS，减少缓存一致性流量
+}
 
-private:
-    std::atomic<bool> locked_{false};
-};
+void TTASSpinLock::unlock() {
+    // TODO: 释放锁
+}
 
 // 题目3: 实现带退避的自旋锁
-// 使用指数退避减少竞争
-class BackoffSpinLock {
-public:
-    void lock() { /* TODO */ }
-    void unlock() { /* TODO */ }
+void BackoffSpinLock::lock() {
+    // TODO: 使用指数退避减少竞争
+}
 
-private:
-    std::atomic<bool> locked_{false};
-};
+void BackoffSpinLock::unlock() {
+    // TODO: 释放锁
+}
 
 // 题目4: 实现 Ticket Lock
-// 保证公平性（FIFO 顺序）
-class TicketLock {
-public:
-    void lock() { /* TODO */ }
-    void unlock() { /* TODO */ }
+void TicketLock::lock() {
+    // TODO: 获取票号并等待
+}
 
-private:
-    std::atomic<unsigned> next_ticket_{0};
-    std::atomic<unsigned> now_serving_{0};
-};
+void TicketLock::unlock() {
+    // TODO: 服务下一个票号
+}
 
 // 题目5: 实现可重入自旋锁
-// 同一线程可以多次获取锁
-class ReentrantSpinLock {
-public:
-    void lock() { /* TODO */ }
-    void unlock() { /* TODO */ }
-
-private:
-    std::atomic<std::thread::id> owner_{};
-    int count_{0};
-    std::atomic_flag flag_ = ATOMIC_FLAG_INIT;
-};
-
-int main() {
-    return 0;
+void ReentrantSpinLock::lock() {
+    // TODO: 检查是否是同一线程重入
 }
+
+void ReentrantSpinLock::unlock() {
+    // TODO: 递减计数或释放锁
+}
+
+} // namespace Spinlock
