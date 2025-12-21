@@ -545,9 +545,327 @@ int main() {
 
 ---
 
-## 4. 访问控制 (Access Control)
+## 4. new/delete 运算符重载
 
-### 4.1 三种访问权限
+### 4.1 全局 new/delete vs 类重载 new/delete
+
+**问题：全局 new/delete 和类重载的 new/delete 有什么区别？**
+
+```cpp
+#include <iostream>
+#include <cstdlib>
+
+class MyClass {
+public:
+    // 类特定的 operator new/delete（隐式 static）
+    static void* operator new(size_t size) {
+        std::cout << "MyClass::operator new(" << size << ")\n";
+        return ::operator new(size);  // 调用全局版本
+    }
+
+    static void operator delete(void* ptr) noexcept {
+        std::cout << "MyClass::operator delete\n";
+        ::operator delete(ptr);
+    }
+
+    int data_ = 42;
+};
+
+int main() {
+    MyClass* p1 = new MyClass();    // 调用 MyClass::operator new
+    delete p1;                       // 调用 MyClass::operator delete
+
+    int* p2 = new int(42);          // 调用全局 ::operator new
+    delete p2;                       // 调用全局 ::operator delete
+}
+```
+
+**调用优先级**：
+1. 先在类作用域查找 `operator new/delete`
+2. 找不到则使用全局 `::operator new/delete`
+
+**对比表**：
+
+| 特性 | 全局 new/delete | 类重载 new/delete |
+|-----|----------------|------------------|
+| **作用域** | 所有类型 | 仅该类及其派生类 |
+| **声明** | `void* operator new(size_t)` | `static void* operator new(size_t)` |
+| **用途** | 通用内存分配、全局追踪 | 类特定优化（内存池等） |
+| **调用方式** | `::operator new` | 自动匹配 |
+| **是否虚函数** | 不适用 | **隐式 static**，不能是虚函数 |
+
+---
+
+### 4.2 重载全局 new/delete
+
+```cpp
+#include <iostream>
+#include <cstdlib>
+
+// 替换全局版本（影响整个程序）
+void* operator new(size_t size) {
+    std::cout << "Global new: " << size << " bytes\n";
+    void* ptr = std::malloc(size);
+    if (!ptr) throw std::bad_alloc();
+    return ptr;
+}
+
+void operator delete(void* ptr) noexcept {
+    std::cout << "Global delete\n";
+    std::free(ptr);
+}
+
+int main() {
+    int* p = new int(10);           // Global new: 4 bytes
+    std::string* s = new std::string("hello");  // Global new: 32 bytes
+    delete p;
+    delete s;
+}
+```
+
+---
+
+### 4.3 基础类型 vs 自定义类调用 new/delete
+
+**问题：基础类型和自定义类调用 new/delete 有什么区别？**
+
+**核心区别：构造/析构函数的调用**
+
+| 操作 | 基础类型 (int, double...) | 自定义类 |
+|-----|-------------------------|---------|
+| `new` | 只分配内存 | 分配内存 + 调用构造函数 |
+| `delete` | 只释放内存 | 调用析构函数 + 释放内存 |
+
+**底层分解**：
+
+```cpp
+class Widget {
+public:
+    Widget() { std::cout << "构造\n"; }
+    ~Widget() { std::cout << "析构\n"; }
+};
+
+// ============ 基础类型 ============
+int* p1 = new int(42);
+// 等价于：
+// void* mem = operator new(sizeof(int));  // 分配 4 字节
+// int* p1 = static_cast<int*>(mem);
+// *p1 = 42;  // 直接赋值，无构造函数
+
+delete p1;
+// 等价于：
+// operator delete(p1);  // 直接释放，无析构函数
+
+
+// ============ 自定义类 ============
+Widget* p2 = new Widget();
+// 等价于：
+// void* mem = operator new(sizeof(Widget));  // 1. 分配内存
+// Widget* p2 = static_cast<Widget*>(mem);
+// new (p2) Widget();  // 2. placement new 调用构造函数
+
+delete p2;
+// 等价于：
+// p2->~Widget();       // 1. 调用析构函数
+// operator delete(p2); // 2. 释放内存
+```
+
+---
+
+### 4.4 new/delete 的完整流程
+
+**new 表达式的三步骤**：
+```
+new T(args...)
+    │
+    ├─→ 1. operator new(sizeof(T))     // 分配原始内存
+    │
+    ├─→ 2. 调用 T 的构造函数            // 自定义类才有
+    │
+    └─→ 3. 返回 T* 指针
+```
+
+**delete 表达式的两步骤**：
+```
+delete ptr
+    │
+    ├─→ 1. 调用 T 的析构函数            // 自定义类才有
+    │
+    └─→ 2. operator delete(ptr)        // 释放原始内存
+```
+
+---
+
+### 4.5 数组的 new[] 和 delete[]
+
+```cpp
+// 基础类型数组
+int* arr1 = new int[10];      // 分配 40 字节
+delete[] arr1;                 // 释放内存
+
+// 自定义类数组
+Widget* arr2 = new Widget[3]; // 分配内存 + 调用 3 次构造函数
+delete[] arr2;                 // 调用 3 次析构函数 + 释放内存
+```
+
+**重要**：`new[]` 通常会额外分配几个字节存储数组大小，供 `delete[]` 知道要调用多少次析构函数。
+
+```
+// 内存布局示意（实现相关）
++--------+--------+--------+--------+
+| count  | obj[0] | obj[1] | obj[2] |
++--------+--------+--------+--------+
+         ^
+         返回的指针
+```
+
+---
+
+### 4.6 类重载 new/delete 的典型用途
+
+```cpp
+#include <iostream>
+#include <vector>
+
+class PooledObject {
+    // 简化的内存池
+    static std::vector<void*> pool_;
+    static constexpr size_t POOL_SIZE = 100;
+
+public:
+    static void* operator new(size_t size) {
+        std::cout << "Pool allocate\n";
+        if (pool_.empty()) {
+            // 池空，从堆分配
+            return ::operator new(size);
+        }
+        // 从池中取出
+        void* ptr = pool_.back();
+        pool_.pop_back();
+        return ptr;
+    }
+
+    static void operator delete(void* ptr) noexcept {
+        std::cout << "Pool deallocate\n";
+        if (pool_.size() < POOL_SIZE) {
+            // 归还到池中
+            pool_.push_back(ptr);
+        } else {
+            // 池满，释放到堆
+            ::operator delete(ptr);
+        }
+    }
+
+    int data_ = 0;
+};
+
+std::vector<void*> PooledObject::pool_;
+```
+
+**典型用途**：
+1. **内存池**：频繁分配/释放小对象，减少系统调用
+2. **调试追踪**：记录分配/释放位置，检测内存泄漏
+3. **对齐要求**：特殊对齐（SIMD、缓存行）
+4. **统计监控**：监控内存使用量
+
+---
+
+### 4.7 new 失败时的处理
+
+```cpp
+#include <new>
+
+// 全局 new 默认行为
+void* operator new(size_t size) {
+    void* ptr = malloc(size);
+    if (!ptr) {
+        // 1. 调用 new_handler（如果设置了）
+        // 2. 如果 new_handler 返回，重试分配
+        // 3. 如果无 new_handler 或持续失败，抛出 std::bad_alloc
+        throw std::bad_alloc();
+    }
+    return ptr;
+}
+
+int main() {
+    // 标准版本：失败抛异常
+    try {
+        int* p = new int[1000000000000];
+    } catch (std::bad_alloc& e) {
+        std::cout << "Allocation failed: " << e.what() << std::endl;
+    }
+
+    // 不抛异常的版本：失败返回 nullptr
+    int* p = new (std::nothrow) int[1000000000000];
+    if (!p) {
+        std::cout << "Allocation failed, p is nullptr\n";
+    }
+}
+```
+
+---
+
+### 4.8 面试常见问题
+
+#### Q1: 类的 operator new 为什么是 static？
+
+**答**：`operator new` 在对象构造**之前**调用，此时还没有对象实例，不能有 `this` 指针。即使不显式写 `static`，编译器也会隐式添加。
+
+#### Q2: delete 和 delete[] 混用会怎样？
+
+```cpp
+Widget* arr = new Widget[3];
+delete arr;    // ❌ 未定义行为！
+
+// 可能的问题：
+// 1. 只调用 arr[0] 的析构函数，其他对象泄漏
+// 2. 释放内存时地址计算错误（因为 new[] 有额外头部）
+// 3. 程序崩溃
+```
+
+#### Q3: 为什么 delete 基础类型不需要析构？
+
+**答**：基础类型（int, double, 指针等）是 **trivially destructible**，没有资源需要释放，析构函数是空操作。编译器优化后直接跳过。
+
+#### Q4: placement new 是什么？
+
+```cpp
+#include <new>
+
+// 在指定内存位置构造对象
+alignas(Widget) char buffer[sizeof(Widget)];
+Widget* p = new (buffer) Widget();  // placement new
+
+// 必须显式调用析构函数（不能 delete）
+p->~Widget();
+// 不能 delete p，因为 buffer 不是 new 分配的
+```
+
+**用途**：内存池、对象池、自定义内存管理。
+
+---
+
+### 4.9 总结速查表
+
+| 对比维度 | 基础类型 | 自定义类 |
+|---------|---------|---------|
+| **new 操作** | 仅分配内存 | 分配内存 + 构造函数 |
+| **delete 操作** | 仅释放内存 | 析构函数 + 释放内存 |
+| **可重载 new/delete** | ❌ 不能 | ✅ 可以 |
+| **new[] 额外开销** | 无 | 存储数组大小 |
+
+| 对比维度 | 全局 new/delete | 类重载 new/delete |
+|---------|----------------|------------------|
+| **作用范围** | 所有类型 | 仅该类 |
+| **是否 static** | 不适用 | 隐式 static |
+| **调用时机** | 无类特定版本时 | 优先调用 |
+| **典型用途** | 全局内存追踪 | 内存池优化 |
+
+---
+
+## 5. 访问控制 (Access Control)
+
+### 5.1 三种访问权限
 
 **问题：`public`、`protected`、`private` 的区别是什么？**
 
@@ -603,7 +921,7 @@ int main() {
 
 ---
 
-### 4.2 友元 (Friend)
+### 5.2 友元 (Friend)
 
 **问题：什么是友元？如何使用？**
 
@@ -657,9 +975,9 @@ int main() {
 
 ---
 
-## 5. 成员函数
+## 6. 成员函数
 
-### 5.1 const 成员函数
+### 6.1 const 成员函数
 
 **问题：什么是 `const` 成员函数？为什么要使用？**
 
@@ -713,7 +1031,7 @@ int main() {
 
 ---
 
-### 5.2 静态成员函数
+### 6.2 静态成员函数
 
 **问题：什么是静态成员函数？和普通成员函数有什么区别？**
 
@@ -767,9 +1085,9 @@ int main() {
 
 ---
 
-## 6. Rule of Three/Five/Zero
+## 7. Rule of Three/Five/Zero
 
-### 6.1 三五零法则
+### 7.1 三五零法则
 
 **问题：什么是 Rule of Three/Five/Zero？**
 
@@ -883,9 +1201,9 @@ private:
 
 ---
 
-## 7. 特殊成员函数控制
+## 8. 特殊成员函数控制
 
-### 7.1 = default 和 = delete
+### 8.1 = default 和 = delete
 
 **问题：如何显式控制编译器生成的特殊成员函数？**
 
@@ -935,9 +1253,9 @@ int main() {
 
 ---
 
-## 8. this 指针
+## 9. this 指针
 
-### 8.1 this 指针的使用
+### 9.1 this 指针的使用
 
 **问题：什么是 `this` 指针？如何使用？**
 
@@ -995,15 +1313,16 @@ int main() {
 
 ---
 
-## 9. 总结
+## 10. 总结
 
 ### 核心要点
 1. **类与对象**：类是模板，对象是实例；栈对象自动管理，堆对象需手动释放
 2. **构造函数**：初始化列表优于赋值；注意拷贝/移动构造；单参数构造加 `explicit`
 3. **析构函数**：释放资源；基类析构必须是 `virtual`
-4. **访问控制**：数据成员用 `private`，接口用 `public`，派生类用 `protected`
-5. **特殊成员函数**：遵循 Rule of Zero/Three/Five
-6. **const 正确性**：不修改状态的函数声明为 `const`
+4. **new/delete**：基础类型只分配内存，自定义类还调用构造/析构；类可重载 new/delete 实现内存池
+5. **访问控制**：数据成员用 `private`，接口用 `public`，派生类用 `protected`
+6. **特殊成员函数**：遵循 Rule of Zero/Three/Five
+7. **const 正确性**：不修改状态的函数声明为 `const`
 
 ### 常见面试题
 - 构造函数和析构函数的调用顺序？
@@ -1011,6 +1330,8 @@ int main() {
 - 移动语义的优势？
 - 什么时候需要虚析构函数？
 - Rule of Three/Five/Zero 是什么？
+- 全局 new/delete 和类重载 new/delete 的区别？
+- 基础类型和自定义类调用 new/delete 有什么区别？
 
 ---
 
