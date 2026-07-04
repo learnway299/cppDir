@@ -11,7 +11,11 @@ namespace ReverseList {
 
 // ==================== 参考答案实现 ====================
 
-// 题目1: 反转链表 - 迭代 O(n)
+/**
+ * 题目1: 反转链表 - 迭代法
+ * 时间复杂度: O(n) - 遍历链表一次
+ * 空间复杂度: O(1) - 仅用常数指针变量
+ */
 ListNode* reverseListSolution(ListNode* head) {
     ListNode* prev = nullptr;
     ListNode* curr = head;
@@ -24,7 +28,11 @@ ListNode* reverseListSolution(ListNode* head) {
     return prev;
 }
 
-// 题目2: 反转链表 II（区间反转）
+/**
+ * 题目2: 反转链表 II - 区间反转（头插法）
+ * 时间复杂度: O(n) - 最多遍历到 right 位置
+ * 空间复杂度: O(1) - 仅用常数指针变量
+ */
 ListNode* reverseBetweenSolution(ListNode* head, int left, int right) {
     if (!head || left == right) return head;
     ListNode dummy(0, head);
@@ -40,7 +48,11 @@ ListNode* reverseBetweenSolution(ListNode* head, int left, int right) {
     return dummy.next;
 }
 
-// 题目3: K 个一组翻转链表
+/**
+ * 题目3: K 个一组翻转链表 - 分组反转
+ * 时间复杂度: O(n) - 每个节点最多访问两次（计数+反转）
+ * 空间复杂度: O(1) - 仅用常数指针变量
+ */
 ListNode* reverseKGroupSolution(ListNode* head, int k) {
     if (!head || k == 1) return head;
     ListNode dummy(0, head);
@@ -67,7 +79,11 @@ ListNode* reverseKGroupSolution(ListNode* head, int k) {
     return dummy.next;
 }
 
-// 题目4: 两两交换链表中的节点
+/**
+ * 题目4: 两两交换链表中的节点 - 迭代法
+ * 时间复杂度: O(n) - 遍历链表一次
+ * 空间复杂度: O(1) - 仅用常数指针变量
+ */
 ListNode* swapPairsSolution(ListNode* head) {
     ListNode dummy(0, head);
     ListNode* prev = &dummy;

@@ -13,6 +13,14 @@ namespace HazardPointer {
 
 // ==================== 题目1: 基本 Hazard Pointer 系统 ====================
 
+/**
+ * 题目1: HazardPointerDomain - 风险指针系统
+ * getHazardPointer: O(1) - 线程局部获取
+ * retire: O(1) 摊还 - 加入退休列表
+ * scan: O(h * r) - h为HP数，r为退休列表大小
+ * 空间复杂度: O(t * h + r) - t线程 * h个HP + 退休列表
+ * 特点: 安全回收无锁数据结构中的节点
+ */
 struct HazardPointerSlot {
     std::atomic<void*> ptr{nullptr};
     std::atomic<bool> active{false};
@@ -83,6 +91,13 @@ void HazardPointerDomainSolution::scan() {
 
 // ==================== 题目2: 使用 HP 的安全无锁栈 ====================
 
+/**
+ * 题目2: SafeLockFreeStack - 使用HP的安全无锁栈
+ * push: O(1) 摊还 - CAS循环
+ * pop: O(1) 摊还 - CAS循环 + HP保护
+ * 空间复杂度: O(n) - 节点 + HP开销
+ * 特点: 通过HP安全回收弹出的节点
+ */
 template <typename T>
 struct SafeLockFreeStackNode {
     T data;
@@ -142,6 +157,13 @@ template class SafeLockFreeStackSolution<int>;
 
 // ==================== 题目3: 多 Hazard Pointer ====================
 
+/**
+ * 题目3: MultiHazardPointer - 多HP系统
+ * get(i): O(1) - 获取第i个HP
+ * clearAll: O(K) - 清空所有HP
+ * 空间复杂度: O(t * K) - t线程 * K个HP
+ * 特点: 支持每线程多个HP（用于链表等需要多指针的场景）
+ */
 template <size_t K>
 struct HPRecord {
     std::atomic<bool> active{false};

@@ -10,6 +10,14 @@
 namespace SkiplistImpl {
 namespace Solution {
 
+/**
+ * Skiplist - 跳表
+ * search: 时间O(logn)期望 - 多层索引
+ * add:    时间O(logn)期望 - 查找+插入
+ * erase:  时间O(logn)期望 - 查找+删除
+ * 空间复杂度: O(n)期望 - 节点+索引
+ * 特点: 概率平衡结构，实现比红黑树简单
+ */
 class Skiplist {
 private:
     static const int MAX_LEVEL = 16;

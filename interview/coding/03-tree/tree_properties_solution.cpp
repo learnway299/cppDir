@@ -33,13 +33,21 @@ static bool isMirror(TreeNode* left, TreeNode* right) {
 
 // ==================== 参考答案实现 ====================
 
-// 题目1: 二叉树的最大深度 - DFS
+/**
+ * 题目1: 二叉树的最大深度 - DFS 递归
+ * 时间复杂度: O(n) - 访问每个节点一次
+ * 空间复杂度: O(h) - 递归栈深度，最坏 O(n)
+ */
 int maxDepthSolution(TreeNode* root) {
     if (!root) return 0;
     return 1 + std::max(maxDepthSolution(root->left), maxDepthSolution(root->right));
 }
 
-// 题目2: 二叉树的最小深度 - DFS
+/**
+ * 题目2: 二叉树的最小深度 - DFS 递归
+ * 时间复杂度: O(n) - 访问每个节点一次
+ * 空间复杂度: O(h) - 递归栈深度
+ */
 int minDepthSolution(TreeNode* root) {
     if (!root) return 0;
     if (!root->left) return 1 + minDepthSolution(root->right);
@@ -47,18 +55,30 @@ int minDepthSolution(TreeNode* root) {
     return 1 + std::min(minDepthSolution(root->left), minDepthSolution(root->right));
 }
 
-// 题目3: 平衡二叉树
+/**
+ * 题目3: 平衡二叉树 - 自底向上递归
+ * 时间复杂度: O(n) - 每个节点访问一次
+ * 空间复杂度: O(h) - 递归栈深度
+ */
 bool isBalancedSolution(TreeNode* root) {
     return checkHeight(root) != -1;
 }
 
-// 题目4: 对称二叉树
+/**
+ * 题目4: 对称二叉树 - 递归比较镜像
+ * 时间复杂度: O(n) - 访问每个节点一次
+ * 空间复杂度: O(h) - 递归栈深度
+ */
 bool isSymmetricSolution(TreeNode* root) {
     if (!root) return true;
     return isMirror(root->left, root->right);
 }
 
-// 题目5: 相同的树
+/**
+ * 题目5: 相同的树 - 递归比较
+ * 时间复杂度: O(min(m,n)) - 访问较小树的节点数
+ * 空间复杂度: O(min(h1,h2)) - 递归栈深度
+ */
 bool isSameTreeSolution(TreeNode* p, TreeNode* q) {
     if (!p && !q) return true;
     if (!p || !q) return false;
@@ -67,14 +87,22 @@ bool isSameTreeSolution(TreeNode* p, TreeNode* q) {
            isSameTreeSolution(p->right, q->right);
 }
 
-// 题目6: 另一棵树的子树
+/**
+ * 题目6: 另一棵树的子树 - 递归遍历 + 相同树判断
+ * 时间复杂度: O(m*n) - 对每个节点调用 isSameTree
+ * 空间复杂度: O(h) - 递归栈深度
+ */
 bool isSubtreeSolution(TreeNode* root, TreeNode* subRoot) {
     if (!root) return false;
     if (isSameTreeSolution(root, subRoot)) return true;
     return isSubtreeSolution(root->left, subRoot) || isSubtreeSolution(root->right, subRoot);
 }
 
-// 题目7: 翻转二叉树
+/**
+ * 题目7: 翻转二叉树 - DFS 递归
+ * 时间复杂度: O(n) - 访问每个节点一次
+ * 空间复杂度: O(h) - 递归栈深度
+ */
 TreeNode* invertTreeSolution(TreeNode* root) {
     if (!root) return nullptr;
     std::swap(root->left, root->right);
@@ -83,7 +111,11 @@ TreeNode* invertTreeSolution(TreeNode* root) {
     return root;
 }
 
-// 题目8: 合并二叉树
+/**
+ * 题目8: 合并二叉树 - DFS 递归
+ * 时间复杂度: O(min(m,n)) - 访问重叠部分的节点
+ * 空间复杂度: O(min(h1,h2)) - 递归栈深度
+ */
 TreeNode* mergeTreesSolution(TreeNode* root1, TreeNode* root2) {
     if (!root1) return root2;
     if (!root2) return root1;

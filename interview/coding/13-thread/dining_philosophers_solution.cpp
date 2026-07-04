@@ -13,6 +13,17 @@ namespace DiningPhilosophers {
 
 // ==================== 参考答案实现 ====================
 
+/**
+ * 题目: DiningPhilosophers - 哲学家就餐问题
+ * 所有解法的 wantsToEat: O(1) - 获取两把叉子并进餐
+ * 空间复杂度: O(5) - 5把叉子的互斥锁
+ *
+ * 解法1: 奇偶编号策略 - 奇数先右后左，偶数先左后右，避免死锁
+ * 解法2: 限制并发数 - 最多4人同时尝试，避免环形等待
+ * 解法3: 条件变量 - 原子获取两把叉子
+ * 解法4: std::lock - 使用死锁避免算法
+ * 解法5: scoped_lock - C++17 RAII死锁避免
+ */
 // 解法1: 奇偶编号策略
 DiningPhilosophersOddEvenSolution::DiningPhilosophersOddEvenSolution() : forks_(5) {}
 

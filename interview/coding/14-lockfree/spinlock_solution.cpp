@@ -12,6 +12,12 @@ namespace Spinlock {
 
 // ==================== 题目1: 基本 TAS 自旋锁 ====================
 
+/**
+ * 题目1: SpinLock - TAS自旋锁
+ * lock: O(1) 无竞争，有竞争时自旋
+ * unlock/try_lock: O(1) - 原子操作
+ * 空间复杂度: O(1) - 一个atomic_flag
+ */
 void SpinLockSolution::lock() {
     while (flag_.test_and_set(std::memory_order_acquire)) {
         // 自旋等待
@@ -28,6 +34,12 @@ bool SpinLockSolution::try_lock() {
 
 // ==================== 题目2: TTAS 自旋锁 ====================
 
+/**
+ * 题目2: TTASSpinLock - Test-and-Test-and-Set自旋锁
+ * lock: O(1) 无竞争，有竞争时先读后CAS减少总线流量
+ * unlock: O(1) - 原子store
+ * 空间复杂度: O(1) - 一个atomic<bool>
+ */
 void TTASSpinLockSolution::lock() {
     while (true) {
         while (locked_.load(std::memory_order_relaxed)) {
@@ -48,6 +60,12 @@ void TTASSpinLockSolution::unlock() {
 
 // ==================== 题目3: 带退避的自旋锁 ====================
 
+/**
+ * 题目3: BackoffSpinLock - 指数退避自旋锁
+ * lock: O(1) 无竞争，有竞争时指数退避减少争用
+ * unlock: O(1) - 原子store
+ * 空间复杂度: O(1) - 一个atomic<bool>
+ */
 void BackoffSpinLockSolution::lock() {
     static constexpr int MIN_BACKOFF = 1;
     static constexpr int MAX_BACKOFF = 1024;
@@ -78,6 +96,13 @@ void BackoffSpinLockSolution::unlock() {
 
 // ==================== 题目4: Ticket Lock ====================
 
+/**
+ * 题目4: TicketLock - 票号锁
+ * lock: O(1) 取票 + 自旋等待
+ * unlock: O(1) - 原子递增
+ * 空间复杂度: O(1) - 两个atomic<unsigned>
+ * 特点: 公平性保证，FIFO顺序
+ */
 void TicketLockSolution::lock() {
     unsigned myTicket = next_ticket_.fetch_add(1, std::memory_order_relaxed);
     while (now_serving_.load(std::memory_order_acquire) != myTicket) {
@@ -91,6 +116,12 @@ void TicketLockSolution::unlock() {
 
 // ==================== 题目5: 可重入自旋锁 ====================
 
+/**
+ * 题目5: ReentrantSpinLock - 可重入自旋锁
+ * lock/unlock/try_lock: O(1) - 检查所有者 + 原子操作
+ * 空间复杂度: O(1) - atomic_flag + atomic<thread::id> + 计数
+ * 特点: 同一线程可多次获取锁
+ */
 void ReentrantSpinLockSolution::lock() {
     std::thread::id self = std::this_thread::get_id();
 

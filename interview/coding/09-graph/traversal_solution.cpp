@@ -27,6 +27,11 @@ static void dfsHelper(std::vector<std::vector<int>>& adj, int node,
 
 // ==================== 参考答案实现 ====================
 
+/**
+ * 题目1: 图的 DFS 遍历（递归）
+ * 时间复杂度: O(V + E) - 访问所有顶点和边
+ * 空间复杂度: O(V) - 递归栈 + visited 数组
+ */
 std::vector<int> dfsSolution(std::vector<std::vector<int>>& adj, int start) {
     std::vector<int> result;
     std::vector<bool> visited(adj.size(), false);
@@ -34,6 +39,11 @@ std::vector<int> dfsSolution(std::vector<std::vector<int>>& adj, int start) {
     return result;
 }
 
+/**
+ * 题目2: 图的 DFS 遍历（迭代）
+ * 时间复杂度: O(V + E)
+ * 空间复杂度: O(V) - 栈 + visited 数组
+ */
 std::vector<int> dfsIterativeSolution(std::vector<std::vector<int>>& adj, int start) {
     std::vector<int> result;
     std::vector<bool> visited(adj.size(), false);
@@ -58,6 +68,11 @@ std::vector<int> dfsIterativeSolution(std::vector<std::vector<int>>& adj, int st
     return result;
 }
 
+/**
+ * 题目3: 图的 BFS 遍历
+ * 时间复杂度: O(V + E)
+ * 空间复杂度: O(V) - 队列 + visited 数组
+ */
 std::vector<int> bfsSolution(std::vector<std::vector<int>>& adj, int start) {
     std::vector<int> result;
     std::vector<bool> visited(adj.size(), false);
@@ -81,6 +96,11 @@ std::vector<int> bfsSolution(std::vector<std::vector<int>>& adj, int start) {
     return result;
 }
 
+/**
+ * 题目4: 图的 BFS 分层遍历
+ * 时间复杂度: O(V + E)
+ * 空间复杂度: O(V) - 队列 + visited 数组
+ */
 std::vector<std::vector<int>> bfsWithLevelsSolution(std::vector<std::vector<int>>& adj, int start) {
     std::vector<std::vector<int>> levels;
     std::vector<bool> visited(adj.size(), false);
@@ -125,6 +145,11 @@ static void numIslandsDfs(std::vector<std::vector<char>>& grid, int i, int j) {
     numIslandsDfs(grid, i, j - 1);
 }
 
+/**
+ * 题目5: 岛屿数量 - DFS 遍历
+ * 时间复杂度: O(m * n) - 每个格子最多访问一次
+ * 空间复杂度: O(m * n) - 最坏情况递归栈深度
+ */
 int numIslandsSolution(std::vector<std::vector<char>>& grid) {
     if (grid.empty() || grid[0].empty()) return 0;
 
@@ -158,6 +183,11 @@ static Node* cloneGraphDfs(Node* node, std::unordered_map<Node*, Node*>& visited
     return clone;
 }
 
+/**
+ * 题目6: 克隆图 - DFS 遍历
+ * 时间复杂度: O(V + E) - 访问所有节点和边
+ * 空间复杂度: O(V) - 哈希表 + 递归栈
+ */
 Node* cloneGraphSolution(Node* node) {
     if (!node) return nullptr;
 
@@ -181,6 +211,11 @@ static void allPathsDfs(std::vector<std::vector<int>>& graph, int node, int targ
     path.pop_back();
 }
 
+/**
+ * 题目7: 所有可能的路径 - DFS 回溯
+ * 时间复杂度: O(2^n * n) - 最多 2^n 条路径，每条长度 O(n)
+ * 空间复杂度: O(n) - 路径数组 + 递归栈
+ */
 std::vector<std::vector<int>> allPathsSourceTargetSolution(std::vector<std::vector<int>>& graph) {
     std::vector<std::vector<int>> result;
     std::vector<int> path;
@@ -205,6 +240,11 @@ static bool isBipartiteDfs(std::vector<std::vector<int>>& graph, int node, int c
     return true;
 }
 
+/**
+ * 题目8: 判断二分图 - DFS 染色
+ * 时间复杂度: O(V + E)
+ * 空间复杂度: O(V) - 颜色数组 + 递归栈
+ */
 bool isBipartiteSolution(std::vector<std::vector<int>>& graph) {
     int n = static_cast<int>(graph.size());
     std::vector<int> color(n, 0);  // 0: 未染色, 1: 颜色1, -1: 颜色2

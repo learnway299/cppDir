@@ -69,6 +69,12 @@ static void backtrackCount(int& count, std::vector<int>& queens, int row, int n,
 
 // ==================== 参考答案实现 ====================
 
+/**
+ * solveNQueens - N皇后问题所有解
+ * 时间复杂度: O(N!) - 每行选择递减
+ * 空间复杂度: O(N²) - 棋盘 + O(N)递归栈
+ * 特点: 回溯 + 对角线/列冲突检测
+ */
 std::vector<std::vector<std::string>> solveNQueensSolution(int n) {
     std::vector<std::vector<std::string>> result;
     std::vector<std::string> board(n, std::string(n, '.'));
@@ -76,6 +82,12 @@ std::vector<std::vector<std::string>> solveNQueensSolution(int n) {
     return result;
 }
 
+/**
+ * totalNQueens - N皇后解的数量
+ * 时间复杂度: O(N!) - 同上
+ * 空间复杂度: O(N) - 使用集合优化冲突检测
+ * 特点: 只计数不构造解，使用set O(1)检测冲突
+ */
 int totalNQueensSolution(int n) {
     int count = 0;
     std::vector<int> queens(n, -1);

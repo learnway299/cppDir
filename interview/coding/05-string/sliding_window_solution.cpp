@@ -17,7 +17,11 @@ namespace SlidingWindowProblems {
 
 // ==================== 参考答案实现 ====================
 
-// 题目1: 无重复字符的最长子串
+/**
+ * 题目1: 无重复字符的最长子串 - 滑动窗口 + 哈希集合
+ * 时间复杂度: O(n) - 每个字符最多被访问两次
+ * 空间复杂度: O(min(m, n)) - m 为字符集大小
+ */
 int lengthOfLongestSubstringSolution(std::string s) {
     std::unordered_set<char> window;
     int left = 0, maxLen = 0;
@@ -34,7 +38,11 @@ int lengthOfLongestSubstringSolution(std::string s) {
     return maxLen;
 }
 
-// 题目2: 最小覆盖子串
+/**
+ * 题目2: 最小覆盖子串 - 滑动窗口 + 哈希表
+ * 时间复杂度: O(|s| + |t|) - 遍历两个字符串
+ * 空间复杂度: O(|t|) - 哈希表存储 t 的字符
+ */
 std::string minWindowSolution(std::string s, std::string t) {
     if (s.empty() || t.empty() || s.size() < t.size()) return "";
 
@@ -79,7 +87,11 @@ std::string minWindowSolution(std::string s, std::string t) {
     return minLen == INT_MAX ? "" : s.substr(start, minLen);
 }
 
-// 题目3: 字符串的排列
+/**
+ * 题目3: 字符串的排列 - 定长滑动窗口
+ * 时间复杂度: O(n) - n 为 s2 长度
+ * 空间复杂度: O(1) - 固定大小数组（26）
+ */
 bool checkInclusionSolution(std::string s1, std::string s2) {
     if (s1.size() > s2.size()) return false;
 
@@ -105,7 +117,11 @@ bool checkInclusionSolution(std::string s1, std::string s2) {
     return false;
 }
 
-// 题目4: 找到字符串中所有字母异位词
+/**
+ * 题目4: 找到字符串中所有字母异位词 - 定长滑动窗口
+ * 时间复杂度: O(n) - n 为 s 长度
+ * 空间复杂度: O(1) - 固定大小数组（26）
+ */
 std::vector<int> findAnagramsSolution(std::string s, std::string p) {
     std::vector<int> result;
     if (s.size() < p.size()) return result;
@@ -132,7 +148,11 @@ std::vector<int> findAnagramsSolution(std::string s, std::string p) {
     return result;
 }
 
-// 题目5: 长度最小的子数组
+/**
+ * 题目5: 长度最小的子数组 - 滑动窗口
+ * 时间复杂度: O(n) - 每个元素最多被访问两次
+ * 空间复杂度: O(1) - 仅用常数变量
+ */
 int minSubArrayLenSolution(int target, std::vector<int>& nums) {
     int left = 0, sum = 0;
     int minLen = INT_MAX;
@@ -150,7 +170,11 @@ int minSubArrayLenSolution(int target, std::vector<int>& nums) {
     return minLen == INT_MAX ? 0 : minLen;
 }
 
-// 题目6: 滑动窗口最大值
+/**
+ * 题目6: 滑动窗口最大值 - 单调队列
+ * 时间复杂度: O(n) - 每个元素最多入队出队各一次
+ * 空间复杂度: O(k) - 单调队列最多存储 k 个元素
+ */
 std::vector<int> maxSlidingWindowSolution(std::vector<int>& nums, int k) {
     std::vector<int> result;
     std::deque<int> dq;
@@ -174,7 +198,11 @@ std::vector<int> maxSlidingWindowSolution(std::vector<int>& nums, int k) {
     return result;
 }
 
-// 题目7: 至多包含两个不同字符的最长子串
+/**
+ * 题目7: 至多包含两个不同字符的最长子串 - 滑动窗口 + 哈希表
+ * 时间复杂度: O(n) - 单次遍历
+ * 空间复杂度: O(1) - 哈希表最多存储 3 个字符
+ */
 int lengthOfLongestSubstringTwoDistinctSolution(std::string s) {
     std::unordered_map<char, int> window;
     int left = 0, maxLen = 0;
@@ -195,7 +223,11 @@ int lengthOfLongestSubstringTwoDistinctSolution(std::string s) {
     return maxLen;
 }
 
-// 题目8: 至多包含 K 个不同字符的最长子串
+/**
+ * 题目8: 至多包含 K 个不同字符的最长子串 - 滑动窗口 + 哈希表
+ * 时间复杂度: O(n) - 单次遍历
+ * 空间复杂度: O(k) - 哈希表最多存储 k+1 个字符
+ */
 int lengthOfLongestSubstringKDistinctSolution(std::string s, int k) {
     if (k == 0) return 0;
 
@@ -218,7 +250,11 @@ int lengthOfLongestSubstringKDistinctSolution(std::string s, int k) {
     return maxLen;
 }
 
-// 题目9: 替换后的最长重复字符
+/**
+ * 题目9: 替换后的最长重复字符 - 滑动窗口
+ * 时间复杂度: O(n) - 单次遍历
+ * 空间复杂度: O(1) - 固定大小数组（26）
+ */
 int characterReplacementSolution(std::string s, int k) {
     std::vector<int> count(26, 0);
     int left = 0, maxCount = 0, maxLen = 0;
@@ -238,7 +274,11 @@ int characterReplacementSolution(std::string s, int k) {
     return maxLen;
 }
 
-// 题目10: 子数组最大平均数 I
+/**
+ * 题目10: 子数组最大平均数 I - 定长滑动窗口
+ * 时间复杂度: O(n) - 单次遍历
+ * 空间复杂度: O(1) - 仅用常数变量
+ */
 double findMaxAverageSolution(std::vector<int>& nums, int k) {
     double sum = 0;
 

@@ -14,7 +14,11 @@ namespace PalindromeProblems {
 
 // ==================== 参考答案实现 ====================
 
-// 题目1: 验证回文串
+/**
+ * 题目1: 验证回文串 - 双指针
+ * 时间复杂度: O(n) - 单次遍历
+ * 空间复杂度: O(1) - 仅用两个指针
+ */
 bool isPalindromeSolution(std::string s) {
     int left = 0, right = static_cast<int>(s.size()) - 1;
 
@@ -37,7 +41,11 @@ bool isPalindromeSolution(std::string s) {
     return true;
 }
 
-// 题目2: 验证回文串 II
+/**
+ * 题目2: 验证回文串 II - 双指针 + 贪心
+ * 时间复杂度: O(n) - 最多两次遍历
+ * 空间复杂度: O(1) - 仅用常数变量
+ */
 bool validPalindromeSolution(std::string s) {
     auto isPalin = [&](int left, int right) -> bool {
         while (left < right) {
@@ -61,7 +69,11 @@ bool validPalindromeSolution(std::string s) {
     return true;
 }
 
-// 题目3: 最长回文子串 - 中心扩展
+/**
+ * 题目3: 最长回文子串 - 中心扩展
+ * 时间复杂度: O(n²) - 每个中心扩展 O(n) xc
+ * 空间复杂度: O(1) - 仅用常数变量
+ */
 std::string longestPalindromeSolution(std::string s) {
     if (s.empty()) return "";
 
@@ -86,7 +98,11 @@ std::string longestPalindromeSolution(std::string s) {
     return s.substr(start, maxLen);
 }
 
-// 题目4: 回文子串数目 - 中心扩展
+/**
+ * 题目4: 回文子串数目 - 中心扩展
+ * 时间复杂度: O(n²) - 每个中心扩展 O(n)
+ * 空间复杂度: O(1) - 仅用常数变量
+ */
 int countSubstringsSolution(std::string s) {
     int count = 0;
 
@@ -106,7 +122,11 @@ int countSubstringsSolution(std::string s) {
     return count;
 }
 
-// 题目5: 最长回文子序列
+/**
+ * 题目5: 最长回文子序列 - 区间 DP
+ * 时间复杂度: O(n²) - 枚举所有区间
+ * 空间复杂度: O(n²) - 二维 DP 数组
+ */
 int longestPalindromeSubseqSolution(std::string s) {
     int n = static_cast<int>(s.size());
     std::vector<std::vector<int>> dp(n, std::vector<int>(n, 0));
@@ -130,7 +150,11 @@ int longestPalindromeSubseqSolution(std::string s) {
     return dp[0][n - 1];
 }
 
-// 题目6: 分割回文串
+/**
+ * 题目6: 分割回文串 - 回溯 + 预处理
+ * 时间复杂度: O(n * 2^n) - 最多 2^n 种分割方式
+ * 空间复杂度: O(n²) - 回文判断数组 + 递归栈
+ */
 std::vector<std::vector<std::string>> partitionSolution(std::string s) {
     int n = static_cast<int>(s.size());
 
@@ -165,7 +189,11 @@ std::vector<std::vector<std::string>> partitionSolution(std::string s) {
     return result;
 }
 
-// 题目7: 分割回文串 II
+/**
+ * 题目7: 分割回文串 II - DP + 预处理
+ * 时间复杂度: O(n²) - 预处理 + DP
+ * 空间复杂度: O(n²) - 回文判断数组
+ */
 int minCutSolution(std::string s) {
     int n = static_cast<int>(s.size());
     if (n <= 1) return 0;
@@ -196,7 +224,11 @@ int minCutSolution(std::string s) {
     return dp[n - 1];
 }
 
-// 题目8: 回文数
+/**
+ * 题目8: 回文数 - 反转一半数字
+ * 时间复杂度: O(log n) - 数字位数
+ * 空间复杂度: O(1) - 仅用常数变量
+ */
 bool isPalindromeNumberSolution(int x) {
     if (x < 0 || (x % 10 == 0 && x != 0)) {
         return false;
@@ -211,7 +243,11 @@ bool isPalindromeNumberSolution(int x) {
     return x == reversed || x == reversed / 10;
 }
 
-// 题目9: 最短回文串
+/**
+ * 题目9: 最短回文串 - KMP 前缀函数
+ * 时间复杂度: O(n) - KMP 预处理
+ * 空间复杂度: O(n) - 前缀函数数组
+ */
 std::string shortestPalindromeSolution(std::string s) {
     std::string rev = s;
     std::reverse(rev.begin(), rev.end());
@@ -239,7 +275,11 @@ std::string shortestPalindromeSolution(std::string s) {
     return toAdd + s;
 }
 
-// 题目10: 回文对
+/**
+ * 题目10: 回文对 - 哈希表 + 枚举分割
+ * 时间复杂度: O(n * k²) - n 为单词数，k 为平均长度
+ * 空间复杂度: O(n * k) - 哈希表存储
+ */
 std::vector<std::vector<int>> palindromePairsSolution(std::vector<std::string>& words) {
     std::unordered_map<std::string, int> wordIndex;
     for (int i = 0; i < static_cast<int>(words.size()); ++i) {

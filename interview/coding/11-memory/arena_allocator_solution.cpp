@@ -17,6 +17,13 @@ namespace Solution {
 
 // ==================== 基础 Arena ====================
 
+/**
+ * 题目1: Arena - 基础Arena分配器
+ * allocate: O(1) - 指针递增 + 对齐计算
+ * reset: O(1) - 重置指针
+ * 空间复杂度: O(n) - 固定大小内存块
+ * 特点: 不支持单独释放，整体释放
+ */
 class Arena {
 public:
     explicit Arena(size_t size)
@@ -70,6 +77,12 @@ private:
 
 // ==================== 可增长的 Arena ====================
 
+/**
+ * 题目2: GrowableArena - 可增长Arena分配器
+ * allocate: O(1) 摊还 - 通常O(1)，增长时O(1)新块分配
+ * reset: O(k) - k为额外块数
+ * 空间复杂度: O(n) - 按需增长
+ */
 class GrowableArena {
 public:
     explicit GrowableArena(size_t initialSize = 4096)
@@ -160,6 +173,12 @@ private:
 
 // ==================== 带析构器的 Arena ====================
 
+/**
+ * 题目3: ArenaWithDestructors - 带析构器的Arena
+ * create: O(1) - 分配 + 记录析构器
+ * reset: O(n) - 调用所有析构器（逆序）
+ * 空间复杂度: O(n) - Arena内存 + 析构器列表
+ */
 class ArenaWithDestructors {
 public:
     explicit ArenaWithDestructors(size_t size)
@@ -212,6 +231,13 @@ private:
 
 // ==================== STL Arena Allocator ====================
 
+/**
+ * 题目4: ArenaAllocator - STL兼容Arena分配器
+ * allocate: O(1) - 委托给Arena
+ * deallocate: O(1) - 空操作（Arena风格）
+ * 空间复杂度: O(1) - 仅存储Arena指针
+ * 用途: 配合STL容器使用Arena分配
+ */
 template <typename T>
 class ArenaAllocator {
 public:

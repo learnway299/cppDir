@@ -16,7 +16,11 @@ namespace HashMapImplProblems {
 
 // ==================== 参考答案实现 ====================
 
-// MyHashSetSolution 实现
+/**
+ * 题目1: 设计哈希集合 - 链地址法
+ * add/remove/contains: 时间均摊 O(1)，最坏 O(n/BUCKET_SIZE)
+ * 空间复杂度: O(n) - 存储所有元素
+ */
 class MyHashSetSolutionImpl {
 private:
     static const int BUCKET_SIZE = 769;
@@ -56,7 +60,11 @@ void MyHashSetSolution::add(int key) {}
 void MyHashSetSolution::remove(int key) {}
 bool MyHashSetSolution::contains(int key) { return false; }
 
-// MyHashMapSolution 实现
+/**
+ * 题目2: 设计哈希映射 - 链地址法
+ * put/get/remove: 时间均摊 O(1)，最坏 O(n/BUCKET_SIZE)
+ * 空间复杂度: O(n) - 存储所有键值对
+ */
 class MyHashMapSolutionImpl {
 private:
     static const int BUCKET_SIZE = 769;
@@ -99,7 +107,11 @@ void MyHashMapSolution::put(int key, int value) {}
 int MyHashMapSolution::get(int key) { return -1; }
 void MyHashMapSolution::remove(int key) {}
 
-// 题目3: 两数之和
+/**
+ * 题目3: 两数之和 - 哈希表
+ * 时间复杂度: O(n) - 单次遍历
+ * 空间复杂度: O(n) - 哈希表存储
+ */
 std::vector<int> twoSumSolution(std::vector<int>& nums, int target) {
     std::unordered_map<int, int> seen;
 
@@ -114,7 +126,11 @@ std::vector<int> twoSumSolution(std::vector<int>& nums, int target) {
     return {};
 }
 
-// 题目4: 存在重复元素
+/**
+ * 题目4: 存在重复元素 - 哈希集合
+ * 时间复杂度: O(n) - 单次遍历
+ * 空间复杂度: O(n) - 哈希集合存储
+ */
 bool containsDuplicateSolution(std::vector<int>& nums) {
     std::unordered_set<int> seen;
 
@@ -128,7 +144,11 @@ bool containsDuplicateSolution(std::vector<int>& nums) {
     return false;
 }
 
-// 题目5: 存在重复元素 II
+/**
+ * 题目5: 存在重复元素 II - 滑动窗口哈希集合
+ * 时间复杂度: O(n) - 单次遍历
+ * 空间复杂度: O(min(n, k)) - 窗口大小
+ */
 bool containsNearbyDuplicateSolution(std::vector<int>& nums, int k) {
     std::unordered_set<int> window;
 
@@ -146,7 +166,11 @@ bool containsNearbyDuplicateSolution(std::vector<int>& nums, int k) {
     return false;
 }
 
-// 题目6: 字母异位词分组
+/**
+ * 题目6: 字母异位词分组 - 排序 + 哈希表
+ * 时间复杂度: O(n * k log k) - n 为字符串数，k 为最长字符串长度
+ * 空间复杂度: O(n * k) - 哈希表存储
+ */
 std::vector<std::vector<std::string>> groupAnagramsSolution(std::vector<std::string>& strs) {
     std::unordered_map<std::string, std::vector<std::string>> groups;
 
@@ -164,7 +188,11 @@ std::vector<std::vector<std::string>> groupAnagramsSolution(std::vector<std::str
     return result;
 }
 
-// 题目7: 同构字符串
+/**
+ * 题目7: 同构字符串 - 双向哈希映射
+ * 时间复杂度: O(n) - 单次遍历
+ * 空间复杂度: O(字符集大小) - 两个哈希表
+ */
 bool isIsomorphicSolution(std::string s, std::string t) {
     if (s.size() != t.size()) return false;
 
@@ -183,7 +211,11 @@ bool isIsomorphicSolution(std::string s, std::string t) {
     return true;
 }
 
-// 题目8: 有效的字母异位词
+/**
+ * 题目8: 有效的字母异位词 - 计数数组
+ * 时间复杂度: O(n) - 单次遍历
+ * 空间复杂度: O(1) - 固定大小数组（26 个字母）
+ */
 bool isAnagramSolution(std::string s, std::string t) {
     if (s.size() != t.size()) return false;
 
@@ -201,7 +233,11 @@ bool isAnagramSolution(std::string s, std::string t) {
     return true;
 }
 
-// 题目9: 最长连续序列
+/**
+ * 题目9: 最长连续序列 - 哈希集合
+ * 时间复杂度: O(n) - 每个元素最多访问两次
+ * 空间复杂度: O(n) - 哈希集合存储
+ */
 int longestConsecutiveSolution(std::vector<int>& nums) {
     std::unordered_set<int> numSet(nums.begin(), nums.end());
     int longest = 0;
@@ -223,7 +259,11 @@ int longestConsecutiveSolution(std::vector<int>& nums) {
     return longest;
 }
 
-// 题目10: 前 K 个高频元素
+/**
+ * 题目10: 前 K 个高频元素 - 桶排序
+ * 时间复杂度: O(n) - 统计 + 桶排序
+ * 空间复杂度: O(n) - 桶和哈希表
+ */
 std::vector<int> topKFrequentSolution(std::vector<int>& nums, int k) {
     std::unordered_map<int, int> freq;
     for (int num : nums) {

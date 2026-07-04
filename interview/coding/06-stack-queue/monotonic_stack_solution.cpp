@@ -13,7 +13,11 @@
 
 namespace MonotonicStackProblems {
 
-// 题目1: 下一个更大元素 I
+/**
+ * 题目1: 下一个更大元素 I - 单调栈 + 哈希表
+ * 时间复杂度: O(m + n) - m, n 分别为两数组长度
+ * 空间复杂度: O(n) - 哈希表和栈存储
+ */
 std::vector<int> nextGreaterElementSolution(std::vector<int>& nums1, std::vector<int>& nums2) {
     std::unordered_map<int, int> nextGreater;
     std::stack<int> stk;
@@ -34,7 +38,11 @@ std::vector<int> nextGreaterElementSolution(std::vector<int>& nums1, std::vector
     return result;
 }
 
-// 题目2: 下一个更大元素 II（循环数组）
+/**
+ * 题目2: 下一个更大元素 II - 单调栈 + 循环数组
+ * 时间复杂度: O(n) - 遍历两倍数组长度
+ * 空间复杂度: O(n) - 栈和结果数组
+ */
 std::vector<int> nextGreaterElementsSolution(std::vector<int>& nums) {
     int n = static_cast<int>(nums.size());
     std::vector<int> result(n, -1);
@@ -54,7 +62,11 @@ std::vector<int> nextGreaterElementsSolution(std::vector<int>& nums) {
     return result;
 }
 
-// 题目3: 每日温度
+/**
+ * 题目3: 每日温度 - 单调递减栈
+ * 时间复杂度: O(n) - 每个元素最多入栈出栈一次
+ * 空间复杂度: O(n) - 栈存储索引
+ */
 std::vector<int> dailyTemperaturesSolution(std::vector<int>& temperatures) {
     int n = static_cast<int>(temperatures.size());
     std::vector<int> answer(n, 0);
@@ -72,7 +84,11 @@ std::vector<int> dailyTemperaturesSolution(std::vector<int>& temperatures) {
     return answer;
 }
 
-// 题目4: 柱状图中最大的矩形
+/**
+ * 题目4: 柱状图中最大的矩形 - 单调递增栈
+ * 时间复杂度: O(n) - 每个元素最多入栈出栈一次
+ * 空间复杂度: O(n) - 栈和哨兵数组
+ */
 int largestRectangleAreaSolution(std::vector<int>& heights) {
     int n = static_cast<int>(heights.size());
 
@@ -97,7 +113,11 @@ int largestRectangleAreaSolution(std::vector<int>& heights) {
     return maxArea;
 }
 
-// 题目5: 最大矩形
+/**
+ * 题目5: 最大矩形 - 柱状图 + 单调栈
+ * 时间复杂度: O(m * n) - 遍历矩阵每行调用单调栈
+ * 空间复杂度: O(n) - 高度数组和栈
+ */
 int maximalRectangleSolution(std::vector<std::vector<char>>& matrix) {
     if (matrix.empty() || matrix[0].empty()) return 0;
 
@@ -117,7 +137,11 @@ int maximalRectangleSolution(std::vector<std::vector<char>>& matrix) {
     return maxArea;
 }
 
-// 题目6: 接雨水
+/**
+ * 题目6: 接雨水 - 单调递减栈
+ * 时间复杂度: O(n) - 每个元素最多入栈出栈一次
+ * 空间复杂度: O(n) - 栈存储索引
+ */
 int trapSolution(std::vector<int>& height) {
     std::stack<int> stk;
     int water = 0;
@@ -140,7 +164,11 @@ int trapSolution(std::vector<int>& height) {
     return water;
 }
 
-// 题目7: 去除重复字母
+/**
+ * 题目7: 去除重复字母 - 单调栈 + 贪心
+ * 时间复杂度: O(n) - 单次遍历字符串
+ * 空间复杂度: O(1) - 固定大小数组（26 个字母）
+ */
 std::string removeDuplicateLettersSolution(std::string s) {
     std::vector<int> count(26, 0);
     std::vector<bool> inStack(26, false);
@@ -168,7 +196,11 @@ std::string removeDuplicateLettersSolution(std::string s) {
     return result;
 }
 
-// 题目8: 股票价格跨度（解答版本）
+/**
+ * 题目8: 股票价格跨度 - 单调递减栈
+ * next: 时间均摊 O(1)，空间 O(n)
+ * 总体: 时间 O(n)，空间 O(n)
+ */
 class StockSpannerSolutionImpl {
 private:
     std::stack<std::pair<int, int>> stk;
@@ -192,7 +224,11 @@ public:
 StockSpannerSolution::StockSpannerSolution() {}
 int StockSpannerSolution::next(int price) { return 0; }
 
-// 题目9: 132 模式
+/**
+ * 题目9: 132 模式 - 单调递减栈（逆序遍历）
+ * 时间复杂度: O(n) - 单次遍历
+ * 空间复杂度: O(n) - 栈存储元素
+ */
 bool find132patternSolution(std::vector<int>& nums) {
     int n = static_cast<int>(nums.size());
     if (n < 3) return false;
@@ -216,7 +252,11 @@ bool find132patternSolution(std::vector<int>& nums) {
     return false;
 }
 
-// 题目10: 移掉 K 位数字
+/**
+ * 题目10: 移掉 K 位数字 - 单调递增栈 + 贪心
+ * 时间复杂度: O(n) - 单次遍历字符串
+ * 空间复杂度: O(n) - 结果字符串
+ */
 std::string removeKdigitsSolution(std::string num, int k) {
     std::string result;
 

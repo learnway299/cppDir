@@ -13,6 +13,12 @@ namespace ThreeSumImpl {
 
 namespace Solution {
 
+/**
+ * threeSum - 三数之和为零
+ * 时间复杂度: O(n²) - 排序O(nlogn) + 外层O(n)*内层O(n)
+ * 空间复杂度: O(1) - 不计结果空间
+ * 特点: 排序 + 固定一个数 + 双指针 + 多层去重
+ */
 std::vector<std::vector<int>> threeSum(std::vector<int>& nums) {
     std::vector<std::vector<int>> result;
     std::sort(nums.begin(), nums.end());
@@ -41,6 +47,11 @@ std::vector<std::vector<int>> threeSum(std::vector<int>& nums) {
     return result;
 }
 
+/**
+ * threeSumClosest - 最接近目标的三数之和
+ * 时间复杂度: O(n²) - 同三数之和
+ * 空间复杂度: O(1) - 常数空间
+ */
 int threeSumClosest(std::vector<int>& nums, int target) {
     std::sort(nums.begin(), nums.end());
     int n = static_cast<int>(nums.size());

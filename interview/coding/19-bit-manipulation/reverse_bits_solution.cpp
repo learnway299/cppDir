@@ -11,6 +11,12 @@ namespace ReverseBitsImpl {
 namespace Solution {
 
 // ==================== 方法1: 逐位翻转 ====================
+/**
+ * reverseBits - 颠倒二进制位（逐位法）
+ * 时间复杂度: O(32) = O(1) - 固定32次循环
+ * 空间复杂度: O(1) - 常数空间
+ * 特点: 每次取最低位放到结果最高位
+ */
 uint32_t reverseBits(uint32_t n) {
     uint32_t result = 0;
     for (int i = 0; i < 32; ++i) {
@@ -21,6 +27,12 @@ uint32_t reverseBits(uint32_t n) {
 }
 
 // ==================== 方法2: 分治法 ====================
+/**
+ * reverseBitsDivide - 颠倒二进制位（分治法）
+ * 时间复杂度: O(1) - 5次位操作
+ * 空间复杂度: O(1) - 常数空间
+ * 特点: 16位→8位→4位→2位→1位逐级交换
+ */
 uint32_t reverseBitsDivide(uint32_t n) {
     n = ((n & 0xffff0000) >> 16) | ((n & 0x0000ffff) << 16);
     n = ((n & 0xff00ff00) >> 8)  | ((n & 0x00ff00ff) << 8);

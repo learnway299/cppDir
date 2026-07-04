@@ -14,6 +14,13 @@ namespace Solution {
 
 // ==================== Function ====================
 
+/**
+ * Function - 类型擦除可调用对象包装器
+ * operator(): O(1) - 虚函数调用
+ * 拷贝: O(n) - clone深拷贝
+ * 空间复杂度: O(1) - 堆分配存储callable
+ * 特点: 类似std::function，支持任意可调用对象
+ */
 template <typename Signature>
 class Function;
 
@@ -81,6 +88,13 @@ private:
 
 // ==================== Any ====================
 
+/**
+ * Any - 类型擦除任意类型容器
+ * get<T>: O(1) - 类型检查+指针转换
+ * 拷贝: O(n) - clone深拷贝
+ * 空间复杂度: O(1) + 存储对象大小
+ * 特点: 类似std::any，运行时类型检查
+ */
 class Any {
 public:
     Any() = default;
@@ -179,6 +193,13 @@ private:
 
 // ==================== Drawable ====================
 
+/**
+ * Drawable - External Polymorphism模式
+ * draw: O(1) - 虚函数调用
+ * 拷贝: O(n) - clone深拷贝
+ * 空间复杂度: O(1) + 存储对象大小
+ * 特点: 无需继承即可实现多态，concept/model模式
+ */
 class Drawable {
 public:
     template <typename T>

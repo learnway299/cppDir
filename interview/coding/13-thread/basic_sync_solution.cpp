@@ -10,6 +10,12 @@ namespace BasicSync {
 
 // ==================== 参考答案实现 ====================
 
+/**
+ * 题目1: Counter - 线程安全计数器
+ * increment/decrement/getValue: O(1) - 加锁操作
+ * incrementAtomic/getAtomicValue: O(1) - 无锁原子操作
+ * 空间复杂度: O(1) - 互斥锁 + 原子变量
+ */
 // 题目1: 线程安全计数器
 void CounterSolution::increment() {
     std::lock_guard<std::mutex> lock(mutex_);
@@ -40,6 +46,12 @@ void CounterSolution::reset() {
     atomicValue_.store(0, std::memory_order_relaxed);
 }
 
+/**
+ * 题目2: Event - 事件同步原语
+ * wait: O(1) - 条件变量等待
+ * signal/signalAll: O(1) - 通知
+ * 空间复杂度: O(1) - 互斥锁 + 条件变量 + bool
+ */
 // 题目2: 事件
 void EventSolution::wait() {
     std::unique_lock<std::mutex> lock(mutex_);
@@ -78,6 +90,12 @@ bool EventSolution::isSignaled() const {
     return signaled_;
 }
 
+/**
+ * 题目3: SpinLock - 自旋锁
+ * lock: O(1) 无竞争，有竞争时自旋
+ * unlock/try_lock: O(1) - 原子操作
+ * 空间复杂度: O(1) - 一个atomic_flag
+ */
 // 题目3: 自旋锁
 void SpinLockSolution::lock() {
     while (flag_.test_and_set(std::memory_order_acquire)) {
@@ -93,6 +111,12 @@ bool SpinLockSolution::try_lock() {
     return !flag_.test_and_set(std::memory_order_acquire);
 }
 
+/**
+ * 题目4: Semaphore - 计数信号量
+ * acquire/release: O(1) - 条件变量操作
+ * try_acquire: O(1) - 非阻塞尝试
+ * 空间复杂度: O(1) - 互斥锁 + 条件变量 + 计数器
+ */
 // 题目4: 计数信号量
 SemaphoreSolution::SemaphoreSolution(int count) : count_(count) {}
 
@@ -134,6 +158,11 @@ int SemaphoreSolution::getCount() const {
     return count_;
 }
 
+/**
+ * 题目4b: BinarySemaphore - 二元信号量
+ * acquire/release: O(1) - 条件变量操作
+ * 空间复杂度: O(1) - 互斥锁 + 条件变量 + bool
+ */
 // 二元信号量
 BinarySemaphoreSolution::BinarySemaphoreSolution(bool initial) : available_(initial) {}
 
@@ -156,6 +185,12 @@ bool BinarySemaphoreSolution::isAvailable() const {
     return available_;
 }
 
+/**
+ * 题目5: TimedLock - 限时锁
+ * try_lock_for: O(1) - 带超时的加锁
+ * lock/unlock/try_lock: O(1) - 标准锁操作
+ * 空间复杂度: O(1) - timed_mutex
+ */
 // 题目5: 限时锁
 template <typename Rep, typename Period>
 bool TimedLockSolution::try_lock_for(const std::chrono::duration<Rep, Period>& timeout) {

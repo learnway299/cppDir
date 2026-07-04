@@ -1,4 +1,4 @@
-/**
+ /**
  * @file lru_cache_solution.cpp
  * @brief LRU 缓存实现 - 参考答案
  */
@@ -13,7 +13,11 @@ namespace LRUCacheHash {
 
 // ==================== 参考答案实现 ====================
 
-// LRUCacheSolution 实现
+/**
+ * 题目1: LRU 缓存 - 哈希表 + std::list
+ * get/put: 时间 O(1)
+ * 空间复杂度: O(capacity) - 存储 capacity 个元素
+ */
 LRUCacheSolution::LRUCacheSolution(int capacity) : capacity_(capacity) {}
 
 int LRUCacheSolution::get(int key) {
@@ -45,7 +49,11 @@ void LRUCacheSolution::put(int key, int value) {
     map_[key] = cache_.begin();
 }
 
-// LRUCacheManualSolution 实现
+/**
+ * 题目2: LRU 缓存（手动双向链表）
+ * get/put: 时间 O(1)
+ * 空间复杂度: O(capacity) - 存储 capacity 个节点
+ */
 struct LRUCacheManualSolution::DLinkedNode {
     int key, value;
     DLinkedNode* prev;
@@ -127,7 +135,11 @@ void LRUCacheManualSolution::put(int key, int value) {
     }
 }
 
-// LRUCacheWithTTLSolution 实现
+/**
+ * 题目3: 带 TTL 的 LRU 缓存
+ * get/put: 时间 O(1)（不考虑过期清理）
+ * 空间复杂度: O(capacity) - 存储 capacity 个元素
+ */
 struct LRUCacheWithTTLSolution::CacheEntry {
     int value;
     std::chrono::steady_clock::time_point expireTime;
@@ -173,7 +185,11 @@ void LRUCacheWithTTLSolution::put(int key, int value, int ttlSeconds) {
     map_[key] = cache_.begin();
 }
 
-// ThreadSafeLRUCacheSolution 实现
+/**
+ * 题目4: 线程安全 LRU 缓存 - 读写锁
+ * get/put: 时间 O(1)（不考虑锁竞争）
+ * 空间复杂度: O(capacity) - 存储 capacity 个元素
+ */
 ThreadSafeLRUCacheSolution::ThreadSafeLRUCacheSolution(int capacity) : capacity_(capacity) {
     mutex_ = new std::shared_mutex();
 }

@@ -15,6 +15,11 @@ namespace ShortestPath {
 
 // ==================== 参考答案实现 ====================
 
+/**
+ * 题目1: Dijkstra 算法 - 单源最短路径
+ * 时间复杂度: O((V + E) log V) - 优先队列实现
+ * 空间复杂度: O(V + E) - 邻接表 + 距离数组 + 优先队列
+ */
 std::vector<int> dijkstraSolution(int n, std::vector<std::vector<int>>& edges, int src) {
     std::vector<std::vector<std::pair<int, int>>> adj(n);
     for (auto& e : edges) {
@@ -45,6 +50,11 @@ std::vector<int> dijkstraSolution(int n, std::vector<std::vector<int>>& edges, i
     return dist;
 }
 
+/**
+ * 题目2: 网络延迟时间 - Dijkstra 应用
+ * 时间复杂度: O((V + E) log V) - Dijkstra算法
+ * 空间复杂度: O(V + E) - 邻接表 + 距离数组
+ */
 int networkDelayTimeSolution(std::vector<std::vector<int>>& times, int n, int k) {
     std::vector<std::vector<std::pair<int, int>>> adj(n + 1);
     for (auto& t : times) {
@@ -79,6 +89,11 @@ int networkDelayTimeSolution(std::vector<std::vector<int>>& times, int n, int k)
     return result;
 }
 
+/**
+ * 题目3: 二进制矩阵最短路径 - BFS
+ * 时间复杂度: O(n²) - 最多访问所有格子
+ * 空间复杂度: O(n²) - 队列最坏情况存储所有格子
+ */
 int shortestPathBinaryMatrixSolution(std::vector<std::vector<int>>& grid) {
     int n = static_cast<int>(grid.size());
     if (grid[0][0] == 1 || grid[n-1][n-1] == 1) return -1;
@@ -111,6 +126,11 @@ int shortestPathBinaryMatrixSolution(std::vector<std::vector<int>>& grid) {
     return -1;
 }
 
+/**
+ * 题目4: 迷宫中离入口最近的出口 - BFS
+ * 时间复杂度: O(m * n) - 最多访问所有格子
+ * 空间复杂度: O(m * n) - 队列最坏情况
+ */
 int nearestExitSolution(std::vector<std::vector<char>>& maze, std::vector<int>& entrance) {
     int m = static_cast<int>(maze.size());
     int n = static_cast<int>(maze[0].size());
@@ -148,6 +168,11 @@ int nearestExitSolution(std::vector<std::vector<char>>& maze, std::vector<int>& 
     return -1;
 }
 
+/**
+ * 题目5: 最小体力消耗路径 - Dijkstra 变体
+ * 时间复杂度: O(m * n * log(m * n)) - 优先队列处理每个格子
+ * 空间复杂度: O(m * n) - effort数组 + 优先队列
+ */
 int minimumEffortPathSolution(std::vector<std::vector<int>>& heights) {
     int m = static_cast<int>(heights.size());
     int n = static_cast<int>(heights[0].size());
@@ -183,6 +208,11 @@ int minimumEffortPathSolution(std::vector<std::vector<int>>& heights) {
     return 0;
 }
 
+/**
+ * 题目6: K 站中转内最便宜的航班 - Bellman-Ford 变体
+ * 时间复杂度: O(k * E) - 最多k+1轮松弛，每轮遍历所有边
+ * 空间复杂度: O(V) - 距离数组
+ */
 int findCheapestPriceSolution(int n, std::vector<std::vector<int>>& flights, int src, int dst, int k) {
     std::vector<int> dist(n, INT_MAX);
     dist[src] = 0;

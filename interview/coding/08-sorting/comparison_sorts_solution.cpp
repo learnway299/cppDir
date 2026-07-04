@@ -14,6 +14,11 @@ namespace ComparisonSorts {
 
 // ==================== 参考答案实现 ====================
 
+/**
+ * 题目1: 冒泡排序
+ * 时间复杂度: O(n²) 平均/最坏，O(n) 最好（已排序）
+ * 空间复杂度: O(1) - 原地排序
+ */
 void bubbleSortSolution(std::vector<int>& nums) {
     int n = static_cast<int>(nums.size());
     for (int i = 0; i < n - 1; ++i) {
@@ -28,6 +33,11 @@ void bubbleSortSolution(std::vector<int>& nums) {
     }
 }
 
+/**
+ * 题目2: 选择排序
+ * 时间复杂度: O(n²) - 固定比较次数
+ * 空间复杂度: O(1) - 原地排序
+ */
 void selectionSortSolution(std::vector<int>& nums) {
     int n = static_cast<int>(nums.size());
     for (int i = 0; i < n - 1; ++i) {
@@ -43,6 +53,11 @@ void selectionSortSolution(std::vector<int>& nums) {
     }
 }
 
+/**
+ * 题目3: 插入排序
+ * 时间复杂度: O(n²) 平均/最坏，O(n) 最好（已排序）
+ * 空间复杂度: O(1) - 原地排序
+ */
 void insertionSortSolution(std::vector<int>& nums) {
     int n = static_cast<int>(nums.size());
     for (int i = 1; i < n; ++i) {
@@ -56,6 +71,11 @@ void insertionSortSolution(std::vector<int>& nums) {
     }
 }
 
+/**
+ * 题目4: 希尔排序
+ * 时间复杂度: O(n log²n) ~ O(n^1.5)，取决于间隔序列
+ * 空间复杂度: O(1) - 原地排序
+ */
 void shellSortSolution(std::vector<int>& nums) {
     int n = static_cast<int>(nums.size());
     int gap = 1;
@@ -77,6 +97,11 @@ void shellSortSolution(std::vector<int>& nums) {
     }
 }
 
+/**
+ * 题目5: 归并排序
+ * 时间复杂度: O(n log n) - 稳定的最优时间
+ * 空间复杂度: O(n) - 辅助数组
+ */
 void mergeSortSolution(std::vector<int>& nums) {
     if (nums.empty()) return;
 
@@ -110,6 +135,11 @@ void mergeSortSolution(std::vector<int>& nums) {
     sort(0, static_cast<int>(nums.size()) - 1);
 }
 
+/**
+ * 题目6: 快速排序（随机化 + 小数组优化）
+ * 时间复杂度: O(n log n) 平均，O(n²) 最坏
+ * 空间复杂度: O(log n) - 递归栈
+ */
 void quickSortSolution(std::vector<int>& nums) {
     if (nums.size() <= 1) return;
 
@@ -156,6 +186,11 @@ void quickSortSolution(std::vector<int>& nums) {
     sort(0, static_cast<int>(nums.size()) - 1);
 }
 
+/**
+ * 题目7: 堆排序
+ * 时间复杂度: O(n log n) - 建堆 O(n) + 排序 O(n log n)
+ * 空间复杂度: O(1) - 原地排序
+ */
 void heapSortSolution(std::vector<int>& nums) {
     int n = static_cast<int>(nums.size());
     if (n <= 1) return;
@@ -184,11 +219,21 @@ void heapSortSolution(std::vector<int>& nums) {
     }
 }
 
+/**
+ * 题目8: 排序数组（LeetCode 912）
+ * 时间复杂度: O(n log n) 平均
+ * 空间复杂度: O(log n) - 递归栈
+ */
 std::vector<int> sortArraySolution(std::vector<int>& nums) {
     quickSortSolution(nums);
     return nums;
 }
 
+/**
+ * 题目9: 排序链表 - 自底向上归并
+ * 时间复杂度: O(n log n)
+ * 空间复杂度: O(1) - 原地排序
+ */
 ListNode* sortListSolution(ListNode* head) {
     if (!head || !head->next) return head;
 
@@ -243,6 +288,11 @@ ListNode* sortListSolution(ListNode* head) {
     return dummy.next;
 }
 
+/**
+ * 题目10: 链表插入排序
+ * 时间复杂度: O(n²) 平均/最坏
+ * 空间复杂度: O(1) - 原地排序
+ */
 ListNode* insertionSortListSolution(ListNode* head) {
     if (!head || !head->next) return head;
 
@@ -266,6 +316,11 @@ ListNode* insertionSortListSolution(ListNode* head) {
     return dummy.next;
 }
 
+/**
+ * 题目11: 逆序对计数 - 归并排序计数
+ * 时间复杂度: O(n log n)
+ * 空间复杂度: O(n) - 辅助数组
+ */
 int reversePairsSolution(std::vector<int>& nums) {
     if (nums.empty()) return 0;
 
@@ -304,6 +359,11 @@ int reversePairsSolution(std::vector<int>& nums) {
     return count;
 }
 
+/**
+ * 题目12: 计算右侧小于当前元素的个数 - 归并排序
+ * 时间复杂度: O(n log n)
+ * 空间复杂度: O(n) - 辅助数组
+ */
 std::vector<int> countSmallerSolution(std::vector<int>& nums) {
     int n = static_cast<int>(nums.size());
     std::vector<int> counts(n, 0);

@@ -30,7 +30,11 @@ static void backtrackCoinChange(std::vector<int>& coins, int amount, int start,
 
 // ==================== 参考答案实现 ====================
 
-// 题目1: 零钱兑换（最少硬币数）
+/**
+ * 题目1: 零钱兑换（最少硬币数） - 完全背包 DP
+ * 时间复杂度: O(n * amount) - n 为硬币种类数
+ * 空间复杂度: O(amount) - 一维 DP 数组
+ */
 int coinChangeSolution(std::vector<int>& coins, int amount) {
     std::vector<int> dp(amount + 1, INT_MAX);
     dp[0] = 0;
@@ -44,7 +48,11 @@ int coinChangeSolution(std::vector<int>& coins, int amount) {
     return dp[amount] == INT_MAX ? -1 : dp[amount];
 }
 
-// 题目2: 零钱兑换 II（组合数）
+/**
+ * 题目2: 零钱兑换 II（组合数） - 完全背包 DP
+ * 时间复杂度: O(n * amount) - n 为硬币种类数
+ * 空间复杂度: O(amount) - 一维 DP 数组
+ */
 int changeSolution(int amount, std::vector<int>& coins) {
     std::vector<int> dp(amount + 1, 0);
     dp[0] = 1;
@@ -56,7 +64,11 @@ int changeSolution(int amount, std::vector<int>& coins) {
     return dp[amount];
 }
 
-// 题目3: 组合总和 IV（排列数）
+/**
+ * 题目3: 组合总和 IV（排列数） - 完全背包变体
+ * 时间复杂度: O(n * target) - n 为数组长度
+ * 空间复杂度: O(target) - 一维 DP 数组
+ */
 int combinationSum4Solution(std::vector<int>& nums, int target) {
     std::vector<unsigned long long> dp(target + 1, 0);
     dp[0] = 1;
@@ -70,7 +82,11 @@ int combinationSum4Solution(std::vector<int>& nums, int target) {
     return static_cast<int>(dp[target]);
 }
 
-// 题目4: 爬楼梯（扩展版）
+/**
+ * 题目4: 爬楼梯（扩展版） - 完全背包变体
+ * 时间复杂度: O(n * k) - k 为步数种类数
+ * 空间复杂度: O(n) - 一维 DP 数组
+ */
 int climbStairsExtendedSolution(int n, std::vector<int>& steps) {
     std::vector<int> dp(n + 1, 0);
     dp[0] = 1;
@@ -84,7 +100,11 @@ int climbStairsExtendedSolution(int n, std::vector<int>& steps) {
     return dp[n];
 }
 
-// 题目5: 最大硬币价值
+/**
+ * 题目5: 最大硬币价值 - 二维 DP（硬币数 + 金额）
+ * 时间复杂度: O(n * maxCoins * amount) - n 为硬币种类数
+ * 空间复杂度: O(maxCoins * amount) - 二维 DP 数组
+ */
 int maxCoinValueSolution(std::vector<int>& coins, int maxCoins, int amount) {
     // dp[i][j] = 使用最多 i 个硬币能凑成金额 j 吗
     std::vector<std::vector<bool>> dp(maxCoins + 1, std::vector<bool>(amount + 1, false));
@@ -106,7 +126,11 @@ int maxCoinValueSolution(std::vector<int>& coins, int maxCoins, int amount) {
     return 0;
 }
 
-// 题目6: 凑零钱的方案（打印所有组合）
+/**
+ * 题目6: 凑零钱的方案（打印所有组合） - 回溯法
+ * 时间复杂度: O(n^(amount/min)) - 指数级，取决于结果数量
+ * 空间复杂度: O(amount/min) - 递归深度
+ */
 std::vector<std::vector<int>> coinChangeCombinationsSolution(std::vector<int>& coins, int amount) {
     std::vector<std::vector<int>> result;
     std::vector<int> path;
@@ -114,7 +138,11 @@ std::vector<std::vector<int>> coinChangeCombinationsSolution(std::vector<int>& c
     return result;
 }
 
-// 题目7: 最少硬币数（有限数量）
+/**
+ * 题目7: 最少硬币数（有限数量） - 多重背包 DP
+ * 时间复杂度: O(n * amount * count) - n 为硬币种类数
+ * 空间复杂度: O(amount) - 一维 DP 数组
+ */
 int coinChangeLimitedSolution(std::vector<std::vector<int>>& coins, int amount) {
     std::vector<int> dp(amount + 1, INT_MAX);
     dp[0] = 0;

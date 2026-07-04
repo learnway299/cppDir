@@ -14,6 +14,13 @@ namespace Solution {
 
 // ==================== 题目1: 协程内存池 ====================
 
+/**
+ * 题目1: CoroutineMemoryPool - 协程帧内存池
+ * allocate: O(1) - 从池中取或fallback
+ * deallocate: O(1) - 归还到池中
+ * 空间复杂度: O(POOL_SIZE * BLOCK_SIZE) - 预分配内存块
+ * 特点: 减少协程帧频繁堆分配开销
+ */
 class CoroutineMemoryPool {
 public:
     static constexpr size_t BLOCK_SIZE = 256;
@@ -72,6 +79,13 @@ CoroutineMemoryPool& getMemoryPool() {
 
 // ==================== 题目2: 带自定义分配器的 Task ====================
 
+/**
+ * 题目2: PooledTask<T> - 使用内存池的Task
+ * 创建: O(1) - 从池分配协程帧
+ * 销毁: O(1) - 归还到池
+ * 空间复杂度: O(1) - 复用内存池中的块
+ * 特点: 通过promise_type的operator new/delete使用内存池
+ */
 template <typename T>
 class PooledTask {
 public:
@@ -143,6 +157,13 @@ private:
 
 // ==================== 题目3: 可复用 Task ====================
 
+/**
+ * 题目3: ReusableTask<T> - 可复用协程
+ * start: O(1) - 恢复协程执行
+ * recycle: O(1) - final_suspend中重置并归还
+ * 空间复杂度: O(1) - 协程帧复用
+ * 特点: 协程完成后重置状态，归还池中复用
+ */
 template <typename T>
 class ReusableTask {
 public:
@@ -202,6 +223,12 @@ private:
 
 // ==================== 题目5: 协程池化执行器 ====================
 
+/**
+ * 题目5: PooledExecutor - 协程池化执行器
+ * execute: O(1) - 创建任务并入队
+ * 空间复杂度: O(n + t) - n个任务队列 + t个工作线程
+ * 特点: 线程池 + 任务队列，协程自动调度
+ */
 class PooledExecutor {
 public:
     explicit PooledExecutor(size_t numWorkers)

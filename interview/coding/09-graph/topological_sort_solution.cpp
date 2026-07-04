@@ -34,6 +34,11 @@ static bool hasCycle(std::vector<std::vector<int>>& adj, int node, std::vector<i
 
 // ==================== 参考答案实现 ====================
 
+/**
+ * 题目1: 课程表 - 拓扑排序 (BFS/Kahn算法)
+ * 时间复杂度: O(V + E) - V为课程数，E为先修关系数
+ * 空间复杂度: O(V + E) - 邻接表 + 入度数组 + 队列
+ */
 bool canFinishSolution(int numCourses, std::vector<std::vector<int>>& prerequisites) {
     std::vector<int> indegree(numCourses, 0);
     std::vector<std::vector<int>> adj(numCourses);
@@ -68,6 +73,11 @@ bool canFinishSolution(int numCourses, std::vector<std::vector<int>>& prerequisi
     return count == numCourses;
 }
 
+/**
+ * 题目2: 课程表 II - 拓扑排序返回顺序
+ * 时间复杂度: O(V + E) - V为课程数，E为先修关系数
+ * 空间复杂度: O(V + E) - 邻接表 + 入度数组 + 结果数组
+ */
 std::vector<int> findOrderSolution(int numCourses, std::vector<std::vector<int>>& prerequisites) {
     std::vector<int> indegree(numCourses, 0);
     std::vector<std::vector<int>> adj(numCourses);
@@ -103,6 +113,11 @@ std::vector<int> findOrderSolution(int numCourses, std::vector<std::vector<int>>
     return order;
 }
 
+/**
+ * 题目3: 课程表 IV - Floyd-Warshall传递闭包
+ * 时间复杂度: O(V³ + E + Q) - Floyd-Warshall + 建图 + 查询
+ * 空间复杂度: O(V²) - 可达性矩阵
+ */
 std::vector<bool> checkIfPrerequisiteSolution(int numCourses,
                                                std::vector<std::vector<int>>& prerequisites,
                                                std::vector<std::vector<int>>& queries) {
@@ -132,6 +147,11 @@ std::vector<bool> checkIfPrerequisiteSolution(int numCourses,
     return result;
 }
 
+/**
+ * 题目4: 外星文字典 - 拓扑排序
+ * 时间复杂度: O(C) - C为所有字符总数
+ * 空间复杂度: O(1) - 最多26个字母的邻接表
+ */
 std::string alienOrderSolution(std::vector<std::string>& words) {
     // 初始化所有字符
     std::unordered_map<char, int> indegree;
@@ -192,6 +212,11 @@ std::string alienOrderSolution(std::vector<std::string>& words) {
     return result;
 }
 
+/**
+ * 题目5: 并行课程 - 拓扑排序分层BFS
+ * 时间复杂度: O(V + E) - V为课程数，E为关系数
+ * 空间复杂度: O(V + E) - 邻接表 + 入度数组
+ */
 int minimumSemestersSolution(int n, std::vector<std::vector<int>>& relations) {
     std::vector<int> indegree(n + 1, 0);
     std::vector<std::vector<int>> adj(n + 1);

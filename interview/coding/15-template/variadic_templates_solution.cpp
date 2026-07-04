@@ -12,6 +12,12 @@ namespace Solution {
 
 // ==================== 题目1: print 函数 ====================
 
+/**
+ * 题目1: print - 变参打印函数
+ * 时间复杂度: O(n) - n为参数个数
+ * 空间复杂度: O(n) - 递归调用栈/O(1) 折叠表达式
+ * 特点: 展示递归展开、折叠表达式、逗号运算符三种方案
+ */
 // 方法1: 递归展开
 void print_v1() {
     std::cout << "\n";
@@ -43,6 +49,12 @@ void print_v3(Args... args) {
 
 // ==================== 题目2: sum 函数 ====================
 
+/**
+ * 题目2: sum - 变参求和函数
+ * 时间复杂度: O(n) - n为参数个数
+ * 空间复杂度: O(n) - 递归版/O(1) 折叠表达式版
+ * 特点: 折叠表达式 (args + ...) 最简洁
+ */
 // 方法1: 递归
 template <typename T>
 T sum_v1(T value) {
@@ -68,6 +80,12 @@ auto sum_v3(Args... args) {
 
 // ==================== 题目3: count_args ====================
 
+/**
+ * 题目3: count_args - 参数计数
+ * 编译期: O(1) - sizeof...运算符
+ * 空间复杂度: O(1) - 无运行时开销
+ * 特点: sizeof...(Args)直接获取参数包大小
+ */
 template <typename... Args>
 constexpr std::size_t count_args(Args...) {
     return sizeof...(Args);
@@ -80,6 +98,12 @@ constexpr std::size_t count_types() {
 
 // ==================== 题目4: make_tuple ====================
 
+/**
+ * 题目4: my_make_tuple - 创建tuple
+ * 时间复杂度: O(n) - n个元素构造
+ * 空间复杂度: O(n) - tuple存储n个元素
+ * 特点: decay_t<Args>...获取衰减类型列表
+ */
 template <typename... Args>
 auto my_make_tuple(Args&&... args) {
     return std::tuple<std::decay_t<Args>...>(std::forward<Args>(args)...);
@@ -87,6 +111,12 @@ auto my_make_tuple(Args&&... args) {
 
 // ==================== 题目5: apply ====================
 
+/**
+ * 题目5: my_apply - tuple展开调用函数
+ * 时间复杂度: O(1) - 单次函数调用
+ * 空间复杂度: O(1) - 无额外空间
+ * 特点: index_sequence展开tuple元素作为函数参数
+ */
 template <typename F, typename Tuple, std::size_t... I>
 auto apply_impl(F&& f, Tuple&& t, std::index_sequence<I...>) {
     return std::forward<F>(f)(std::get<I>(std::forward<Tuple>(t))...);
@@ -104,6 +134,12 @@ auto my_apply(F&& f, Tuple&& t) {
 
 // ==================== 题目6: all_same ====================
 
+/**
+ * 题目6: all_same - 检测所有类型相同
+ * 编译期: O(n) - 递归特化匹配
+ * 空间复杂度: O(1) - 类型特征无运行时开销
+ * 特点: 递归比较相邻类型，遇到不同返回false_type
+ */
 template <typename...>
 struct all_same : std::true_type {};
 
@@ -119,6 +155,12 @@ constexpr bool all_same_v = all_same<Types...>::value;
 
 // ==================== 题目7: contains_type ====================
 
+/**
+ * 题目7: contains_type - 类型列表查找
+ * 编译期: O(n) - 线性遍历类型列表
+ * 空间复杂度: O(1) - 类型特征无运行时开销
+ * 特点: 递归匹配，找到相同类型返回true_type
+ */
 template <typename T, typename... List>
 struct contains_type : std::false_type {};
 
@@ -131,6 +173,12 @@ constexpr bool contains_type_v = contains_type<T, List...>::value;
 
 // ==================== 题目8: type_at ====================
 
+/**
+ * 题目8: type_at - 类型列表索引访问
+ * 编译期: O(I) - 递归I次到达目标位置
+ * 空间复杂度: O(1) - 类型特征无运行时开销
+ * 特点: 递归减少索引直到I==0，返回当前类型
+ */
 template <std::size_t I, typename T, typename... Rest>
 struct type_at_impl {
     using type = typename type_at_impl<I - 1, Rest...>::type;

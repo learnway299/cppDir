@@ -14,6 +14,13 @@ namespace Solution {
 
 // ==================== 题目1: 简单调度器 ====================
 
+/**
+ * 题目1: SimpleScheduler - FIFO协程调度器
+ * schedule: O(1) - 入队
+ * run: O(n) - 执行所有就绪协程
+ * 空间复杂度: O(n) - 就绪队列存储n个协程句柄
+ * 特点: 简单公平调度，单线程
+ */
 class SimpleScheduler {
 public:
     void schedule(std::coroutine_handle<> handle) {
@@ -49,6 +56,12 @@ private:
 
 // ==================== 题目2: 多线程调度器 ====================
 
+/**
+ * 题目2: ThreadPoolScheduler - 多线程协程调度器
+ * schedule: O(1) - 加锁入队
+ * 空间复杂度: O(n + t) - n个任务 + t个工作线程
+ * 特点: 线程安全，条件变量等待，支持并行执行
+ */
 class ThreadPoolScheduler {
 public:
     explicit ThreadPoolScheduler(size_t numThreads) : running_(true) {
@@ -135,6 +148,13 @@ private:
 
 // ==================== 题目3: 优先级调度器 ====================
 
+/**
+ * 题目3: PriorityScheduler - 优先级协程调度器
+ * schedule: O(1) - 入对应优先级队列
+ * run: O(n) - 按优先级执行，高优先级优先
+ * 空间复杂度: O(n) - 3个优先级队列
+ * 特点: Low/Normal/High三级优先级
+ */
 class PriorityScheduler {
 public:
     enum class Priority { Low = 0, Normal = 1, High = 2 };
@@ -171,6 +191,12 @@ private:
 
 // ==================== 题目4: Yield 操作 ====================
 
+/**
+ * 题目4: YieldScheduler + Yield - 协作式让出
+ * yield: O(1) - 将当前协程重新入队
+ * 空间复杂度: O(1) - Awaiter无额外开销
+ * 特点: await_suspend中重新调度，实现协作式多任务
+ */
 class YieldScheduler;
 
 struct Yield {
@@ -222,6 +248,12 @@ void Yield::await_suspend(std::coroutine_handle<> handle) noexcept {
 
 // ==================== 题目5: 公平调度器（时间片轮转）====================
 
+/**
+ * 题目5: FairScheduler - 时间片轮转调度器
+ * 单次调度: O(1) - 执行一个时间片
+ * 空间复杂度: O(n) - 就绪队列
+ * 特点: 防止单个协程饥饿，公平分配CPU时间
+ */
 class FairScheduler {
 public:
     explicit FairScheduler(int timeSliceMs = 10)

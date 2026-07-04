@@ -92,14 +92,22 @@ static int sumNumbersDFS(TreeNode* root, int currentNum) {
 
 // ==================== 参考答案实现 ====================
 
-// 题目1: 二叉树的所有路径
+/**
+ * 题目1: 二叉树的所有路径 - DFS 递归
+ * 时间复杂度: O(n²) - 每个节点访问一次，字符串拼接 O(n)
+ * 空间复杂度: O(n²) - 路径字符串总长度
+ */
 std::vector<std::string> binaryTreePathsSolution(TreeNode* root) {
     std::vector<std::string> result;
     binaryTreePathsHelper(root, "", result);
     return result;
 }
 
-// 题目2: 路径总和
+/**
+ * 题目2: 路径总和 - DFS 递归
+ * 时间复杂度: O(n) - 访问每个节点一次
+ * 空间复杂度: O(h) - 递归栈深度，最坏 O(n)
+ */
 bool hasPathSumSolution(TreeNode* root, int targetSum) {
     if (!root) return false;
     if (!root->left && !root->right) return root->val == targetSum;
@@ -107,7 +115,11 @@ bool hasPathSumSolution(TreeNode* root, int targetSum) {
     return hasPathSumSolution(root->left, remaining) || hasPathSumSolution(root->right, remaining);
 }
 
-// 题目3: 路径总和 II
+/**
+ * 题目3: 路径总和 II - DFS 回溯
+ * 时间复杂度: O(n²) - 访问每个节点，路径拷贝 O(n)
+ * 空间复杂度: O(n) - 递归栈 + 路径数组
+ */
 std::vector<std::vector<int>> pathSumSolution(TreeNode* root, int targetSum) {
     std::vector<std::vector<int>> result;
     std::vector<int> path;
@@ -115,21 +127,33 @@ std::vector<std::vector<int>> pathSumSolution(TreeNode* root, int targetSum) {
     return result;
 }
 
-// 题目4: 路径总和 III
+/**
+ * 题目4: 路径总和 III - 前缀和 + 哈希表
+ * 时间复杂度: O(n) - 访问每个节点一次
+ * 空间复杂度: O(n) - 哈希表存储前缀和
+ */
 int pathSumIIISolution(TreeNode* root, int targetSum) {
     std::unordered_map<long long, int> prefixSumCount;
     prefixSumCount[0] = 1;
     return pathSumIIIHelper(root, 0, targetSum, prefixSumCount);
 }
 
-// 题目5: 二叉树的最大路径和
+/**
+ * 题目5: 二叉树的最大路径和 - 后序遍历 + 贡献值
+ * 时间复杂度: O(n) - 访问每个节点一次
+ * 空间复杂度: O(h) - 递归栈深度
+ */
 int maxPathSumSolution(TreeNode* root) {
     int maxSum = INT_MIN;
     maxPathSumHelper(root, maxSum);
     return maxSum;
 }
 
-// 题目6: 二叉树中的最长交替路径
+/**
+ * 题目6: 二叉树中的最长交替路径 - DFS 双向递归
+ * 时间复杂度: O(n) - 访问每个节点一次
+ * 空间复杂度: O(h) - 递归栈深度
+ */
 int longestZigZagSolution(TreeNode* root) {
     if (!root) return 0;
     int maxLen = 0;
@@ -138,14 +162,22 @@ int longestZigZagSolution(TreeNode* root) {
     return maxLen;
 }
 
-// 题目7: 二叉树的直径
+/**
+ * 题目7: 二叉树的直径 - 后序遍历求深度
+ * 时间复杂度: O(n) - 访问每个节点一次
+ * 空间复杂度: O(h) - 递归栈深度
+ */
 int diameterOfBinaryTreeSolution(TreeNode* root) {
     int maxDiameter = 0;
     diameterHelper(root, maxDiameter);
     return maxDiameter;
 }
 
-// 题目8: 求根节点到叶节点数字之和
+/**
+ * 题目8: 求根节点到叶节点数字之和 - DFS 递归
+ * 时间复杂度: O(n) - 访问每个节点一次
+ * 空间复杂度: O(h) - 递归栈深度
+ */
 int sumNumbersSolution(TreeNode* root) {
     return sumNumbersDFS(root, 0);
 }

@@ -15,6 +15,13 @@ size_t hash(const std::string& key, int seed, size_t size) {
     return hasher(key + std::to_string(seed)) % size;
 }
 
+/**
+ * BloomFilter - 布隆过滤器
+ * add:          时间O(k) - k个哈希函数
+ * mightContain: 时间O(k) - k个哈希函数
+ * 空间复杂度: O(m) - m为位数组大小
+ * 特点: 概率数据结构，有假阳性无假阴性
+ */
 class BloomFilter {
 private:
     std::vector<bool> bits_;

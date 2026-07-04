@@ -44,12 +44,20 @@ static TreeNode* sortedArrayToBSTHelper(std::vector<int>& nums, int left, int ri
 
 // ==================== 参考答案实现 ====================
 
-// 题目1: 验证二叉搜索树
+/**
+ * 题目1: 验证二叉搜索树 - 递归边界法
+ * 时间复杂度: O(n) - 访问每个节点一次
+ * 空间复杂度: O(h) - 递归栈深度
+ */
 bool isValidBSTSolution(TreeNode* root) {
     return isValidBSTHelper(root, LLONG_MIN, LLONG_MAX);
 }
 
-// 题目2: 二叉搜索树中的搜索
+/**
+ * 题目2: 二叉搜索树中的搜索 - 递归/迭代
+ * 时间复杂度: O(h) - 最多走一条路径
+ * 空间复杂度: O(h) - 递归栈深度
+ */
 TreeNode* searchBSTSolution(TreeNode* root, int val) {
     if (!root) return nullptr;
     if (val == root->val) return root;
@@ -57,7 +65,11 @@ TreeNode* searchBSTSolution(TreeNode* root, int val) {
     return searchBSTSolution(root->right, val);
 }
 
-// 题目3: 二叉搜索树中的插入操作
+/**
+ * 题目3: 二叉搜索树中的插入操作 - 递归
+ * 时间复杂度: O(h) - 最多走一条路径到叶子
+ * 空间复杂度: O(h) - 递归栈深度
+ */
 TreeNode* insertIntoBSTSolution(TreeNode* root, int val) {
     if (!root) return new TreeNode(val);
     if (val < root->val) root->left = insertIntoBSTSolution(root->left, val);
@@ -65,7 +77,11 @@ TreeNode* insertIntoBSTSolution(TreeNode* root, int val) {
     return root;
 }
 
-// 题目4: 删除二叉搜索树中的节点
+/**
+ * 题目4: 删除二叉搜索树中的节点 - 递归 + 后继替换
+ * 时间复杂度: O(h) - 搜索 + 找后继
+ * 空间复杂度: O(h) - 递归栈深度
+ */
 TreeNode* deleteNodeSolution(TreeNode* root, int key) {
     if (!root) return nullptr;
     if (key < root->val) {
@@ -94,7 +110,11 @@ TreeNode* deleteNodeSolution(TreeNode* root, int key) {
     return root;
 }
 
-// 题目5: 二叉搜索树的最近公共祖先
+/**
+ * 题目5: 二叉搜索树的最近公共祖先 - 利用 BST 性质
+ * 时间复杂度: O(h) - 最多走一条路径
+ * 空间复杂度: O(h) - 递归栈深度
+ */
 TreeNode* lowestCommonAncestorBSTSolution(TreeNode* root, TreeNode* p, TreeNode* q) {
     if (!root) return nullptr;
     if (p->val < root->val && q->val < root->val)
@@ -104,19 +124,31 @@ TreeNode* lowestCommonAncestorBSTSolution(TreeNode* root, TreeNode* p, TreeNode*
     return root;
 }
 
-// 题目6: 二叉搜索树中第K小的元素
+/**
+ * 题目6: 二叉搜索树中第K小的元素 - 中序遍历
+ * 时间复杂度: O(h+k) - 走到第 k 小元素
+ * 空间复杂度: O(h) - 递归栈深度
+ */
 int kthSmallestSolution(TreeNode* root, int k) {
     int result = 0;
     kthSmallestHelper(root, k, result);
     return result;
 }
 
-// 题目7: 将有序数组转换为二叉搜索树
+/**
+ * 题目7: 将有序数组转换为二叉搜索树 - 分治递归
+ * 时间复杂度: O(n) - 每个元素创建一个节点
+ * 空间复杂度: O(log n) - 递归栈深度（平衡树）
+ */
 TreeNode* sortedArrayToBSTSolution(std::vector<int>& nums) {
     return sortedArrayToBSTHelper(nums, 0, static_cast<int>(nums.size()) - 1);
 }
 
-// 题目8: 二叉搜索树的范围和
+/**
+ * 题目8: 二叉搜索树的范围和 - 剪枝 DFS
+ * 时间复杂度: O(n) - 最坏访问所有节点
+ * 空间复杂度: O(h) - 递归栈深度
+ */
 int rangeSumBSTSolution(TreeNode* root, int low, int high) {
     if (!root) return 0;
     if (root->val < low) return rangeSumBSTSolution(root->right, low, high);

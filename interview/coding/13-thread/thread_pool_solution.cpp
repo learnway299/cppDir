@@ -10,6 +10,13 @@ namespace ThreadPool {
 
 // ==================== 参考答案实现 ====================
 
+/**
+ * 题目: ThreadPool - 线程池
+ * submit: O(1) - 任务入队
+ * shutdown: O(k) - k为工作线程数
+ * 空间复杂度: O(n + k) - n个待执行任务 + k个工作线程
+ * 特点: 任务队列 + 条件变量唤醒
+ */
 ThreadPoolSolution::ThreadPoolSolution(size_t threadCount) : stop_(false) {
     for (size_t i = 0; i < threadCount; ++i) {
         workers_.emplace_back([this] { workerThread(); });

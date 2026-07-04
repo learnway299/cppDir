@@ -13,6 +13,13 @@ namespace ReadWriteLock {
 
 // ==================== 参考答案实现 ====================
 
+/**
+ * 题目1: ReadWriteLock - 读写锁
+ * lock_read/unlock_read: O(1) - 读者计数
+ * lock_write/unlock_write: O(1) - 互斥写
+ * 空间复杂度: O(1) - 互斥锁 + 条件变量 + 计数器
+ * 特点: 允许多读者，单写者
+ */
 ReadWriteLockSolution::ReadWriteLockSolution() : readers_(0), writer_(false) {}
 
 void ReadWriteLockSolution::lock_read() {
@@ -41,6 +48,12 @@ void ReadWriteLockSolution::unlock_write() {
     cv_.notify_all();
 }
 
+/**
+ * 题目2: SharedMutexWrapper - shared_mutex封装
+ * lock_read/unlock_read: O(1) - 共享锁
+ * lock_write/unlock_write: O(1) - 独占锁
+ * 空间复杂度: O(1) - shared_mutex
+ */
 // SharedMutex 封装
 void SharedMutexWrapper::lock_read() {
     mutex_.lock_shared();

@@ -1,4 +1,4 @@
-# C++ 内存管理 (Memory Management)
+ # C++ 内存管理 (Memory Management)
 
 ## 概述
 
@@ -71,6 +71,445 @@ int main() {
 **常见陷阱：**
 - 混淆栈和堆的特性
 - 栈空间有限，大对象或递归过深会导致栈溢出
+
+---
+
+### 1.2 各内存区域可用大小
+
+**问题：进程内存布局中各区域的可用大小是多少？**
+
+各内存区域的大小因操作系统、编译器和系统配置而异：
+
+| 区域 | Windows (默认) | Linux (默认) | 特点 |
+|------|---------------|--------------|------|
+| **栈 (Stack)** | 1 MB | 8 MB | 可调整，存放局部变量、函数调用 |
+| **堆 (Heap)** | ~2 GB (32位) / ~128 TB (64位) | 受物理内存+swap限制 | 动态分配，最大可用区域 |
+| **全局/静态区** | 受可执行文件大小限制 | 同左 | .data + .bss 段 |
+| **代码区 (Text)** | 受可执行文件大小限制 | 同左 | 只读，存放指令 |
+| **常量区** | 包含在代码区或只读数据段 | 同左 | 字符串字面量等 |
+
+**查看和修改栈大小：**
+
+```cpp
+// Windows: 编译时设置栈大小
+// cl /F 4194304 main.cpp          // 设置为 4MB
+// 或链接时: /STACK:4194304
+
+// Linux: 运行时查看和设置
+// ulimit -s                        // 查看栈大小 (KB)
+// ulimit -s 16384                  // 设置为 16MB
+
+// Linux: 编译时设置
+// g++ -Wl,--stack,4194304 main.cpp
+
+// 代码中获取栈大小（Linux）
+#include <sys/resource.h>
+
+void printStackLimit() {
+    struct rlimit limit;
+    getrlimit(RLIMIT_STACK, &limit);
+    std::cout << "Stack soft limit: " << limit.rlim_cur / 1024 << " KB\n";
+    std::cout << "Stack hard limit: " << limit.rlim_max / 1024 << " KB\n";
+}
+```
+
+**测试各区域大小的代码：**
+
+```cpp
+#include <iostream>
+#include <vector>
+#include <cstdlib>
+
+// 测试堆大小
+void testHeapSize() {
+    size_t total = 0;
+    std::vector<void*> blocks;
+
+    while (true) {
+        void* p = malloc(1024 * 1024);  // 每次 1MB
+        if (!p) break;
+        blocks.push_back(p);
+        total += 1024 * 1024;
+    }
+
+    std::cout << "Max heap allocated: " << total / (1024 * 1024) << " MB\n";
+
+    for (void* p : blocks) free(p);
+}
+
+// 测试栈大小（通过递归深度估算）
+void testStackDepth(int depth, int& maxDepth) {
+    char buffer[1024];  // 每次递归占用约 1KB+
+    maxDepth = depth;
+    testStackDepth(depth + 1, maxDepth);  // 会栈溢出
+}
+
+int main() {
+    // 测试堆
+    testHeapSize();
+
+    // 测试栈（会崩溃，仅演示）
+    // int depth = 0;
+    // testStackDepth(0, depth);
+    // std::cout << "Stack depth: ~" << depth << " KB\n";
+
+    return 0;
+}
+```
+
+**关键要点：**
+
+| 要点 | 说明 |
+|------|------|
+| 栈空间有限 | 大数组应放堆上，避免栈溢出 |
+| 堆几乎无限 | 受物理内存 + 虚拟内存限制 |
+| 64位更大 | 地址空间从 4GB 扩展到 TB 级别 |
+| 可配置 | 栈大小可通过编译器/系统参数调整 |
+
+**常见问题：**
+
+```cpp
+// 1. 栈溢出：大数组放栈上
+void bad() {
+    int arr[1000000];  // ~4MB，可能栈溢出
+}
+
+void good() {
+    std::vector<int> arr(1000000);  // 堆上分配，安全
+    // 或
+    static int arr2[1000000];  // 静态区，不占用栈
+}
+
+// 2. 深递归导致栈溢出
+int fibonacci(int n) {
+    if (n <= 1) return n;
+    return fibonacci(n - 1) + fibonacci(n - 2);  // 深递归风险
+}
+
+// 解决方案：
+// - 改用迭代
+// - 使用尾递归优化
+// - 增大栈空间
+// - 使用显式栈（std::stack）模拟递归
+```
+
+**32位 vs 64位进程内存空间：**
+
+```
+32位进程（4GB 虚拟地址空间）：
+┌─────────────────┐ 0xFFFFFFFF (4GB)
+│   Kernel (1GB)  │
+├─────────────────┤ 0xC0000000 (3GB)
+│                 │
+│   User Space    │  ← 最多 3GB 可用
+│   (Stack/Heap)  │
+│                 │
+└─────────────────┘ 0x00000000
+
+64位进程（128TB+ 虚拟地址空间）：
+┌─────────────────┐ 高地址
+│   Kernel Space  │
+├─────────────────┤
+│                 │
+│   User Space    │  ← 理论上 128TB+ 可用
+│   (巨大空间)     │     实际受物理内存限制
+│                 │
+└─────────────────┘ 低地址
+```
+
+**常见陷阱：**
+- 在 32 位系统上分配超过 2GB 内存
+- 不了解栈大小限制导致栈溢出
+- 递归深度过大未做保护
+
+---
+
+### 1.3 内核空间与用户空间
+
+**问题：什么是内核空间和用户空间？每个进程是否都占用这两部分内存？**
+
+操作系统将进程的虚拟地址空间划分为两部分：
+
+| 区域 | 说明 | 访问权限 |
+|------|------|----------|
+| **内核空间 (Kernel Space)** | 操作系统内核代码和数据 | 仅内核态可访问 |
+| **用户空间 (User Space)** | 应用程序代码和数据 | 用户态可访问 |
+
+**各系统的划分：**
+
+| 系统 | 用户空间 | 内核空间 |
+|------|----------|----------|
+| **Linux 32位 (默认)** | 3 GB (0x00000000 - 0xBFFFFFFF) | 1 GB (0xC0000000 - 0xFFFFFFFF) |
+| **Windows 32位 (默认)** | 2 GB (0x00000000 - 0x7FFFFFFF) | 2 GB (0x80000000 - 0xFFFFFFFF) |
+| **Linux 64位** | 128 TB | 128 TB |
+| **Windows 64位** | 8-128 TB | 8-128 TB |
+
+**每个进程是否都占用两部分？**
+
+**是的**，每个运行的 C++ 程序（进程）都同时占用两部分内存：
+
+| 空间 | 占用方式 | 说明 |
+|------|----------|------|
+| **用户空间** | **独占** | 每个进程有自己独立的用户空间 |
+| **内核空间** | **共享** | 所有进程共享同一个内核空间 |
+
+```
+进程 A                    进程 B                    进程 C
+┌─────────────┐          ┌─────────────┐          ┌─────────────┐
+│ 用户空间 A   │          │ 用户空间 B   │          │ 用户空间 C   │
+│ (独立)      │          │ (独立)      │          │ (独立)      │
+│ 代码/堆/栈   │          │ 代码/堆/栈   │          │ 代码/堆/栈   │
+├─────────────┤          ├─────────────┤          ├─────────────┤
+│             │          │             │          │             │
+│  内核空间    │◄─────────┴─────────────┴──────────►│             │
+│  (共享)     │         所有进程共享同一份           │             │
+└─────────────┘                                    └─────────────┘
+```
+
+**进程在内核空间占用的资源：**
+
+虽然内核代码共享，但每个进程会占用内核空间中的一些专属资源：
+
+```cpp
+// 每个进程在内核空间的开销（约 10-100 KB）：
+struct 进程内核开销 {
+    task_struct  pcb;           // 进程控制块，约 1-10 KB
+    char         kernel_stack[8192];  // 内核栈，8-16 KB
+    pgd_t*       page_table;    // 页表，大小取决于内存使用量
+    files_struct file_table;    // 打开的文件描述符
+    signal_struct signals;      // 信号处理结构
+};
+```
+
+**用户态与内核态切换：**
+
+```cpp
+#include <iostream>
+#include <unistd.h>
+#include <fcntl.h>
+
+int global_var = 42;  // 用户空间：数据段
+
+int main() {
+    int local_var = 10;           // 用户空间：栈
+    int* heap_var = new int(20);  // 用户空间：堆
+
+    // 以上都在用户空间执行
+
+    // 系统调用 → 切换到内核态
+    pid_t pid = getpid();  // 陷入内核获取 PID
+
+    int fd = open("file.txt", O_RDONLY);  // 陷入内核打开文件
+    if (fd >= 0) {
+        char buf[64];
+        read(fd, buf, sizeof(buf));  // 陷入内核读取数据
+        close(fd);  // 陷入内核关闭文件
+    }
+
+    delete heap_var;
+    return 0;
+}
+
+/*
+执行流程：
+┌──────────────┐
+│  用户态代码   │ ← 普通计算、内存访问
+└──────┬───────┘
+       │ open() 系统调用
+       ▼
+┌──────────────┐
+│  内核态代码   │ ← 检查权限、分配 fd、访问磁盘
+└──────┬───────┘
+       │ 返回
+       ▼
+┌──────────────┐
+│  用户态代码   │ ← 继续执行
+└──────────────┘
+*/
+```
+
+**为什么需要划分？**
+
+| 原因 | 说明 |
+|------|------|
+| **安全隔离** | 防止用户程序破坏内核 |
+| **权限控制** | 敏感操作需通过系统调用 |
+| **稳定性** | 用户程序崩溃不影响内核 |
+| **内存保护** | 硬件 MMU 强制执行边界 |
+
+**关键要点：**
+
+| 问题 | 答案 |
+|------|------|
+| 用户空间是否独立？ | **是**，每个进程有独立的用户空间 |
+| 内核空间是否独立？ | **否**，所有进程共享同一内核空间 |
+| 进程能访问其他进程用户空间吗？ | **不能**（除非共享内存） |
+| 进程能直接访问内核空间吗？ | **不能**，必须通过系统调用 |
+| 每个进程占用多少内核资源？ | 约 **10-100 KB** |
+
+**常见面试题：**
+- 为什么 32 位系统最大只能用约 3GB 内存？（4GB 中 1GB 给内核）
+- 为什么内核空间所有进程共享？（节省内存，方便通信）
+- 用户态如何访问内核功能？（通过系统调用 syscall）
+
+**常见陷阱：**
+- 试图在用户态直接访问内核地址（导致段错误）
+- 不理解系统调用的开销（频繁调用影响性能）
+- 混淆虚拟地址空间和物理内存
+
+---
+
+### 1.4 标准库 I/O 缓冲区
+
+**问题：标准库输入输出的缓冲区大小是多少？每个进程独占还是共享？**
+
+| 问题 | 答案 |
+|------|------|
+| 缓冲区大小 | 通常 **4KB - 8KB**（平台相关） |
+| 是否独占 | **每个进程独占自己的缓冲区** |
+| 存放位置 | 用户空间（堆或静态区） |
+
+**查看缓冲区大小：**
+
+```cpp
+#include <iostream>
+#include <cstdio>
+
+int main() {
+    // 查看 C 标准库缓冲区大小
+    std::cout << "BUFSIZ: " << BUFSIZ << " bytes\n";
+    // Linux 通常: 8192 (8KB)
+    // Windows 通常: 512 或 4096
+
+    return 0;
+}
+```
+
+**各平台默认大小：**
+
+| 平台 | BUFSIZ | 说明 |
+|------|--------|------|
+| Linux (glibc) | 8192 (8KB) | 可配置 |
+| Windows (MSVC) | 512 或 4096 | 取决于版本 |
+| macOS | 1024 或 8192 | 取决于版本 |
+
+**每个进程独占各自的缓冲区：**
+
+```
+进程 A                              进程 B
+┌─────────────────────────┐        ┌─────────────────────────┐
+│ 用户空间                 │        │ 用户空间                 │
+│                         │        │                         │
+│  stdin  缓冲区 [8KB]     │        │  stdin  缓冲区 [8KB]     │
+│  stdout 缓冲区 [8KB]     │        │  stdout 缓冲区 [8KB]     │
+│  stderr 缓冲区 [无]      │        │  stderr 缓冲区 [无]      │
+│                         │        │                         │
+│  FILE* f1 缓冲区 [8KB]   │        │  FILE* f2 缓冲区 [8KB]   │
+└─────────────────────────┘        └─────────────────────────┘
+        ↓                                  ↓
+        └──────────┬───────────────────────┘
+                   ▼
+          ┌─────────────────┐
+          │   内核空间       │
+          │  (文件系统缓存)   │  ← 内核缓冲区可能共享
+          └─────────────────┘
+```
+
+**三种缓冲模式：**
+
+```cpp
+#include <cstdio>
+
+int main() {
+    FILE* f = fopen("test.txt", "w");
+
+    // 1. 全缓冲 (_IOFBF)：缓冲区满或手动刷新时写入
+    char buf1[4096];
+    setvbuf(f, buf1, _IOFBF, sizeof(buf1));
+
+    // 2. 行缓冲 (_IOLBF)：遇到换行符或缓冲区满时写入
+    char buf2[1024];
+    setvbuf(f, buf2, _IOLBF, sizeof(buf2));
+
+    // 3. 无缓冲 (_IONBF)：立即写入
+    setvbuf(f, nullptr, _IONBF, 0);
+
+    fclose(f);
+    return 0;
+}
+```
+
+**默认缓冲模式：**
+
+| 流 | 默认模式 | 原因 |
+|----|----------|------|
+| `stdin` | 行缓冲（终端）/ 全缓冲（文件） | 交互需要及时响应 |
+| `stdout` | 行缓冲（终端）/ 全缓冲（文件） | 同上 |
+| `stderr` | **无缓冲** | 错误信息需立即显示 |
+| 普通文件 | 全缓冲 | 提高 I/O 效率 |
+
+**C++ iostream 缓冲区：**
+
+```cpp
+#include <iostream>
+
+int main() {
+    // cout 有自己的缓冲区（streambuf）
+    std::streambuf* buf = std::cout.rdbuf();
+
+    // 手动刷新缓冲区
+    std::cout << "Hello" << std::flush;  // 方式1
+    std::cout << "World" << std::endl;   // 方式2：endl = '\n' + flush
+
+    // 关闭与 C stdio 的同步可提高性能
+    std::ios_base::sync_with_stdio(false);
+
+    return 0;
+}
+```
+
+**fork 时的缓冲区问题：**
+
+```cpp
+#include <cstdio>
+#include <unistd.h>
+
+int main() {
+    printf("Before fork");  // 注意：没有 \n，数据在缓冲区中
+
+    pid_t pid = fork();
+    if (pid == 0) {
+        printf(" - Child\n");
+    } else {
+        printf(" - Parent\n");
+    }
+    return 0;
+}
+
+/*
+可能输出：
+Before fork - Parent
+Before fork - Child    ← "Before fork" 被输出两次！
+
+原因：fork 时缓冲区中的 "Before fork" 被复制到子进程
+解决：fork 前调用 fflush(stdout)
+*/
+```
+
+**关键要点：**
+
+| 要点 | 说明 |
+|------|------|
+| 缓冲区大小 | 通常 4-8 KB，由 BUFSIZ 宏定义 |
+| 进程隔离 | 每个进程独占自己的 I/O 缓冲区 |
+| 存放位置 | 用户空间（堆或静态区） |
+| fork 问题 | 子进程会复制父进程的缓冲区内容 |
+| stderr | 默认无缓冲，错误立即输出 |
+
+**常见陷阱：**
+- fork 前忘记刷新缓冲区（导致输出重复）
+- cout 和 printf 混用顺序错乱（需关闭同步或只用一种）
+- 程序崩溃时缓冲区数据丢失（关键日志用 cerr 或手动刷新）
 
 ---
 
@@ -501,6 +940,116 @@ int main() {
 **常见陷阱：**
 - 尝试拷贝 `unique_ptr`
 - 从 `get()` 获取的指针创建新的 `unique_ptr`（导致 double free）
+
+---
+
+### 4.2.1 new vs make_unique
+
+**问题：`new` + 构造 和 `make_unique` 有什么区别？哪个效率高？哪个有风险？**
+
+```cpp
+#include <memory>
+#include <iostream>
+
+// 两种创建方式
+std::unique_ptr<int> p1(new int(42));              // 方式1: new
+std::unique_ptr<int> p2 = std::make_unique<int>(100);  // 方式2: make_unique (C++14)
+```
+
+**核心区别：**
+
+| 对比项 | `new` + 构造 | `make_unique` |
+|--------|-------------|---------------|
+| 内存分配次数 | 1次 | 1次 |
+| 异常安全 | **有风险** | 安全 |
+| 代码简洁性 | 重复写类型 | 更简洁 |
+| C++ 版本 | C++11 | C++14 |
+| 自定义删除器 | 支持 | 不支持 |
+
+**效率对比：基本相同**
+
+对于 `unique_ptr`，两者效率几乎一样，都是一次内存分配：
+
+```cpp
+// 两者都只分配一次内存
+std::unique_ptr<int> p1(new int(42));              // 分配 int
+std::unique_ptr<int> p2 = std::make_unique<int>(100);  // 分配 int
+
+// 注意：make_shared 比 new + shared_ptr 效率更高（1次 vs 2次分配）
+// 但 make_unique 没有这个优势
+```
+
+**风险：`new` 有异常安全问题**
+
+```cpp
+void process(std::unique_ptr<int> a, std::unique_ptr<int> b);
+
+// 危险！可能内存泄漏（C++17 前）
+process(std::unique_ptr<int>(new int(1)),
+        std::unique_ptr<int>(new int(2)));
+
+// 安全
+process(std::make_unique<int>(1),
+        std::make_unique<int>(2));
+```
+
+**问题原因**（C++17 前）：
+
+编译器可能按以下顺序执行：
+1. `new int(1)` ✓ 成功，分配内存
+2. `new int(2)` → 抛异常 ❌
+3. 构造 `unique_ptr`（第一个 new 的结果）← 未执行
+
+此时第一个 `new` 的内存泄漏！
+
+```
+执行顺序可能是：
+┌─────────────────────────────────────┐
+│ new int(1)                          │ ← 成功，分配内存
+│ new int(2)                          │ ← 抛异常！
+│ unique_ptr(第一个new的结果)          │ ← 未执行
+│ unique_ptr(第二个new的结果)          │ ← 未执行
+└─────────────────────────────────────┘
+结果：第一个 new 的内存泄漏
+```
+
+> C++17 修复了函数参数求值顺序问题，但仍推荐用 `make_unique`。
+
+**何时必须用 `new`：**
+
+```cpp
+// 1. 自定义删除器
+auto deleter = [](int* p) {
+    std::cout << "deleting\n";
+    delete p;
+};
+std::unique_ptr<int, decltype(deleter)> p(new int(42), deleter);
+
+// 2. 接管已有裸指针
+int* raw = legacyFunction();
+std::unique_ptr<int> p(raw);
+
+// 3. 数组（C++14 前）
+std::unique_ptr<int[]> arr(new int[10]);  // C++14 前
+auto arr2 = std::make_unique<int[]>(10);  // C++14 起
+```
+
+**总结：**
+
+| 结论 | 说明 |
+|------|------|
+| **效率** | 基本相同 |
+| **安全性** | `make_unique` 更安全 |
+| **推荐** | **优先使用 `make_unique`** |
+| **例外** | 需要自定义删除器时用 `new` |
+
+```cpp
+// ✓ 推荐
+auto p = std::make_unique<MyClass>(args...);
+
+// ✗ 避免（除非必要）
+std::unique_ptr<MyClass> p(new MyClass(args...));
+```
 
 ---
 
@@ -1164,3 +1713,58 @@ int main() {
 - *Effective Modern C++* by Scott Meyers (Item 18-22)
 - *C++ Primer* (5th Edition), Chapter 12
 - ISO C++ Core Guidelines - Resource Management
+
+---
+
+## 10. 高频补充：动态对象生命周期与智能指针计数
+
+### Q1: 函数内部 `new` 一个对象，函数退出后对象会消失吗？
+
+**答案：**
+- 不会自动消失。
+- `new` 分配在堆上，函数退出只会销毁“局部指针变量”，不会自动释放堆对象。
+- 若无人管理会导致内存泄漏。
+
+### Q2: 如果要把对象传到函数外继续用，推荐怎么实现？
+
+**答案：**
+- 优先返回值对象（让编译器做 RVO/移动）。
+- 需要动态分配时，优先返回智能指针。
+
+```cpp
+Foo makeFoo();                              // 优先
+std::unique_ptr<Foo> makeUniqueFoo();       // 单一所有权
+std::shared_ptr<Foo> makeSharedFoo();       // 共享所有权
+```
+
+### Q3: `return std::make_shared<Foo>();` 时引用计数如何变化？
+
+```cpp
+std::shared_ptr<Foo> makeFoo() {
+    return std::make_shared<Foo>();
+}
+```
+
+**答案：**
+- 创建时强引用计数为 1。
+- 返回到调用方通常走移动/返回值优化，计数通常保持 1。
+- 发生拷贝时计数 +1，析构/reset 时计数 -1，降为 0 时销毁对象。
+
+### Q4: 先 `new` 再构造 `shared_ptr` 时计数如何变化？
+
+```cpp
+std::shared_ptr<Foo> makeFoo2() {
+    Foo* raw = new Foo();
+    std::shared_ptr<Foo> sp(raw);  // 注意显式构造
+    return sp;
+}
+```
+
+**答案：**
+- `new Foo()` 阶段还没有控制块，无引用计数。
+- 构造 `shared_ptr` 后创建控制块，强引用计数变为 1。
+- 返回后通常仍为 1（移动/NRVO）。
+
+**注意：**
+- 不要从同一裸指针构造多个 `shared_ptr`，否则可能 double free。
+- 更推荐 `make_shared`：代码更简洁，通常分配更高效。

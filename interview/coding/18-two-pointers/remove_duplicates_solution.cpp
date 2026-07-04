@@ -12,6 +12,12 @@ namespace RemoveDuplicatesImpl {
 namespace Solution {
 
 // ==================== 题目1: 删除重复项（每个元素最多出现一次）====================
+/**
+ * removeDuplicates - 删除重复项I
+ * 时间复杂度: O(n) - 单次遍历
+ * 空间复杂度: O(1) - 原地修改
+ * 特点: 快慢指针，保留不重复元素
+ */
 int removeDuplicates(std::vector<int>& nums) {
     if (nums.empty()) return 0;
 
@@ -25,6 +31,12 @@ int removeDuplicates(std::vector<int>& nums) {
 }
 
 // ==================== 题目2: 删除重复项（每个元素最多出现两次）====================
+/**
+ * removeDuplicates2 - 删除重复项II
+ * 时间复杂度: O(n) - 单次遍历
+ * 空间复杂度: O(1) - 原地修改
+ * 特点: 比较nums[fast]与nums[slow-2]
+ */
 int removeDuplicates2(std::vector<int>& nums) {
     if (nums.size() <= 2) return static_cast<int>(nums.size());
 

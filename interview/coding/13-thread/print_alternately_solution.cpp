@@ -12,6 +12,11 @@ namespace PrintAlternately {
 
 // ==================== 参考答案实现 ====================
 
+/**
+ * 题目1: OddEvenPrinter - 奇偶数交替打印
+ * printOdd/printEven: O(n) - n次条件变量等待
+ * 空间复杂度: O(1) - 互斥锁 + 条件变量
+ */
 // 奇偶数交替打印
 OddEvenPrinterSolution::OddEvenPrinterSolution(int max) : max_(max), current_(1) {}
 
@@ -37,6 +42,11 @@ void OddEvenPrinterSolution::printEven() {
 
 int OddEvenPrinterSolution::getCurrent() const { return current_; }
 
+/**
+ * 题目2: ABCPrinter - ABC交替打印
+ * printA/printB/printC: O(n) - n轮交替
+ * 空间复杂度: O(1) - 互斥锁 + 条件变量 + 状态
+ */
 // ABC 交替打印
 ABCPrinterSolution::ABCPrinterSolution(int n) : n_(n), state_(0), count_(0) {}
 
@@ -70,6 +80,11 @@ void ABCPrinterSolution::printC(std::string& output) {
     }
 }
 
+/**
+ * 题目3: Foo - 按序打印
+ * first/second/third: O(1) - 条件变量同步
+ * 空间复杂度: O(1) - 互斥锁 + 条件变量 + 步骤计数
+ */
 // 按序打印
 FooSolution::FooSolution() : step_(0) {}
 
@@ -96,6 +111,11 @@ void FooSolution::third(std::function<void()> printThird) {
     printThird();
 }
 
+/**
+ * 题目3b: FooAtomic - 按序打印（无锁版）
+ * first/second/third: O(1) - 原子变量自旋
+ * 空间复杂度: O(1) - 一个原子变量
+ */
 // 无锁版本
 FooAtomicSolution::FooAtomicSolution() : step_(0) {}
 
@@ -119,6 +139,11 @@ void FooAtomicSolution::third(std::function<void()> printThird) {
     printThird();
 }
 
+/**
+ * 题目4: FooBar - 交替打印
+ * foo/bar: O(n) - n轮交替
+ * 空间复杂度: O(1) - 互斥锁 + 条件变量 + bool
+ */
 // FooBar 交替打印
 FooBarSolution::FooBarSolution(int n) : n_(n), fooTurn_(true) {}
 

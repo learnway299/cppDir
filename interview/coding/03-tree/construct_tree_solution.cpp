@@ -103,7 +103,11 @@ static void preorder(TreeNode* root, std::vector<int>& result) {
 
 // ==================== 参考答案实现 ====================
 
-// 题目1: 从前序与中序遍历序列构造二叉树
+/**
+ * 题目1: 从前序与中序遍历序列构造二叉树 - 分治递归
+ * 时间复杂度: O(n) - 每个节点创建一次，哈希表查找 O(1)
+ * 空间复杂度: O(n) - 哈希表 + 递归栈
+ */
 TreeNode* buildTreeFromPreInSolution(std::vector<int>& preorder, std::vector<int>& inorder) {
     if (preorder.empty()) return nullptr;
     std::unordered_map<int, int> inorderMap;
@@ -113,7 +117,11 @@ TreeNode* buildTreeFromPreInSolution(std::vector<int>& preorder, std::vector<int
     return buildFromPreInHelper(preorder, 0, static_cast<int>(preorder.size()) - 1, 0, inorderMap);
 }
 
-// 题目2: 从中序与后序遍历序列构造二叉树
+/**
+ * 题目2: 从中序与后序遍历序列构造二叉树 - 分治递归
+ * 时间复杂度: O(n) - 每个节点创建一次，哈希表查找 O(1)
+ * 空间复杂度: O(n) - 哈希表 + 递归栈
+ */
 TreeNode* buildTreeFromInPostSolution(std::vector<int>& inorder, std::vector<int>& postorder) {
     if (inorder.empty()) return nullptr;
     std::unordered_map<int, int> inorderMap;
@@ -123,7 +131,11 @@ TreeNode* buildTreeFromInPostSolution(std::vector<int>& inorder, std::vector<int
     return buildFromInPostHelper(postorder, 0, static_cast<int>(postorder.size()) - 1, 0, inorderMap);
 }
 
-// 题目3: 根据前序和后序遍历构造二叉树
+/**
+ * 题目3: 根据前序和后序遍历构造二叉树 - 分治递归
+ * 时间复杂度: O(n) - 每个节点创建一次
+ * 空间复杂度: O(n) - 哈希表 + 递归栈
+ */
 TreeNode* buildTreeFromPrePostSolution(std::vector<int>& preorder, std::vector<int>& postorder) {
     if (preorder.empty()) return nullptr;
     std::unordered_map<int, int> postMap;
@@ -134,12 +146,20 @@ TreeNode* buildTreeFromPrePostSolution(std::vector<int>& preorder, std::vector<i
                                   postorder, 0, static_cast<int>(postorder.size()) - 1, postMap);
 }
 
-// 题目4: 最大二叉树
+/**
+ * 题目4: 最大二叉树 - 分治递归
+ * 时间复杂度: O(n²) - 每层找最大值 O(n)，最坏 n 层
+ * 空间复杂度: O(n) - 递归栈深度
+ */
 TreeNode* constructMaximumBinaryTreeSolution(std::vector<int>& nums) {
     return constructMaxHelper(nums, 0, static_cast<int>(nums.size()) - 1);
 }
 
-// 题目5: 有序链表转换二叉搜索树
+/**
+ * 题目5: 有序链表转换二叉搜索树 - 快慢指针找中点 + 分治
+ * 时间复杂度: O(n log n) - 每层遍历 O(n)，共 log n 层
+ * 空间复杂度: O(log n) - 递归栈深度（平衡树）
+ */
 TreeNode* sortedListToBSTSolution(ListNode* head) {
     if (!head) return nullptr;
     if (!head->next) return new TreeNode(head->val);
@@ -158,12 +178,20 @@ TreeNode* sortedListToBSTSolution(ListNode* head) {
     return root;
 }
 
-// 题目6: 有序数组转换为二叉搜索树
+/**
+ * 题目6: 有序数组转换为二叉搜索树 - 分治递归
+ * 时间复杂度: O(n) - 每个元素创建一个节点
+ * 空间复杂度: O(log n) - 递归栈深度（平衡树）
+ */
 TreeNode* sortedArrayToBSTSolution(std::vector<int>& nums) {
     return buildBSTFromArray(nums, 0, static_cast<int>(nums.size()) - 1);
 }
 
-// 题目7: 将二叉搜索树转化为排序的双向链表
+/**
+ * 题目7: 将二叉搜索树转化为排序的双向链表 - 中序遍历
+ * 时间复杂度: O(n) - 访问每个节点一次
+ * 空间复杂度: O(h) - 递归栈深度
+ */
 TreeNode* treeToDoublyListSolution(TreeNode* root) {
     if (!root) return nullptr;
     head_ = nullptr;
@@ -174,7 +202,11 @@ TreeNode* treeToDoublyListSolution(TreeNode* root) {
     return head_;
 }
 
-// 题目8: 从先序遍历还原二叉树
+/**
+ * 题目8: 从先序遍历还原二叉树 - 栈模拟
+ * 时间复杂度: O(n) - 遍历字符串一次
+ * 空间复杂度: O(h) - 栈最多存储 h 个节点
+ */
 TreeNode* recoverFromPreorderSolution(std::string traversal) {
     if (traversal.empty()) return nullptr;
     std::stack<TreeNode*> stk;

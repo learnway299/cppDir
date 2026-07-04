@@ -9,6 +9,14 @@
 namespace TimerWheelImpl {
 namespace Solution {
 
+/**
+ * TimerWheel - 时间轮
+ * addTimer:    时间O(1) - 直接定位槽
+ * cancelTimer: 时间O(n)最坏 - 遍历查找
+ * tick:        时间O(m) - m为当前槽定时器数
+ * 空间复杂度: O(slots + timers)
+ * 特点: 高效定时器管理，适合大量定时任务
+ */
 class TimerWheel {
 public:
     using Callback = std::function<void()>;

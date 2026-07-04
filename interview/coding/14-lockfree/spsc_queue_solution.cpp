@@ -15,6 +15,11 @@ static constexpr size_t CACHE_LINE_SIZE = 64;
 
 // ==================== 题目1: 基本 SPSC 队列 ====================
 
+/**
+ * 题目1: SPSCQueueBasic - 基本单生产者单消费者队列
+ * push/pop: O(1) - 无锁，仅原子load/store
+ * 空间复杂度: O(Capacity) - 固定大小环形缓冲区
+ */
 template <typename T, size_t Capacity>
 class SPSCQueueBasicSolution {
 public:
@@ -72,6 +77,12 @@ template class SPSCQueueBasicSolution<int, 1024>;
 
 // ==================== 题目2: 缓存行优化版本 ====================
 
+/**
+ * 题目2: SPSCQueueOptimized - 缓存行优化SPSC队列
+ * push/pop: O(1) - 缓存友好，减少伪共享
+ * 空间复杂度: O(Capacity) - 缓存行对齐的索引
+ * 特点: 本地缓存head/tail，减少跨核原子读取
+ */
 template <typename T, size_t Capacity>
 class SPSCQueueOptimizedSolution {
 public:
@@ -128,6 +139,12 @@ template class SPSCQueueOptimizedSolution<int, 1024>;
 
 // ==================== 题目3: 支持批量操作 ====================
 
+/**
+ * 题目3: SPSCQueueBatch - 支持批量操作的SPSC队列
+ * push_batch/pop_batch: O(k) - k为批量大小
+ * 空间复杂度: O(Capacity) - 固定大小环形缓冲区
+ * 特点: 减少原子操作次数，提高吞吐量
+ */
 template <typename T, size_t Capacity>
 class SPSCQueueBatchSolution {
 public:
@@ -185,6 +202,12 @@ template class SPSCQueueBatchSolution<int, 1024>;
 
 // ==================== 题目4: 无界 SPSC 队列（链表实现）====================
 
+/**
+ * 题目4: SPSCQueueUnbounded - 无界SPSC队列
+ * push: O(1) - 链表尾部追加
+ * pop: O(1) - 链表头部移除
+ * 空间复杂度: O(n) - 动态增长
+ */
 template <typename T>
 struct SPSCNode {
     T data;

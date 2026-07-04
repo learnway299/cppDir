@@ -26,7 +26,11 @@ static int robRangeSolution(std::vector<int>& nums, int start, int end) {
 
 // ==================== 参考答案实现 ====================
 
-// 题目1: 爬楼梯
+/**
+ * 题目1: 爬楼梯 - 空间优化 DP（斐波那契）
+ * 时间复杂度: O(n) - 线性遍历
+ * 空间复杂度: O(1) - 仅用两个变量
+ */
 int climbStairsSolution(int n) {
     if (n <= 2) return n;
     int prev2 = 1, prev1 = 2;
@@ -38,7 +42,11 @@ int climbStairsSolution(int n) {
     return prev1;
 }
 
-// 题目2: 最大子数组和
+/**
+ * 题目2: 最大子数组和 - Kadane 算法
+ * 时间复杂度: O(n) - 单次遍历
+ * 空间复杂度: O(1) - 仅用两个变量
+ */
 int maxSubArraySolution(std::vector<int>& nums) {
     int maxSum = nums[0];
     int currentSum = nums[0];
@@ -49,7 +57,11 @@ int maxSubArraySolution(std::vector<int>& nums) {
     return maxSum;
 }
 
-// 题目3: 打家劫舍
+/**
+ * 题目3: 打家劫舍 - 空间优化 DP
+ * 时间复杂度: O(n) - 单次遍历
+ * 空间复杂度: O(1) - 仅用两个变量
+ */
 int robSolution(std::vector<int>& nums) {
     int n = static_cast<int>(nums.size());
     if (n == 0) return 0;
@@ -64,7 +76,11 @@ int robSolution(std::vector<int>& nums) {
     return prev1;
 }
 
-// 题目4: 打家劫舍 II（环形）
+/**
+ * 题目4: 打家劫舍 II（环形） - 分段 DP
+ * 时间复杂度: O(n) - 两次线性遍历
+ * 空间复杂度: O(1) - 仅用常数变量
+ */
 int robIISolution(std::vector<int>& nums) {
     int n = static_cast<int>(nums.size());
     if (n == 0) return 0;
@@ -73,7 +89,11 @@ int robIISolution(std::vector<int>& nums) {
     return std::max(robRangeSolution(nums, 0, n - 2), robRangeSolution(nums, 1, n - 1));
 }
 
-// 题目5: 最小路径和
+/**
+ * 题目5: 最小路径和 - 空间优化 DP
+ * 时间复杂度: O(m * n) - 遍历整个网格
+ * 空间复杂度: O(n) - 一维 DP 数组
+ */
 int minPathSumSolution(std::vector<std::vector<int>>& grid) {
     int m = static_cast<int>(grid.size()), n = static_cast<int>(grid[0].size());
     std::vector<int> dp(n);
@@ -88,7 +108,11 @@ int minPathSumSolution(std::vector<std::vector<int>>& grid) {
     return dp[n - 1];
 }
 
-// 题目6: 不同路径
+/**
+ * 题目6: 不同路径 - 空间优化 DP
+ * 时间复杂度: O(m * n) - 遍历整个网格
+ * 空间复杂度: O(n) - 一维 DP 数组
+ */
 int uniquePathsSolution(int m, int n) {
     std::vector<int> dp(n, 1);
     for (int i = 1; i < m; ++i) {
@@ -99,7 +123,11 @@ int uniquePathsSolution(int m, int n) {
     return dp[n - 1];
 }
 
-// 题目7: 不同路径 II（有障碍物）
+/**
+ * 题目7: 不同路径 II（有障碍物） - 空间优化 DP
+ * 时间复杂度: O(m * n) - 遍历整个网格
+ * 空间复杂度: O(n) - 一维 DP 数组
+ */
 int uniquePathsWithObstaclesSolution(std::vector<std::vector<int>>& obstacleGrid) {
     int m = static_cast<int>(obstacleGrid.size()), n = static_cast<int>(obstacleGrid[0].size());
     if (obstacleGrid[0][0] == 1) return 0;
@@ -117,7 +145,11 @@ int uniquePathsWithObstaclesSolution(std::vector<std::vector<int>>& obstacleGrid
     return static_cast<int>(dp[n - 1]);
 }
 
-// 题目8: 解码方法
+/**
+ * 题目8: 解码方法 - 空间优化 DP
+ * 时间复杂度: O(n) - 单次遍历字符串
+ * 空间复杂度: O(1) - 仅用两个变量
+ */
 int numDecodingsSolution(const std::string& s) {
     if (s.empty() || s[0] == '0') return 0;
     int n = static_cast<int>(s.size());
@@ -133,7 +165,11 @@ int numDecodingsSolution(const std::string& s) {
     return prev1;
 }
 
-// 题目9: 最长递增子序列（二分查找优化）
+/**
+ * 题目9: 最长递增子序列 - 二分查找优化
+ * 时间复杂度: O(n log n) - 每个元素二分查找一次
+ * 空间复杂度: O(n) - tails 数组
+ */
 int lengthOfLISSolution(std::vector<int>& nums) {
     std::vector<int> tails;
     for (int num : nums) {
@@ -144,7 +180,11 @@ int lengthOfLISSolution(std::vector<int>& nums) {
     return static_cast<int>(tails.size());
 }
 
-// 题目10: 乘积最大子数组
+/**
+ * 题目10: 乘积最大子数组 - 维护最大最小值
+ * 时间复杂度: O(n) - 单次遍历
+ * 空间复杂度: O(1) - 仅用常数变量
+ */
 int maxProductSolution(std::vector<int>& nums) {
     if (nums.empty()) return 0;
     int maxProd = nums[0];

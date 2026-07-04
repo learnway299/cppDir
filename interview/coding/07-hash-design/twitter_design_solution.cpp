@@ -12,7 +12,13 @@ namespace TwitterDesign {
 
 // ==================== 参考答案实现 ====================
 
-// TwitterSolution 实现
+/**
+ * 题目1: 设计推特 - 哈希表 + 最大堆合并
+ * postTweet: 时间 O(1)
+ * getNewsFeed: 时间 O(n log n)，n 为关注者推文数
+ * follow/unfollow: 时间 O(1)
+ * 空间复杂度: O(用户数 + 推文数)
+ */
 TwitterSolution::TwitterSolution() : timestamp_(0) {}
 
 void TwitterSolution::postTweet(int userId, int tweetId) {
@@ -67,7 +73,12 @@ void TwitterSolution::unfollow(int followerId, int followeeId) {
     following_[followerId].erase(followeeId);
 }
 
-// FileSystemSolution 实现
+/**
+ * 题目2: 设计文件系统 - 哈希表路径映射
+ * createPath: 时间 O(path长度)
+ * get: 时间 O(1)
+ * 空间复杂度: O(路径总数 * 平均路径长度)
+ */
 FileSystemSolution::FileSystemSolution() {
     paths_[""] = 0;
 }
@@ -97,7 +108,11 @@ int FileSystemSolution::get(const std::string& path) {
     return it != paths_.end() ? it->second : -1;
 }
 
-// BrowserHistorySolution 实现
+/**
+ * 题目3: 设计浏览器历史记录 - 动态数组
+ * visit/back/forward: 时间 O(1)
+ * 空间复杂度: O(访问页面数)
+ */
 BrowserHistorySolution::BrowserHistorySolution(const std::string& homepage) : curr_(0), end_(0) {
     history_.push_back(homepage);
 }
@@ -122,7 +137,12 @@ std::string BrowserHistorySolution::forward(int steps) {
     return history_[curr_];
 }
 
-// FoodRatingsSolution 实现
+/**
+ * 题目4: 设计食物评分系统 - 哈希表 + 有序集合
+ * changeRating: 时间 O(log n)
+ * highestRated: 时间 O(1)
+ * 空间复杂度: O(食物数量)
+ */
 FoodRatingsSolution::FoodRatingsSolution(std::vector<std::string>& foods,
                                          std::vector<std::string>& cuisines,
                                          std::vector<int>& ratings) {
@@ -144,7 +164,12 @@ std::string FoodRatingsSolution::highestRated(const std::string& cuisine) {
     return cuisineSet_[cuisine].begin()->second;
 }
 
-// StockPriceSolution 实现
+/**
+ * 题目5: 股票价格波动 - 哈希表 + multiset
+ * update: 时间 O(log n)
+ * current/maximum/minimum: 时间 O(1)
+ * 空间复杂度: O(n) - n 为记录数
+ */
 StockPriceSolution::StockPriceSolution() : latestTime_(0) {}
 
 void StockPriceSolution::update(int timestamp, int price) {
@@ -168,7 +193,11 @@ int StockPriceSolution::minimum() {
     return *priceSet_.begin();
 }
 
-// AutocompleteSystemSolution 实现
+/**
+ * 题目6: 设计搜索自动补全系统 - Trie + 排序
+ * input: 时间 O(n log n)，n 为候选句子数
+ * 空间复杂度: O(句子总长度)
+ */
 struct AutocompleteSystemSolution::TrieNode {
     std::unordered_map<char, TrieNode*> children;
     std::unordered_map<std::string, int> sentences;

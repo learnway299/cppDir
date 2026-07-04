@@ -40,7 +40,11 @@ static std::vector<int> buildKMPTable(const std::string& pattern) {
 
 // ==================== 参考答案实现 ====================
 
-// 题目1: 实现 strStr() - KMP 算法
+/**
+ * 题目1: 实现 strStr() - KMP 算法
+ * 时间复杂度: O(n + m) - n, m 分别为主串和模式串长度
+ * 空间复杂度: O(m) - 前缀函数数组
+ */
 int strStrSolution(const std::string& haystack, const std::string& needle) {
     if (needle.empty()) return 0;
 
@@ -71,7 +75,11 @@ int strStrSolution(const std::string& haystack, const std::string& needle) {
     return -1;
 }
 
-// 题目2: 重复的子字符串 - KMP 解法
+/**
+ * 题目2: 重复的子字符串 - KMP 前缀函数
+ * 时间复杂度: O(n) - 构建前缀函数
+ * 空间复杂度: O(n) - 前缀函数数组
+ */
 bool repeatedSubstringPatternSolution(const std::string& s) {
     int n = static_cast<int>(s.size());
     std::vector<int> lps = buildKMPTable(s);
@@ -80,7 +88,11 @@ bool repeatedSubstringPatternSolution(const std::string& s) {
     return len > 0 && n % (n - len) == 0;
 }
 
-// 题目3: 最短回文串
+/**
+ * 题目3: 最短回文串 - KMP 前缀函数
+ * 时间复杂度: O(n) - 构建前缀函数
+ * 空间复杂度: O(n) - 拼接字符串 + 前缀函数
+ */
 std::string shortestPalindromeSolution(const std::string& s) {
     if (s.empty()) return s;
 
@@ -97,7 +109,11 @@ std::string shortestPalindromeSolution(const std::string& s) {
     return toAdd + s;
 }
 
-// 题目4: 通配符匹配 - 动态规划
+/**
+ * 题目4: 通配符匹配 - 动态规划
+ * 时间复杂度: O(m * n) - m, n 分别为两字符串长度
+ * 空间复杂度: O(m * n) - 二维 DP 数组
+ */
 bool isMatchSolution(const std::string& s, const std::string& p) {
     int m = static_cast<int>(s.size()), n = static_cast<int>(p.size());
     std::vector<std::vector<bool>> dp(m + 1, std::vector<bool>(n + 1, false));
@@ -123,7 +139,11 @@ bool isMatchSolution(const std::string& s, const std::string& p) {
     return dp[m][n];
 }
 
-// 题目5: 正则表达式匹配
+/**
+ * 题目5: 正则表达式匹配 - 动态规划
+ * 时间复杂度: O(m * n) - m, n 分别为两字符串长度
+ * 空间复杂度: O(m * n) - 二维 DP 数组
+ */
 bool isMatchRegexSolution(const std::string& s, const std::string& p) {
     int m = static_cast<int>(s.size()), n = static_cast<int>(p.size());
     std::vector<std::vector<bool>> dp(m + 1, std::vector<bool>(n + 1, false));
@@ -152,7 +172,11 @@ bool isMatchRegexSolution(const std::string& s, const std::string& p) {
     return dp[m][n];
 }
 
-// 题目6: 查找所有匹配位置
+/**
+ * 题目6: 查找所有匹配位置 - KMP 算法
+ * 时间复杂度: O(n + m) - n, m 分别为文本和模式串长度
+ * 空间复杂度: O(m) - 前缀函数数组
+ */
 std::vector<int> findAllOccurrencesSolution(const std::string& text, const std::string& pattern) {
     std::vector<int> result;
     if (pattern.empty()) return result;
@@ -183,7 +207,11 @@ std::vector<int> findAllOccurrencesSolution(const std::string& text, const std::
     return result;
 }
 
-// 题目7: Rabin-Karp 字符串匹配
+/**
+ * 题目7: Rabin-Karp 字符串匹配 - 滚动哈希
+ * 时间复杂度: O(n + m) 平均，O(n * m) 最坏
+ * 空间复杂度: O(1) - 仅用常数变量
+ */
 int rabinKarpSolution(const std::string& text, const std::string& pattern) {
     if (pattern.empty()) return 0;
     if (pattern.size() > text.size()) return -1;
@@ -221,7 +249,11 @@ int rabinKarpSolution(const std::string& text, const std::string& pattern) {
     return -1;
 }
 
-// 题目8: 最长公共前缀
+/**
+ * 题目8: 最长公共前缀 - 纵向扫描
+ * 时间复杂度: O(m * n) - m 为最短字符串长度，n 为字符串数量
+ * 空间复杂度: O(1) - 仅用常数变量
+ */
 std::string longestCommonPrefixSolution(std::vector<std::string>& strs) {
     if (strs.empty()) return "";
 
@@ -237,7 +269,11 @@ std::string longestCommonPrefixSolution(std::vector<std::string>& strs) {
     return strs[0];
 }
 
-// 题目9: Z 函数
+/**
+ * 题目9: Z 函数 - Z-Algorithm
+ * 时间复杂度: O(n) - 线性时间
+ * 空间复杂度: O(n) - Z 数组
+ */
 std::vector<int> zFunctionSolution(const std::string& s) {
     int n = static_cast<int>(s.size());
     std::vector<int> z(n, 0);

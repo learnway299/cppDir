@@ -13,6 +13,7 @@
 // 01-basic
 #include "01-basic/easy_problems.h"
 #include "01-basic/fibonacci.h"
+#include "01-basic/rand7_from_rand5.h"
 
 // 02-linked-list
 #include "02-linked-list/reverse_list.h"
@@ -175,6 +176,7 @@ void runAllTests() {
     // ========== 01-basic ==========
     std::cout << ">>> 01-basic <<<\n";
     EasyProblems::runTests();
+    Rand7FromRand5::runTests();
     // Fibonacci::runTests();
 
     // ========== 02-linked-list ==========

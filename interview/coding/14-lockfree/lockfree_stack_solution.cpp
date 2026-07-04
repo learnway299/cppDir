@@ -12,6 +12,13 @@ namespace LockFreeStack {
 
 // ==================== 题目1: 基本无锁栈 ====================
 
+/**
+ * 题目1: LockFreeStackBasic - 基本无锁栈
+ * push: O(1) 摊还 - CAS循环
+ * pop: O(1) 摊还 - CAS循环
+ * 空间复杂度: O(n) - n个节点
+ * 注意: 存在ABA问题
+ */
 template <typename T>
 struct LockFreeStackNode {
     T data;
@@ -54,6 +61,13 @@ bool LockFreeStackBasicSolution<T>::empty() const {
 }
 
 // ==================== 题目2: 解决 ABA 问题（带版本号）====================
+
+/**
+ * 题目2: LockFreeStackABA - 带版本号的无锁栈
+ * push/pop: O(1) 摊还 - CAS循环
+ * 空间复杂度: O(n) - n个节点
+ * 特点: 使用版本号解决ABA问题（高16位tag + 低48位指针）
+ */
 // 使用 64 位打包指针：高 16 位存 tag，低 48 位存指针（x64 用户空间指针只用 48 位）
 
 template <typename T>
@@ -127,6 +141,12 @@ bool LockFreeStackABASolution<T>::empty() const {
 
 // ==================== 题目3: 使用 shared_ptr 的无锁栈 ====================
 
+/**
+ * 题目3: LockFreeStackSimple - shared_ptr无锁栈
+ * push/pop: O(1) 摊还 - 原子shared_ptr操作
+ * 空间复杂度: O(n) - n个节点
+ * 特点: 利用atomic<shared_ptr>避免ABA，但性能较低
+ */
 template <typename T>
 struct SharedNode {
     T data;

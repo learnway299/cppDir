@@ -434,6 +434,150 @@ void objectNameDemo() {
 }
 ```
 
+### 3.1.1 多个对象能否使用同一个 objectName？
+
+**面试问题**：多个 QObject 可以设置相同的 objectName 吗？会有什么影响？
+
+**答案**：
+
+**可以！** Qt 不强制 objectName 唯一，多个对象可以设置相同的名称。
+
+```cpp
+void duplicateNameDemo() {
+    QWidget* parent = new QWidget();
+
+    // ✅ 允许：多个对象使用相同的 objectName
+    QPushButton* btn1 = new QPushButton("Button 1", parent);
+    btn1->setObjectName("myButton");
+
+    QPushButton* btn2 = new QPushButton("Button 2", parent);
+    btn2->setObjectName("myButton");  // 与 btn1 同名，完全合法
+
+    QPushButton* btn3 = new QPushButton("Button 3", parent);
+    btn3->setObjectName("myButton");  // 三个同名按钮
+
+    // 影响 1：findChild 只返回第一个匹配的对象
+    QPushButton* found = parent->findChild<QPushButton*>("myButton");
+    // found == btn1（返回第一个找到的，不一定是哪个）
+
+    // 影响 2：findChildren 返回所有匹配的对象
+    QList<QPushButton*> allButtons = parent->findChildren<QPushButton*>("myButton");
+    qDebug() << "Found" << allButtons.size() << "buttons";  // 输出: Found 3 buttons
+
+    delete parent;
+}
+```
+
+**重名的影响与风险：**
+
+```cpp
+// ⚠️ 风险 1：findChild 行为不确定
+void findChildRisk() {
+    QWidget* form = new QWidget();
+
+    QLineEdit* email1 = new QLineEdit(form);
+    email1->setObjectName("emailInput");
+
+    QLineEdit* email2 = new QLineEdit(form);
+    email2->setObjectName("emailInput");  // 重名
+
+    // findChild 返回哪一个？不确定！
+    QLineEdit* found = form->findChild<QLineEdit*>("emailInput");
+    // 可能是 email1，也可能是 email2
+    // 取决于内部实现，不应依赖这个行为
+
+    delete form;
+}
+
+// ⚠️ 风险 2：样式表选择器影响所有同名对象
+// QSS: QLineEdit#emailInput { border: 2px solid red; }
+// 所有 objectName 为 "emailInput" 的 QLineEdit 都会变红
+
+// ⚠️ 风险 3：测试代码可能操作错误的对象
+void testRisk() {
+    // 测试代码期望唯一匹配
+    QLineEdit* input = window->findChild<QLineEdit*>("userInput");
+    input->setText("test");  // 如果有多个同名对象，可能操作错误的那个
+}
+```
+
+**最佳实践：**
+
+```cpp
+class FormWidget : public QWidget {
+    Q_OBJECT
+public:
+    FormWidget(QWidget* parent = nullptr) : QWidget(parent) {
+        // ✅ 最佳实践 1：使用唯一的 objectName
+        m_usernameEdit = new QLineEdit(this);
+        m_usernameEdit->setObjectName("usernameEdit");  // 唯一
+
+        m_passwordEdit = new QLineEdit(this);
+        m_passwordEdit->setObjectName("passwordEdit");  // 唯一
+
+        // ✅ 最佳实践 2：使用命名约定确保唯一性
+        // 格式：<功能>_<类型>_<序号>
+        for (int i = 0; i < 5; ++i) {
+            auto* btn = new QPushButton(QString("Item %1").arg(i), this);
+            btn->setObjectName(QString("listItem_button_%1").arg(i));
+        }
+
+        // ✅ 最佳实践 3：保留成员指针，避免依赖 findChild
+        // 直接使用 m_usernameEdit，而不是每次 findChild
+    }
+
+    // ✅ 最佳实践 4：如果必须用 findChild，使用 findChildren 并验证
+    QLineEdit* getSingleInput(const QString& name) {
+        auto list = findChildren<QLineEdit*>(name);
+        if (list.size() != 1) {
+            qWarning() << "Expected 1 object named" << name
+                       << "but found" << list.size();
+            return nullptr;
+        }
+        return list.first();
+    }
+
+private:
+    QLineEdit* m_usernameEdit;
+    QLineEdit* m_passwordEdit;
+};
+```
+
+**重名的合法用途：**
+
+```cpp
+// 有时重名是故意的设计
+void intentionalDuplicateNames() {
+    QWidget* toolbar = new QWidget();
+
+    // 所有工具按钮共享相同的样式
+    for (int i = 0; i < 10; ++i) {
+        auto* btn = new QToolButton(toolbar);
+        btn->setObjectName("toolButton");  // 故意同名
+    }
+
+    // 这样可以用一条 QSS 规则设置所有按钮的样式
+    // QToolButton#toolButton { ... }
+
+    // 或者批量操作
+    for (auto* btn : toolbar->findChildren<QToolButton*>("toolButton")) {
+        btn->setEnabled(false);
+    }
+
+    delete toolbar;
+}
+```
+
+**总结：**
+
+| 特性 | 说明 |
+|------|------|
+| 唯一性 | **不强制**，允许重名 |
+| findChild 行为 | 返回第一个匹配的（不确定是哪个） |
+| findChildren 行为 | 返回所有匹配的列表 |
+| QSS 影响 | 影响所有同名对象 |
+| 最佳实践 | 保持唯一，或故意重名用于批量操作 |
+
 ---
 
 ### 3.2 findChild 和 findChildren
@@ -830,6 +974,256 @@ void conflictDemo() {
 
     delete parent;
 }
+```
+
+---
+
+### 5.4 对象删除机制的组合与陷阱
+
+**面试问题**：对象树、QPointer、std::unique_ptr、delete 和 deleteLater 之间如何正确搭配使用？会有重复删除的风险吗？
+
+**答案**：
+
+这是 Qt 开发中非常容易出错的地方，需要深入理解各种删除机制的交互。
+
+#### 5.4.1 各种删除机制的特点
+
+| 机制 | 删除时机 | 是否通知其他机制 | 适用场景 |
+|------|----------|------------------|----------|
+| `delete` | 立即同步删除 | 会触发 QObject 的析构通知 | 确定安全时立即删除 |
+| `deleteLater()` | 事件循环下一次迭代 | 会触发 QObject 的析构通知 | 信号槽上下文、异步场景 |
+| 对象树 | 父对象析构时 | 会触发 QObject 的析构通知 | 自动管理子对象生命周期 |
+| `std::unique_ptr` | 离开作用域时 | **不感知** Qt 对象树 | 独占所有权 |
+| `QPointer` | **不负责删除** | 被动感知对象销毁 | 弱引用、安全检查 |
+
+#### 5.4.2 危险组合：对象树 + std::unique_ptr
+
+```cpp
+// ❌ 危险：双重删除！
+void dangerousCombo1() {
+    QWidget* parent = new QWidget();
+    std::unique_ptr<QWidget> child(new QWidget(parent));
+
+    delete parent;
+    // 1. parent 析构时，对象树自动 delete child
+    // 2. unique_ptr 离开作用域时，再次 delete child
+    // 结果：崩溃！双重删除
+}
+
+// ✅ 正确做法 1：不使用父对象
+void safeCombo1a() {
+    std::unique_ptr<QWidget> parent(new QWidget());
+    std::unique_ptr<QWidget> child(new QWidget());  // 无父对象
+    child->setParent(parent.get());  // 也不要这样！
+
+    // 如果需要父子关系，让对象树管理，不要用 unique_ptr
+}
+
+// ✅ 正确做法 2：只用对象树，不用智能指针
+void safeCombo1b() {
+    QWidget* parent = new QWidget();
+    new QWidget(parent);  // 让对象树管理
+    new QWidget(parent);
+    delete parent;  // 所有子对象自动删除
+}
+
+// ✅ 正确做法 3：顶层对象用智能指针，子对象用对象树
+void safeCombo1c() {
+    std::unique_ptr<QWidget> root(new QWidget());
+    new QWidget(root.get());  // 子对象由对象树管理
+    new QWidget(root.get());
+    // root 析构时，对象树自动清理所有子对象
+}
+```
+
+#### 5.4.3 危险组合：delete + deleteLater
+
+```cpp
+// ❌ 危险：双重删除！
+void dangerousCombo2() {
+    QObject* obj = new QObject();
+    obj->deleteLater();  // 安排延迟删除
+    delete obj;          // 立即删除
+    // 事件循环稍后会尝试删除已经无效的指针！
+}
+
+// ❌ 危险：多次 deleteLater
+void dangerousCombo2b() {
+    QObject* obj = new QObject();
+    obj->deleteLater();
+    obj->deleteLater();  // 投递两次删除事件
+    // 可能导致双重删除（取决于 Qt 版本和具体实现）
+}
+
+// ✅ 正确：只选择一种方式
+void safeDelete() {
+    QObject* obj1 = new QObject();
+    delete obj1;  // 方式1：立即删除
+
+    QObject* obj2 = new QObject();
+    obj2->deleteLater();  // 方式2：延迟删除（确保事件循环运行）
+}
+```
+
+#### 5.4.4 危险组合：对象树 + deleteLater
+
+```cpp
+// ⚠️ 需要注意的场景
+void treeWithDeleteLater() {
+    QWidget* parent = new QWidget();
+    QWidget* child = new QWidget(parent);
+
+    child->deleteLater();  // 安排 child 延迟删除
+    delete parent;         // 立即删除 parent
+
+    // 问题：parent 析构时会 delete child
+    // 但 child 已经安排了 deleteLater
+    // Qt 内部处理：deleteLater 的事件会被取消（对象已不存在）
+    // 结果：通常安全，但依赖 Qt 内部实现
+}
+
+// ✅ 更安全的做法：统一使用 deleteLater
+void saferTreeDelete() {
+    QWidget* parent = new QWidget();
+    QWidget* child = new QWidget(parent);
+
+    // 如果需要先删除子对象
+    child->setParent(nullptr);  // 先解除父子关系
+    child->deleteLater();
+
+    parent->deleteLater();
+}
+```
+
+#### 5.4.5 QPointer 的正确使用
+
+```cpp
+// ✅ QPointer 不会导致双重删除（它不负责删除）
+void qpointerSafety() {
+    QPointer<QWidget> weak;
+
+    {
+        QWidget* widget = new QWidget();
+        weak = widget;
+
+        delete widget;  // 正常删除
+    }
+
+    // weak 自动变为 nullptr，安全检查
+    if (weak) {
+        weak->show();  // 不会执行
+    }
+}
+
+// ✅ QPointer + deleteLater 安全组合
+void qpointerWithDeleteLater() {
+    QPointer<QWidget> weak;
+    QWidget* widget = new QWidget();
+    weak = widget;
+
+    widget->deleteLater();
+
+    // 在 deleteLater 执行前，weak 仍然有效
+    if (weak) {
+        qDebug() << "Still valid before event loop";
+    }
+
+    QCoreApplication::processEvents();
+
+    // deleteLater 执行后，weak 自动置空
+    if (!weak) {
+        qDebug() << "Now it's null";
+    }
+}
+
+// ✅ QPointer + 对象树 安全组合
+void qpointerWithTree() {
+    QPointer<QWidget> weak;
+    QWidget* parent = new QWidget();
+    QWidget* child = new QWidget(parent);
+    weak = child;
+
+    delete parent;  // child 被对象树删除
+
+    // weak 自动变为 nullptr
+    Q_ASSERT(weak.isNull());
+}
+```
+
+#### 5.4.6 最佳实践总结
+
+```cpp
+class LifetimeManager {
+public:
+    // 规则 1：有父对象的 QObject 不要用智能指针管理
+    void rule1_parentManaged() {
+        m_parent = std::make_unique<QWidget>();
+        // 子对象只用原始指针，让对象树管理
+        m_child = new QLabel("Text", m_parent.get());
+    }
+
+    // 规则 2：需要弱引用时用 QPointer
+    void rule2_weakReference(QWidget* external) {
+        m_externalRef = external;  // QPointer 自动追踪
+    }
+
+    void useExternalRef() {
+        if (m_externalRef) {  // 安全检查
+            m_externalRef->update();
+        }
+    }
+
+    // 规则 3：在信号槽上下文中优先使用 deleteLater
+    void rule3_signalSlotContext() {
+        connect(m_button, &QPushButton::clicked, this, [this]() {
+            // 不要在槽中直接 delete sender
+            // m_button->deleteLater();  // 如果真的需要删除
+        });
+    }
+
+    // 规则 4：无父对象的顶层对象可以用智能指针
+    void rule4_topLevel() {
+        auto dialog = std::make_unique<QDialog>();
+        dialog->exec();
+        // 离开作用域自动删除
+    }
+
+private:
+    std::unique_ptr<QWidget> m_parent;
+    QLabel* m_child = nullptr;  // 由 m_parent 的对象树管理
+    QPointer<QWidget> m_externalRef;
+    QPushButton* m_button = nullptr;
+};
+```
+
+#### 5.4.7 常见错误速查表
+
+| 组合 | 风险 | 解决方案 |
+|------|------|----------|
+| `unique_ptr` + 有父对象 | 双重删除 | 不要对有父对象的 QObject 使用智能指针 |
+| `delete` + `deleteLater` | 双重删除 | 只选择一种方式 |
+| 多次 `deleteLater` | 可能双重删除 | 使用标志位或 QPointer 检查 |
+| 对象树 + 手动 `delete` 子对象 | 父对象悬空指针 | 先 `setParent(nullptr)` 或让对象树管理 |
+| `shared_ptr` + 对象树 | 所有权混乱 | 避免混用，选择一种管理方式 |
+
+```cpp
+// 防止重复删除的辅助类
+class SafeDeleter {
+public:
+    static void safeDelete(QObject* obj) {
+        if (obj && !obj->parent()) {
+            obj->deleteLater();
+        }
+        // 有父对象的让对象树处理
+    }
+
+    static void safeDeleteNow(QObject* obj) {
+        if (obj) {
+            obj->setParent(nullptr);  // 解除父子关系
+            delete obj;
+        }
+    }
+};
 ```
 
 ---

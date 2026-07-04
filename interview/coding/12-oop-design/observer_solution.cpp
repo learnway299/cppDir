@@ -15,6 +15,12 @@ namespace Solution {
 
 // ==================== 基础观察者模式 ====================
 
+/**
+ * 题目1: Observer/Subject - 基础观察者模式
+ * attach/detach: O(1)/O(n) - 添加O(1)，删除需查找O(n)
+ * notify: O(n) - 通知所有观察者
+ * 空间复杂度: O(n) - 观察者列表
+ */
 class Observer {
 public:
     virtual ~Observer() = default;
@@ -79,6 +85,11 @@ private:
 
 // ==================== 类型安全的观察者 ====================
 
+/**
+ * 题目2: TypedSubject/TypedObserver - 类型安全观察者
+ * 所有操作复杂度同基础版
+ * 优势: 编译期类型检查，避免运行时类型错误
+ */
 template <typename EventType>
 class TypedObserver {
 public:
@@ -135,6 +146,13 @@ private:
 
 // ==================== Signal/Slot 模式 ====================
 
+/**
+ * 题目3: Signal/Slot - 信号槽模式
+ * connect: O(1) - 哈希表插入
+ * disconnect: O(1) - 哈希表删除
+ * emit: O(n) - 调用所有槽函数
+ * 空间复杂度: O(n) - 槽函数哈希表
+ */
 template <typename... Args>
 class Signal {
 public:
@@ -198,6 +216,12 @@ private:
 
 // ==================== 弱引用观察者 ====================
 
+/**
+ * 题目4: WeakSubject/WeakObserver - 弱引用观察者
+ * notify: O(n) - 遍历并清理过期引用
+ * 空间复杂度: O(n) - weak_ptr列表
+ * 优势: 自动处理观察者生命周期，避免悬空指针
+ */
 class WeakObserver : public std::enable_shared_from_this<WeakObserver> {
 public:
     virtual ~WeakObserver() = default;
@@ -251,6 +275,12 @@ private:
 
 // ==================== 事件总线 ====================
 
+/**
+ * 题目5: EventBus - 全局事件总线（单例）
+ * subscribe: O(1) - 添加处理器
+ * publish: O(n) - 调用该类型所有处理器
+ * 空间复杂度: O(n * m) - n种事件类型，每种m个处理器
+ */
 class EventBus {
 public:
     static EventBus& getInstance() {

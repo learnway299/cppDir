@@ -29,6 +29,12 @@ static void backtrackPartition(const std::string& s, int start,
 
 // ==================== 参考答案实现 ====================
 
+/**
+ * partition - 分割回文串I（所有方案）
+ * 时间复杂度: O(n * 2^n) - 最坏全是单字符
+ * 空间复杂度: O(n²) - isPalin预处理 + O(n)递归栈
+ * 特点: DP预处理回文 + 回溯枚举分割
+ */
 std::vector<std::vector<std::string>> partitionSolution(const std::string& s) {
     int n = static_cast<int>(s.size());
     std::vector<std::vector<bool>> isPalin(n, std::vector<bool>(n, false));
@@ -46,6 +52,12 @@ std::vector<std::vector<std::string>> partitionSolution(const std::string& s) {
     return result;
 }
 
+/**
+ * minCut - 分割回文串II（最少分割次数）
+ * 时间复杂度: O(n²) - DP
+ * 空间复杂度: O(n²) - isPalin预处理 + O(n) dp数组
+ * 特点: DP预处理 + 线性DP求最小值
+ */
 int minCutSolution(const std::string& s) {
     int n = static_cast<int>(s.size());
     std::vector<std::vector<bool>> isPalin(n, std::vector<bool>(n, false));

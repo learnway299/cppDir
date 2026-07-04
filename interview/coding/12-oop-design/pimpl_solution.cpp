@@ -15,6 +15,12 @@ namespace Solution {
 
 // ==================== DatabaseConnection ====================
 
+/**
+ * 题目1: DatabaseConnection - 基础Pimpl
+ * 所有操作: O(1) - 委托给Impl
+ * 空间复杂度: O(1) - unique_ptr<Impl>
+ * 特点: 编译防火墙，隐藏实现细节
+ */
 class DatabaseConnection {
 public:
     DatabaseConnection() : pImpl_(std::make_unique<Impl>()) {}
@@ -78,6 +84,13 @@ private:
 
 // ==================== Widget (支持拷贝) ====================
 
+/**
+ * 题目2: Widget - 可拷贝Pimpl
+ * 拷贝构造/赋值: O(n) - 深拷贝Impl内容
+ * 移动: O(1) - 指针转移
+ * 空间复杂度: O(1) - unique_ptr<Impl>
+ * 特点: 支持值语义的Pimpl
+ */
 class Widget {
 public:
     Widget() : pImpl_(std::make_unique<Impl>()) {}
@@ -117,6 +130,13 @@ private:
 
 // ==================== Document (Copy-on-Write) ====================
 
+/**
+ * 题目3: Document - Copy-on-Write Pimpl
+ * 拷贝: O(1) - 共享shared_ptr
+ * 写入: O(n) - 写时复制（仅当引用计数>1）
+ * 读取: O(1) - 直接访问
+ * 空间复杂度: O(1)~O(n) - 取决于是否触发COW
+ */
 class Document {
 public:
     Document() : pImpl_(std::make_shared<Impl>()) {}
@@ -163,6 +183,12 @@ private:
 
 // ==================== Base / Derived (继承) ====================
 
+/**
+ * 题目4: Base/Derived - 继承体系Pimpl
+ * 所有操作: O(1) - 虚函数委托
+ * 空间复杂度: O(1) - unique_ptr<Impl>
+ * 特点: Pimpl与继承结合，Impl也支持继承
+ */
 class Base {
 public:
     Base() : pImpl_(std::make_unique<BaseImpl>()) {}
@@ -225,6 +251,12 @@ private:
 
 // ==================== Fast Pimpl ====================
 
+/**
+ * 题目5: FastPimpl - 栈上Pimpl（无堆分配）
+ * construct/destroy/get: O(1) - 原地构造
+ * 空间复杂度: O(1) - 栈上固定缓冲区
+ * 特点: 避免堆分配，提高缓存局部性
+ */
 template <size_t Size, size_t Alignment = alignof(std::max_align_t)>
 class FastPimpl {
 public:

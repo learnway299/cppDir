@@ -13,6 +13,12 @@ namespace ThreadSafeQueue {
 
 // ==================== 参考答案实现 ====================
 
+/**
+ * 题目: ThreadSafeQueue - 线程安全队列
+ * push: O(1) - 加锁入队
+ * try_pop/wait_and_pop: O(1) - 加锁出队
+ * 空间复杂度: O(n) - 队列元素
+ */
 template <typename T>
 void ThreadSafeQueueSolution<T>::push(T value) {
     {

@@ -25,6 +25,16 @@ std::vector<std::vector<int>> combinationSum3Solution(int k, int n);
 std::vector<std::vector<int>> subsetsSolution(std::vector<int>& nums);
 std::vector<std::vector<int>> subsetsWithDupSolution(std::vector<int>& nums);
 
+// 不同实现方式
+// 子集 - 递归（回溯）
+std::vector<std::vector<int>> subsetsRecursive(std::vector<int>& nums);
+// 子集 - 迭代（位运算枚举）
+std::vector<std::vector<int>> subsetsIterative(std::vector<int>& nums);
+// 子集 II - 递归（回溯）
+std::vector<std::vector<int>> subsetsWithDupRecursive(std::vector<int>& nums);
+// 子集 II - 迭代（逐个元素扩展）
+std::vector<std::vector<int>> subsetsWithDupIterative(std::vector<int>& nums);
+
 // 测试函数
 void runTests();
 

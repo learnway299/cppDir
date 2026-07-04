@@ -24,7 +24,11 @@ static ListNode* reverseList(ListNode* head) {
 
 // ==================== 参考答案实现 ====================
 
-// 题目1: 链表的中间结点 - 快慢指针 O(n)
+/**
+ * 题目1: 链表的中间结点 - 快慢指针
+ * 时间复杂度: O(n) - 快指针走完链表
+ * 空间复杂度: O(1) - 仅用两个指针
+ */
 ListNode* middleNodeSolution(ListNode* head) {
     ListNode* slow = head;
     ListNode* fast = head;
@@ -35,7 +39,11 @@ ListNode* middleNodeSolution(ListNode* head) {
     return slow;
 }
 
-// 题目2: 删除链表的倒数第 N 个结点
+/**
+ * 题目2: 删除链表的倒数第 N 个结点 - 快慢指针
+ * 时间复杂度: O(n) - 一次遍历
+ * 空间复杂度: O(1) - 仅用常数指针
+ */
 ListNode* removeNthFromEndSolution(ListNode* head, int n) {
     ListNode dummy(0, head);
     ListNode* fast = &dummy;
@@ -51,7 +59,11 @@ ListNode* removeNthFromEndSolution(ListNode* head, int n) {
     return dummy.next;
 }
 
-// 题目3: 链表中倒数第 k 个节点
+/**
+ * 题目3: 链表中倒数第 k 个节点 - 快慢指针
+ * 时间复杂度: O(n) - 一次遍历
+ * 空间复杂度: O(1) - 仅用两个指针
+ */
 ListNode* getKthFromEndSolution(ListNode* head, int k) {
     ListNode* fast = head;
     ListNode* slow = head;
@@ -63,7 +75,11 @@ ListNode* getKthFromEndSolution(ListNode* head, int k) {
     return slow;
 }
 
-// 题目4: 回文链表 - 快慢指针+反转后半部分
+/**
+ * 题目4: 回文链表 - 快慢指针 + 反转后半部分
+ * 时间复杂度: O(n) - 找中点 + 反转 + 比较
+ * 空间复杂度: O(1) - 原地反转，仅用常数指针
+ */
 bool isPalindromeSolution(ListNode* head) {
     if (!head || !head->next) return true;
     ListNode* slow = head;
@@ -85,7 +101,11 @@ bool isPalindromeSolution(ListNode* head) {
     return result;
 }
 
-// 题目5: 重排链表
+/**
+ * 题目5: 重排链表 - 找中点 + 反转 + 交替合并
+ * 时间复杂度: O(n) - 三次遍历
+ * 空间复杂度: O(1) - 原地操作
+ */
 void reorderListSolution(ListNode* head) {
     if (!head || !head->next || !head->next->next) return;
     ListNode* slow = head;
@@ -107,7 +127,11 @@ void reorderListSolution(ListNode* head) {
     }
 }
 
-// 题目6: 分隔链表
+/**
+ * 题目6: 分隔链表 - 双链表法
+ * 时间复杂度: O(n) - 遍历链表一次
+ * 空间复杂度: O(1) - 仅用常数指针（原地分割）
+ */
 ListNode* partitionSolution(ListNode* head, int x) {
     ListNode smallDummy, largeDummy;
     ListNode* small = &smallDummy;
@@ -127,7 +151,11 @@ ListNode* partitionSolution(ListNode* head, int x) {
     return smallDummy.next;
 }
 
-// 题目7: 奇偶链表
+/**
+ * 题目7: 奇偶链表 - 双指针分离
+ * 时间复杂度: O(n) - 遍历链表一次
+ * 空间复杂度: O(1) - 原地调整指针
+ */
 ListNode* oddEvenListSolution(ListNode* head) {
     if (!head || !head->next) return head;
     ListNode* odd = head;

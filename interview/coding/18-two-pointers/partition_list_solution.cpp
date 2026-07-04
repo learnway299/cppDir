@@ -11,6 +11,12 @@ namespace PartitionListImpl {
 
 namespace Solution {
 
+/**
+ * partition - 分隔链表
+ * 时间复杂度: O(n) - 遍历链表一次
+ * 空间复杂度: O(1) - 原地重组节点
+ * 特点: 双链表收集 + 连接，保持相对顺序
+ */
 ListNode* partition(ListNode* head, int x) {
     ListNode smallDummy(0), largeDummy(0);
     ListNode* small = &smallDummy;

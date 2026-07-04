@@ -11,7 +11,12 @@ namespace BitwiseAndRangeImpl {
 namespace Solution {
 
 // ==================== 方法1: 找公共前缀 ====================
-// 不断右移直到相等，因为范围内的数按位与，只有公共前缀部分会保留
+/**
+ * rangeBitwiseAnd - 数字范围按位与（移位法）
+ * 时间复杂度: O(log n) - 最多移动32位
+ * 空间复杂度: O(1) - 常数空间
+ * 特点: 找公共前缀，后面位必被清零
+ */
 int rangeBitwiseAnd(int left, int right) {
     int shift = 0;
     while (left < right) {
@@ -23,7 +28,12 @@ int rangeBitwiseAnd(int left, int right) {
 }
 
 // ==================== 方法2: Brian Kernighan ====================
-// 不断消除 right 最右边的 1
+/**
+ * rangeBitwiseAndBK - 数字范围按位与（BK算法）
+ * 时间复杂度: O(log n) - 最多消除32个1
+ * 空间复杂度: O(1) - 常数空间
+ * 特点: 不断消除right最低位1直到<=left
+ */
 int rangeBitwiseAndBK(int left, int right) {
     while (left < right) {
         right &= (right - 1);

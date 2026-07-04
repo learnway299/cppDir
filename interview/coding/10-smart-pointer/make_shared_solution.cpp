@@ -14,11 +14,21 @@ namespace Solution {
 
 // ==================== make_unique ====================
 
+/**
+ * 题目1: myMakeUnique - 实现std::make_unique
+ * 时间复杂度: O(1) - 一次分配 + 构造
+ * 空间复杂度: O(1) - 栈上创建unique_ptr
+ */
 template <typename T, typename... Args>
 std::unique_ptr<T> myMakeUnique(Args&&... args) {
     return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
 }
 
+/**
+ * 题目2: myMakeUniqueArray - 数组版本make_unique
+ * 时间复杂度: O(n) - 分配并默认初始化n个元素
+ * 空间复杂度: O(1) - 栈上创建unique_ptr
+ */
 // 数组版本（未知大小）
 template <typename T>
 std::unique_ptr<T[]> myMakeUniqueArray(size_t size) {
@@ -27,6 +37,12 @@ std::unique_ptr<T[]> myMakeUniqueArray(size_t size) {
 
 // ==================== CombinedBlock ====================
 
+/**
+ * 题目3: CombinedBlock - 合并分配块
+ * 核心优化: 控制块与对象存储在连续内存中
+ * 构造: O(1) - 原地构造
+ * 空间: sizeof(控制块) + sizeof(T) - 一次分配
+ */
 template <typename T>
 struct alignas(std::max_align_t) CombinedBlock {
     std::atomic<long> strong_count;
@@ -50,6 +66,12 @@ struct alignas(std::max_align_t) CombinedBlock {
 
 // ==================== MySharedPtr ====================
 
+/**
+ * 题目4: MySharedPtr - 配合CombinedBlock的SharedPtr
+ * 所有操作: O(1) - 原子计数操作
+ * 空间复杂度: O(1) - 仅存储块指针
+ * 优势: make_shared创建时只需一次内存分配
+ */
 template <typename T>
 class MySharedPtr {
 public:
@@ -123,6 +145,12 @@ private:
 
 // ==================== myMakeShared ====================
 
+/**
+ * 题目5: myMakeShared - 实现std::make_shared
+ * 时间复杂度: O(1) - 单次分配 + 原地构造
+ * 空间复杂度: O(1) - 栈上创建MySharedPtr
+ * 优势: 相比shared_ptr(new T)减少一次分配，提高缓存局部性
+ */
 template <typename T, typename... Args>
 MySharedPtr<T> myMakeShared(Args&&... args) {
     auto* block = new CombinedBlock<T>(std::forward<Args>(args)...);

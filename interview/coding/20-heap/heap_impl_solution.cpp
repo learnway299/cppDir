@@ -13,7 +13,14 @@ namespace HeapImplImpl {
 namespace Solution {
 
 // ==================== 最小堆实现 ====================
-
+/**
+ * MinHeap - 最小堆实现
+ * push: 时间O(logn) - 上浮调整
+ * pop:  时间O(logn) - 下沉调整
+ * top:  时间O(1) - 返回堆顶
+ * 空间复杂度: O(n) - 存储n个元素
+ * 特点: 完全二叉树，父节点<=子节点
+ */
 class MinHeap {
 public:
     void push(int val) {

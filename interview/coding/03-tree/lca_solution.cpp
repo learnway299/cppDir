@@ -34,7 +34,11 @@ static TreeNode* lowestCommonAncestorIIHelper(TreeNode* root, TreeNode* p, TreeN
 
 // ==================== 参考答案实现 ====================
 
-// 题目1: 二叉树的最近公共祖先
+/**
+ * 题目1: 二叉树的最近公共祖先 - 递归后序遍历
+ * 时间复杂度: O(n) - 访问每个节点一次
+ * 空间复杂度: O(h) - 递归栈深度
+ */
 TreeNode* lowestCommonAncestorSolution(TreeNode* root, TreeNode* p, TreeNode* q) {
     if (!root || root == p || root == q) return root;
     TreeNode* left = lowestCommonAncestorSolution(root->left, p, q);
@@ -43,7 +47,11 @@ TreeNode* lowestCommonAncestorSolution(TreeNode* root, TreeNode* p, TreeNode* q)
     return left ? left : right;
 }
 
-// 题目2: 二叉搜索树的最近公共祖先
+/**
+ * 题目2: 二叉搜索树的最近公共祖先 - 利用 BST 性质
+ * 时间复杂度: O(h) - 最多走一条路径
+ * 空间复杂度: O(h) - 递归栈深度
+ */
 TreeNode* lowestCommonAncestorBSTSolution(TreeNode* root, TreeNode* p, TreeNode* q) {
     if (!root) return nullptr;
     if (p->val < root->val && q->val < root->val)
@@ -53,7 +61,11 @@ TreeNode* lowestCommonAncestorBSTSolution(TreeNode* root, TreeNode* p, TreeNode*
     return root;
 }
 
-// 题目3: 有父指针的二叉树的最近公共祖先
+/**
+ * 题目3: 有父指针的二叉树的最近公共祖先 - 双指针相遇
+ * 时间复杂度: O(h) - 两指针各走到根再回到 LCA
+ * 空间复杂度: O(1) - 仅用两个指针
+ */
 ParentNode* lowestCommonAncestorWithParentSolution(ParentNode* p, ParentNode* q) {
     ParentNode* a = p;
     ParentNode* b = q;
@@ -64,7 +76,11 @@ ParentNode* lowestCommonAncestorWithParentSolution(ParentNode* p, ParentNode* q)
     return a;
 }
 
-// 题目4: 二叉树的最近公共祖先 II（p或q可能不存在）
+/**
+ * 题目4: 二叉树的最近公共祖先 II - 后序遍历 + 标记
+ * 时间复杂度: O(n) - 访问每个节点一次
+ * 空间复杂度: O(h) - 递归栈深度
+ */
 TreeNode* lowestCommonAncestorIISolution(TreeNode* root, TreeNode* p, TreeNode* q) {
     foundP = false;
     foundQ = false;
@@ -73,7 +89,11 @@ TreeNode* lowestCommonAncestorIISolution(TreeNode* root, TreeNode* p, TreeNode* 
     return nullptr;
 }
 
-// 题目5: 二叉树的最近公共祖先 III（多个节点）
+/**
+ * 题目5: 二叉树的最近公共祖先 III - 逐个归约
+ * 时间复杂度: O(k*n) - k 个节点，每次 O(n)
+ * 空间复杂度: O(h) - 递归栈深度
+ */
 TreeNode* lowestCommonAncestorMultipleSolution(TreeNode* root, std::vector<TreeNode*>& nodes) {
     if (nodes.empty()) return nullptr;
     TreeNode* result = nodes[0];
@@ -84,7 +104,11 @@ TreeNode* lowestCommonAncestorMultipleSolution(TreeNode* root, std::vector<TreeN
     return result;
 }
 
-// 题目6: 二叉树的最深叶节点的最近公共祖先
+/**
+ * 题目6: 二叉树的最深叶节点的最近公共祖先 - 后序遍历 + 深度比较
+ * 时间复杂度: O(n) - 访问每个节点一次
+ * 空间复杂度: O(h) - 递归栈深度
+ */
 TreeNode* lcaDeepestLeavesSolution(TreeNode* root) {
     return lcaDeepestLeavesHelper(root).second;
 }

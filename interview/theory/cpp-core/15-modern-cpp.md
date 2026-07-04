@@ -249,6 +249,386 @@ vec.emplace_back("data");  // 直接构造，无拷贝/移动
 
 ---
 
+### 1.3.1 值类别 (Value Categories)？
+
+**问题描述**：C++11 引入的完整值类别体系，是理解移动语义的基础。
+
+**值类别体系**：
+
+```
+                  表达式 (expression)
+                        │
+           ┌────────────┴────────────┐
+           │                         │
+       glvalue                    rvalue
+    (泛左值)                      (右值)
+           │                         │
+     ┌─────┴─────┐             ┌─────┴─────┐
+     │           │             │           │
+  lvalue      xvalue        xvalue      prvalue
+  (左值)     (将亡值)       (将亡值)     (纯右值)
+```
+
+**三种基本值类别**：
+
+| 值类别 | 英文 | 特点 | 示例 |
+|--------|------|------|------|
+| **lvalue** | 左值 | 有身份，不可移动 | 变量名、解引用、字符串字面量 |
+| **xvalue** | 将亡值 | 有身份，可移动 | `std::move(x)`、返回右值引用的函数 |
+| **prvalue** | 纯右值 | 无身份，可移动 | 字面量、临时对象、lambda |
+
+**判断方法**：
+
+```cpp
+#include <iostream>
+#include <type_traits>
+
+// 辅助函数：判断值类别
+template<typename T>
+void check_category(T&&) {
+    if constexpr (std::is_lvalue_reference_v<T>) {
+        std::cout << "lvalue\n";
+    } else {
+        std::cout << "rvalue (xvalue or prvalue)\n";
+    }
+}
+
+int main() {
+    int x = 10;
+    int& lref = x;
+    int&& rref = 20;
+
+    // lvalue 示例
+    check_category(x);        // lvalue - 变量名
+    check_category(lref);     // lvalue - 左值引用
+    check_category(rref);     // lvalue - 右值引用变量本身是 lvalue！
+    check_category("hello");  // lvalue - 字符串字面量
+
+    // rvalue 示例
+    check_category(10);              // rvalue (prvalue) - 字面量
+    check_category(x + 1);           // rvalue (prvalue) - 临时值
+    check_category(std::move(x));    // rvalue (xvalue) - std::move 结果
+    check_category(static_cast<int&&>(x));  // rvalue (xvalue)
+
+    return 0;
+}
+```
+
+**关键要点**：
+
+```cpp
+int x = 10;
+int&& rref = std::move(x);
+
+// 重要：右值引用变量本身是 lvalue！
+// rref 是 lvalue，它引用的对象可以被移动
+// 要再次移动，需要 std::move(rref)
+
+std::vector<int> vec;
+vec.push_back(rref);            // ❌ 拷贝！rref 是 lvalue
+vec.push_back(std::move(rref)); // ✅ 移动
+```
+
+**面试常问**：
+- Q: `int&& rref = 10;` 中 `rref` 是什么值类别？
+- A: **lvalue**。右值引用变量本身是左值，只是它只能绑定到右值。
+
+---
+
+### 1.3.2 RVO/NRVO 与 Copy Elision？
+
+**问题描述**：编译器如何优化返回值拷贝？
+
+**三种优化形式**：
+
+| 优化 | 全称 | 场景 | C++17 |
+|------|------|------|-------|
+| **RVO** | Return Value Optimization | 返回临时对象 | 强制 |
+| **NRVO** | Named RVO | 返回具名局部变量 | 允许但不强制 |
+| **Copy Elision** | 拷贝消除 | 通用术语 | - |
+
+**RVO 示例**：
+
+```cpp
+#include <iostream>
+
+class Heavy {
+public:
+    Heavy() { std::cout << "Constructor\n"; }
+    Heavy(const Heavy&) { std::cout << "Copy Constructor\n"; }
+    Heavy(Heavy&&) { std::cout << "Move Constructor\n"; }
+    ~Heavy() { std::cout << "Destructor\n"; }
+};
+
+// RVO：返回临时对象
+Heavy createRVO() {
+    return Heavy();  // 直接在调用者的内存中构造
+}
+
+// NRVO：返回具名局部变量
+Heavy createNRVO() {
+    Heavy h;
+    return h;  // 编译器可能优化掉拷贝/移动
+}
+
+int main() {
+    std::cout << "=== RVO ===\n";
+    Heavy h1 = createRVO();
+    // C++17: 保证只输出 Constructor + Destructor
+
+    std::cout << "\n=== NRVO ===\n";
+    Heavy h2 = createNRVO();
+    // 可能只输出 Constructor + Destructor（优化后）
+    // 也可能有 Move Constructor（未优化）
+
+    return 0;
+}
+```
+
+**C++17 强制 RVO**：
+
+```cpp
+// C++17 前：RVO 是优化，可能发生也可能不发生
+// C++17 起：返回 prvalue 时，强制进行 copy elision
+
+Heavy createGuaranteed() {
+    return Heavy();  // C++17: 保证不调用拷贝/移动构造
+}
+
+// 即使拷贝/移动构造函数被 delete，也能编译
+class NoCopy {
+public:
+    NoCopy() = default;
+    NoCopy(const NoCopy&) = delete;
+    NoCopy(NoCopy&&) = delete;
+};
+
+NoCopy create() {
+    return NoCopy();  // C++17: OK
+}
+```
+
+**NRVO 可能失效的情况**：
+
+```cpp
+Heavy createConditional(bool flag) {
+    Heavy a, b;
+    if (flag) {
+        return a;  // 返回 a
+    } else {
+        return b;  // 返回 b
+    }
+    // NRVO 可能失效：编译器不知道返回哪个
+}
+
+Heavy createWithMove() {
+    Heavy h;
+    return std::move(h);  // ❌ 反而阻止 NRVO！
+    // 正确做法：直接 return h;
+}
+```
+
+**最佳实践**：
+
+```cpp
+// ✅ 直接返回局部变量，让编译器优化
+std::vector<int> getData() {
+    std::vector<int> result;
+    result.push_back(1);
+    result.push_back(2);
+    return result;  // NRVO 或自动 move
+}
+
+// ❌ 不要画蛇添足使用 std::move
+std::vector<int> getBadData() {
+    std::vector<int> result;
+    return std::move(result);  // 阻止 NRVO！
+}
+
+// ✅ 函数参数是右值引用时，需要显式 move
+std::vector<int> transform(std::vector<int>&& input) {
+    // input 是 lvalue（右值引用变量）
+    return std::move(input);  // 这里需要 move
+}
+```
+
+---
+
+### 1.3.3 移动语义的陷阱？
+
+**问题描述**：移动语义常见的错误和注意事项。
+
+**陷阱 1：移动后对象的状态**
+
+```cpp
+#include <vector>
+#include <iostream>
+
+void trap1() {
+    std::vector<int> v1 = {1, 2, 3, 4, 5};
+    std::vector<int> v2 = std::move(v1);
+
+    // v1 处于"有效但未指定"的状态
+    // 可以安全地：
+    v1.clear();           // ✅ 调用成员函数
+    v1.push_back(10);     // ✅ 重新使用
+    v1 = {6, 7, 8};       // ✅ 重新赋值
+
+    // 但不能假设：
+    // - v1 是空的（标准不保证）
+    // - v1.size() 是 0
+    // - v1[0] 的值
+
+    std::cout << "v1.size() = " << v1.size() << "\n";  // 可能是任何值
+}
+```
+
+**陷阱 2：自移动 (Self-Move)**
+
+```cpp
+class MyString {
+    char* data_;
+    size_t size_;
+
+public:
+    // ❌ 错误：未处理自移动
+    MyString& operator=(MyString&& other) noexcept {
+        delete[] data_;        // 如果 this == &other，会删除自己的数据！
+        data_ = other.data_;
+        size_ = other.size_;
+        other.data_ = nullptr;
+        other.size_ = 0;
+        return *this;
+    }
+
+    // ✅ 正确：检查自移动
+    MyString& operator=(MyString&& other) noexcept {
+        if (this != &other) {  // 自移动检查
+            delete[] data_;
+            data_ = other.data_;
+            size_ = other.size_;
+            other.data_ = nullptr;
+            other.size_ = 0;
+        }
+        return *this;
+    }
+
+    // ✅ 更好：使用 swap 惯用法
+    MyString& operator=(MyString&& other) noexcept {
+        MyString temp(std::move(other));
+        std::swap(data_, temp.data_);
+        std::swap(size_, temp.size_);
+        return *this;
+        // temp 析构时释放旧数据
+    }
+};
+
+void trap2() {
+    MyString s("hello");
+    s = std::move(s);  // 自移动，需要安全处理
+}
+```
+
+**陷阱 3：const 对象不能移动**
+
+```cpp
+void trap3() {
+    const std::vector<int> cv = {1, 2, 3};
+
+    // const 对象调用 std::move 后仍然是 const 左值引用
+    // 会调用拷贝构造而不是移动构造
+    std::vector<int> v2 = std::move(cv);  // 实际是拷贝！
+
+    // 原因：std::move(cv) 返回 const vector<int>&&
+    // const 右值引用只能绑定到 const 左值引用参数
+}
+```
+
+**陷阱 4：成员变量移动**
+
+```cpp
+class Container {
+    std::vector<int> data_;
+    std::string name_;
+
+public:
+    // ❌ 错误：忘记移动成员
+    Container(Container&& other) noexcept
+        : data_(other.data_),     // 拷贝！
+          name_(other.name_) {}   // 拷贝！
+
+    // ✅ 正确：显式移动每个成员
+    Container(Container&& other) noexcept
+        : data_(std::move(other.data_)),
+          name_(std::move(other.name_)) {}
+
+    // ✅ 最佳：使用 default
+    Container(Container&&) noexcept = default;
+};
+```
+
+**陷阱 5：返回局部变量的引用**
+
+```cpp
+// ❌ 危险：返回局部变量的右值引用
+std::string&& dangerous() {
+    std::string s = "hello";
+    return std::move(s);  // 悬垂引用！
+}
+
+// ✅ 正确：返回值
+std::string safe() {
+    std::string s = "hello";
+    return s;  // NRVO 或自动移动
+}
+```
+
+**陷阱 6：异常与 noexcept**
+
+```cpp
+#include <vector>
+
+class MayThrow {
+public:
+    MayThrow(MayThrow&&) { /* 可能抛异常 */ }  // 没有 noexcept
+};
+
+class NoThrow {
+public:
+    NoThrow(NoThrow&&) noexcept { /* 不会抛异常 */ }
+};
+
+void trap6() {
+    std::vector<MayThrow> v1;
+    // vector 扩容时会使用拷贝而不是移动
+    // 因为移动构造可能抛异常，无法保证强异常安全
+
+    std::vector<NoThrow> v2;
+    // vector 扩容时会使用移动
+    // 因为移动构造标记为 noexcept
+}
+
+// 最佳实践：移动构造/赋值应标记 noexcept
+class Best {
+public:
+    Best(Best&&) noexcept = default;
+    Best& operator=(Best&&) noexcept = default;
+};
+```
+
+**移动语义总结**：
+
+| 要点 | 说明 |
+|------|------|
+| 右值引用变量是 lvalue | 需要 `std::move` 再次转换 |
+| 移动后对象状态 | 有效但未指定，可重新赋值使用 |
+| 返回局部变量 | 直接 return，不要 `std::move` |
+| 移动构造加 noexcept | 保证 STL 容器使用移动 |
+| 自移动要安全 | 检查 `this != &other` 或用 swap |
+| const 不能移动 | `std::move(const T)` 实际是拷贝 |
+
+---
+
 ### 1.4 智能指针？
 
 **问题描述**：自动管理内存，避免泄漏。

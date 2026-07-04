@@ -17,6 +17,12 @@ static constexpr size_t CACHE_LINE_SIZE = 64;
 
 // ==================== 题目1: Dmitry Vyukov 的有界 MPMC 队列 ====================
 
+/**
+ * 题目1: MPMCQueueBounded - Vyukov有界MPMC队列
+ * push/pop: O(1) 摊还 - CAS循环
+ * 空间复杂度: O(Capacity) - 固定大小，缓存行对齐
+ * 特点: 高性能无锁队列，使用序列号避免ABA
+ */
 template <typename T, size_t Capacity>
 struct alignas(CACHE_LINE_SIZE) Cell {
     std::atomic<size_t> sequence;
@@ -107,6 +113,12 @@ template class MPMCQueueBoundedSolution<int, 1024>;
 
 // ==================== 题目2: Michael & Scott 无锁队列 ====================
 
+/**
+ * 题目2: MSQueue - Michael & Scott无锁队列
+ * push/pop: O(1) 摊还 - CAS循环
+ * 空间复杂度: O(n) - 动态链表
+ * 特点: 经典无锁队列算法，无界
+ */
 template <typename T>
 struct MSNode {
     T data;
@@ -199,6 +211,12 @@ template class MSQueueSolution<int>;
 
 // ==================== 题目3: 带阻塞的 MPMC 队列 ====================
 
+/**
+ * 题目3: MPMCQueueBlocking - 阻塞式MPMC队列
+ * push/pop: O(1) - 条件变量等待
+ * try_push/try_pop: O(1) - 非阻塞尝试
+ * 空间复杂度: O(Capacity) - 固定大小缓冲区
+ */
 template <typename T, size_t Capacity>
 class MPMCQueueBlockingSolution {
 public:

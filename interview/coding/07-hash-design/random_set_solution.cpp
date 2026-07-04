@@ -13,7 +13,11 @@ namespace RandomSetProblems {
 
 // ==================== 参考答案实现 ====================
 
-// RandomizedSetSolution 实现
+/**
+ * 题目1: O(1) 时间插入、删除和获取随机元素 - 数组 + 哈希表
+ * insert/remove/getRandom: 时间 O(1)
+ * 空间复杂度: O(n) - 存储 n 个元素
+ */
 RandomizedSetSolution::RandomizedSetSolution() : rng_(std::random_device{}()) {}
 
 bool RandomizedSetSolution::insert(int val) {
@@ -49,7 +53,11 @@ int RandomizedSetSolution::getRandom() {
     return nums_[dist(rng_)];
 }
 
-// RandomizedCollectionSolution 实现
+/**
+ * 题目2: O(1) 时间插入、删除和获取随机元素（允许重复）
+ * insert/remove/getRandom: 时间 O(1)
+ * 空间复杂度: O(n) - 存储 n 个元素
+ */
 RandomizedCollectionSolution::RandomizedCollectionSolution() : rng_(std::random_device{}()) {}
 
 bool RandomizedCollectionSolution::insert(int val) {
@@ -89,7 +97,11 @@ int RandomizedCollectionSolution::getRandom() {
     return nums_[dist(rng_)];
 }
 
-// BlacklistRandomSolution 实现
+/**
+ * 题目3: 黑名单中的随机数 - 虚拟白名单映射
+ * 构造: 时间 O(b)，空间 O(b)，b 为黑名单大小
+ * pick: 时间 O(1)
+ */
 BlacklistRandomSolution::BlacklistRandomSolution(int n, std::vector<int>& blacklist) : rng_(std::random_device{}()) {
     whitelistSize_ = n - static_cast<int>(blacklist.size());
 
@@ -121,7 +133,11 @@ int BlacklistRandomSolution::pick() {
     return r;
 }
 
-// WeightedRandomSolution 实现
+/**
+ * 题目4: 按权重随机选择 - 前缀和 + 二分查找
+ * 构造: 时间 O(n)，空间 O(n)
+ * pickIndex: 时间 O(log n)
+ */
 WeightedRandomSolution::WeightedRandomSolution(std::vector<int>& w) : rng_(std::random_device{}()) {
     prefixSum_.resize(w.size());
     prefixSum_[0] = w[0];
@@ -137,7 +153,11 @@ int WeightedRandomSolution::pickIndex() {
     return static_cast<int>(std::lower_bound(prefixSum_.begin(), prefixSum_.end(), target) - prefixSum_.begin());
 }
 
-// ReservoirSamplingSolution 实现
+/**
+ * 题目5: 链表随机节点 - 蓄水池抽样
+ * getRandom: 时间 O(n)，空间 O(1)
+ * getKRandom: 时间 O(n)，空间 O(k)
+ */
 ReservoirSamplingSolution::ReservoirSamplingSolution(ListNode* head) : head_(head), rng_(std::random_device{}()) {}
 
 int ReservoirSamplingSolution::getRandom() {
@@ -180,7 +200,11 @@ std::vector<int> ReservoirSamplingSolution::getKRandom(int k) {
     return reservoir;
 }
 
-// ShuffleArraySolution 实现
+/**
+ * 题目6: 打乱数组 - Fisher-Yates 洗牌算法
+ * shuffle: 时间 O(n)，空间 O(1)（原地）
+ * reset: 时间 O(n)，空间 O(1)
+ */
 ShuffleArraySolution::ShuffleArraySolution(std::vector<int>& nums)
     : original_(nums), shuffled_(nums), rng_(std::random_device{}()) {}
 

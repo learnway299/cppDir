@@ -1,3 +1,4 @@
+#include "util/NativeCrashHandler.h"
 #include "sort/other/StrCountSort.h"
 #include "sort/quickSort/QuickSort.h"
 #include "sort/mergeSort/MergeSort.h"
@@ -24,10 +25,11 @@ void solution() {
 }
 
 int main() {
+    CrossPlatform_CrashHandler::NativeCrashHandler::GetInstance().Initialize();
+
     // solution();
 
     // 运行面试编程题测试
     interview::runAllTests();
-
     return 0;
 }

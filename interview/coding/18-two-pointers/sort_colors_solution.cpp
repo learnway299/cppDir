@@ -12,6 +12,12 @@ namespace SortColorsImpl {
 
 namespace Solution {
 
+/**
+ * sortColors - 颜色分类（荷兰国旗问题）
+ * 时间复杂度: O(n) - 单次遍历
+ * 空间复杂度: O(1) - 原地排序
+ * 特点: 三指针分区，p0/curr/p2
+ */
 void sortColors(std::vector<int>& nums) {
     int p0 = 0, curr = 0, p2 = static_cast<int>(nums.size()) - 1;
 

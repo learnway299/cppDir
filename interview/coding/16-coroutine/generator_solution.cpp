@@ -15,6 +15,12 @@ namespace Solution {
 
 // ==================== 题目1: 完整 Generator 实现 ====================
 
+/**
+ * 题目1: Generator<T> - 惰性生成器协程
+ * next/begin: O(1) 摊还 - 单次协程恢复
+ * 空间复杂度: O(1) - 协程帧 + 当前值
+ * 特点: 惰性求值，支持无限序列，迭代器接口
+ */
 template <typename T>
 class Generator {
 public:
@@ -150,6 +156,12 @@ private:
 
 // ==================== 题目2: 斐波那契数列 ====================
 
+/**
+ * 题目2: fibonacci - 斐波那契生成器
+ * 每次co_yield: O(1) - 常数时间计算下一个值
+ * 空间复杂度: O(1) - 仅保存当前两个数
+ * 特点: 惰性生成，支持有限/无限版本
+ */
 Generator<long long> fibonacci(int n) {
     long long a = 0, b = 1;
     for (int i = 0; i < n; ++i) {
@@ -173,6 +185,12 @@ Generator<long long> fibonacci_infinite() {
 
 // ==================== 题目3: 范围生成器 ====================
 
+/**
+ * 题目3: range - Python风格范围生成器
+ * 每次co_yield: O(1) - 常数时间步进
+ * 空间复杂度: O(1) - 仅保存当前值
+ * 特点: 支持正负步长，惰性生成
+ */
 Generator<int> range(int start, int end, int step) {
     if (step > 0) {
         for (int i = start; i < end; i += step) {
@@ -187,6 +205,12 @@ Generator<int> range(int start, int end, int step) {
 
 // ==================== 题目4: 无限生成器 ====================
 
+/**
+ * 题目4: natural_numbers/count_from - 无限序列生成器
+ * 每次co_yield: O(1) - 常数时间递增
+ * 空间复杂度: O(1) - 仅保存当前计数
+ * 特点: 无限序列，配合take使用
+ */
 Generator<int> natural_numbers() {
     int n = 0;
     while (true) {
@@ -202,6 +226,13 @@ Generator<int> count_from(int start) {
 
 // ==================== 题目5: Generator 操作 ====================
 
+/**
+ * 题目5: take/map/filter/enumerate - 生成器组合子
+ * take: O(n) - 取前n个元素
+ * map: O(n) - 对每个元素应用函数
+ * filter: O(n) - 过滤满足条件的元素
+ * 空间复杂度: O(1) - 流式处理，不存储中间结果
+ */
 // take: 从生成器中取前 n 个元素
 template <typename T>
 Generator<T> take(Generator<T> gen, int n) {

@@ -1,4 +1,4 @@
-# 07 - STL 容器 (STL Containers)
+ # 07 - STL 容器 (STL Containers)
 
 ## 简介
 
@@ -92,9 +92,43 @@ for (int i = 0; i < 10000; ++i) {
 
 ### 1.2 `vector` 的扩容机制？
 
-**问题描述**：`vector` 如何动态增长？扩容因子是多少？
+**问题描述**：`vector` 默认预留多少空间？如何动态增长？扩容因子是多少？
 
-**扩容机制**：
+**默认预留空间：通常为 0**
+
+```cpp
+#include <vector>
+#include <iostream>
+
+void vector_default_capacity() {
+    std::vector<int> v;
+    std::cout << "size: " << v.size() << "\n";        // 0
+    std::cout << "capacity: " << v.capacity() << "\n"; // 0（通常）
+
+    v.push_back(1);
+    std::cout << "After 1 push, capacity: " << v.capacity() << "\n";  // 1 或更大
+}
+```
+
+**各实现的扩容策略：**
+
+| 实现 | 初始 capacity | 扩容倍数 |
+|------|--------------|----------|
+| GCC (libstdc++) | 0 | **2 倍** |
+| Clang (libc++) | 0 | **2 倍** |
+| MSVC | 0 | **1.5 倍** |
+
+```
+GCC 扩容示例：
+push 1: capacity = 1
+push 2: capacity = 2
+push 3: capacity = 4
+push 5: capacity = 8
+push 9: capacity = 16
+...
+```
+
+**扩容机制详解**：
 
 ```cpp
 #include <vector>
@@ -439,11 +473,145 @@ void custom_hash() {
 | 删除 | O(1) | O(n) |
 | 查找 | O(1) | O(n) |
 
+**哈希冲突的常见解决方法**：
+
+| 方法 | 原理 | 优点 | 缺点 |
+|------|------|------|------|
+| **链地址法（拉链法）** | 每个桶维护一个链表，冲突元素追加到链表 | 实现简单；删除方便；负载因子可 >1 | 链表指针额外开销；cache 不友好 |
+| **开放地址法 — 线性探测** | 冲突时依次往后找空槽 `(h+1, h+2, ...)` | cache 友好；内存紧凑 | 容易产生"聚集"(clustering)；删除需标记 |
+| **开放地址法 — 二次探测** | 冲突时按平方步长找空槽 `(h+1², h+2², ...)` | 减缓聚集问题 | 可能无法探测所有槽位；删除复杂 |
+| **开放地址法 — 双重哈希** | 用第二个哈希函数计算步长 `(h + i·h₂(key))` | 冲突分布更均匀 | 需要设计两个互不相关的哈希函数 |
+| **Robin Hood Hashing** | 开放地址变体，"富者让位"——新元素可以抢占探测距离更短的元素 | 减少最坏探测长度；查找方差小 | 实现复杂 |
+| **Cuckoo Hashing** | 两个哈希表+两个哈希函数，冲突时踢走旧元素 | 最坏查找 O(1) | 插入可能触发连锁踢出；负载因子需 <50% |
+
+**C++ STL 使用的方法：链地址法（Separate Chaining）**
+
+```cpp
+// STL unordered_map 内部结构示意（GCC libstdc++ 实现）
+//
+// buckets[] (桶数组，存指针)
+// ┌───┐
+// │ 0 │ → nullptr
+// ├───┤
+// │ 1 │ → [Node A] → [Node D] → nullptr
+// ├───┤
+// │ 2 │ → [Node B] → nullptr
+// ├───┤
+// │ 3 │ → nullptr
+// ├───┤
+// │ 4 │ → [Node C] → [Node E] → [Node F] → nullptr
+// └───┘
+//
+// 每个 Node 包含: { hash_value, key, value, next_ptr }
+//
+// GCC 实际实现细节：
+// - 使用单链表串联所有元素（便于迭代器遍历）
+// - 每个桶存储指向链表中对应段的指针
+// - 这样 begin()/end() 遍历不需要跳过空桶
+
+#include <unordered_map>
+#include <iostream>
+
+void hash_collision_demo() {
+    std::unordered_map<int, std::string> m;
+    m[1] = "one";
+    m[2] = "two";
+    m[3] = "three";
+
+    // 查看桶分布
+    std::cout << "bucket_count: " << m.bucket_count() << "\n";
+    for (size_t i = 0; i < m.bucket_count(); ++i) {
+        std::cout << "bucket " << i << " has "
+                  << m.bucket_size(i) << " elements";
+        if (m.bucket_size(i) > 0) {
+            std::cout << ": ";
+            for (auto it = m.begin(i); it != m.end(i); ++it) {
+                std::cout << "{" << it->first << "," << it->second << "} ";
+            }
+        }
+        std::cout << "\n";
+    }
+
+    // 负载因子相关
+    std::cout << "load_factor: " << m.load_factor() << "\n";
+    std::cout << "max_load_factor: " << m.max_load_factor() << "\n";
+    // 当 load_factor > max_load_factor 时触发 rehash
+}
+```
+
+**为什么 STL 选择链地址法而非开放地址法？**
+
+```
+1. 通用性：链地址法对哈希函数质量要求较低，适合标准库的通用场景
+2. 删除友好：直接从链表中删除节点，无需"墓碑标记"
+3. 负载因子灵活：负载因子可以 >1（每个桶多个元素），开放地址法必须 <1
+4. 迭代器稳定性：rehash 时节点可以直接移到新桶，指向节点的指针不失效
+5. 异常安全：节点独立分配，插入失败不影响已有元素
+
+代价：
+- 每个节点额外指针开销（8 字节/节点 on 64-bit）
+- 链表遍历 cache 不友好（节点分散在堆上）
+- 这也是为什么在性能极致场景下，工程中常用开放地址法的替代实现
+  （如 Google 的 absl::flat_hash_map 使用 Swiss Table / 开放地址法）
+```
+
+**面试扩展：开放地址法的实现示例**
+
+```cpp
+// 简单的线性探测哈希表实现
+template<typename K, typename V>
+class LinearProbingMap {
+    enum class State { EMPTY, OCCUPIED, DELETED };
+    struct Slot {
+        K key;
+        V value;
+        State state = State::EMPTY;
+    };
+    std::vector<Slot> table;
+    size_t count = 0;
+
+    size_t probe(const K& key) const {
+        size_t idx = std::hash<K>{}(key) % table.size();
+        while (table[idx].state != State::EMPTY) {
+            if (table[idx].state == State::OCCUPIED && table[idx].key == key)
+                return idx;  // 找到
+            idx = (idx + 1) % table.size();  // 线性探测
+        }
+        return idx;
+    }
+
+public:
+    LinearProbingMap(size_t cap = 16) : table(cap) {}
+
+    void insert(const K& key, const V& value) {
+        if ((double)count / table.size() > 0.7) rehash();  // 负载因子阈值
+        size_t idx = probe(key);
+        table[idx] = {key, value, State::OCCUPIED};
+        ++count;
+    }
+
+    void erase(const K& key) {
+        size_t idx = probe(key);
+        if (table[idx].state == State::OCCUPIED) {
+            table[idx].state = State::DELETED;  // 标记删除，不能直接置空
+            --count;
+        }
+    }
+
+    // 为什么删除要标记而不能直接置空？
+    // 因为线性探测依赖连续占用的槽位来查找元素
+    // 如果中间出现空槽，后面的元素就"断链"找不到了
+
+    void rehash() { /* 扩容并重新插入所有 OCCUPIED 元素 */ }
+};
+```
+
 **关键要点**：
-- **哈希冲突处理**：链地址法（拉链法）
-- **负载因子**：元素数量 / 桶数量，默认 1.0
-- **自动扩容**：负载因子超过阈值时重新哈希
+- **STL 使用链地址法**：通用性好、删除友好、异常安全
+- **负载因子**：元素数量 / 桶数量，默认 max_load_factor = 1.0
+- **自动扩容**：负载因子超过阈值时 rehash，所有元素重新分配到新桶
 - **要求**：键类型需要支持 `std::hash` 和 `operator==`
+- **高性能替代**：`absl::flat_hash_map`（开放地址法）在很多场景下比 `std::unordered_map` 快 2-3 倍
 
 **何时使用**：
 ```cpp
@@ -476,6 +644,149 @@ struct PointEqual {
 };
 std::unordered_map<Point, int, PointHash, PointEqual> m2;  // ✅
 ```
+
+---
+
+### 2.4 自定义类型放入容器的要求
+
+**问题描述**：自定义类要放入 `set`、`map`、`unordered_set`、`unordered_map` 需要实现什么方法？
+
+**要求总结：**
+
+| 容器 | 需要实现 | 默认使用 |
+|------|----------|----------|
+| `set` / `map` | `operator<` 或自定义比较器 | `std::less<T>` |
+| `unordered_set` / `unordered_map` | `std::hash` 特化 + `operator==` | `std::hash<T>` + `std::equal_to<T>` |
+
+**1. set / map（有序容器）：需要 `operator<`**
+
+```cpp
+#include <set>
+#include <map>
+
+class Person {
+public:
+    std::string name;
+    int age;
+
+    Person(std::string n, int a) : name(std::move(n)), age(a) {}
+
+    // 方式1：重载 operator<
+    bool operator<(const Person& other) const {
+        if (age != other.age) return age < other.age;
+        return name < other.name;
+    }
+};
+
+// 方式2：自定义比较器（函数对象）
+struct PersonCompare {
+    bool operator()(const Person& a, const Person& b) const {
+        return a.age < b.age;
+    }
+};
+
+void set_map_custom_type() {
+    // 使用 operator<
+    std::set<Person> s1;
+    s1.insert(Person("Alice", 25));
+    s1.insert(Person("Bob", 30));
+
+    std::map<Person, int> m1;
+    m1[Person("Alice", 25)] = 1;
+
+    // 使用自定义比较器
+    std::set<Person, PersonCompare> s2;
+    std::map<Person, int, PersonCompare> m2;
+}
+```
+
+**2. unordered_set / unordered_map（哈希容器）：需要 `std::hash` + `operator==`**
+
+```cpp
+#include <unordered_set>
+#include <unordered_map>
+#include <functional>
+
+class Person {
+public:
+    std::string name;
+    int age;
+
+    Person(std::string n, int a) : name(std::move(n)), age(a) {}
+
+    // 必须：operator==
+    bool operator==(const Person& other) const {
+        return name == other.name && age == other.age;
+    }
+};
+
+// 方式1：特化 std::hash
+namespace std {
+    template<>
+    struct hash<Person> {
+        size_t operator()(const Person& p) const {
+            size_t h1 = hash<string>{}(p.name);
+            size_t h2 = hash<int>{}(p.age);
+            return h1 ^ (h2 << 1);  // 组合哈希值
+        }
+    };
+}
+
+// 方式2：自定义哈希函数对象
+struct PersonHash {
+    size_t operator()(const Person& p) const {
+        return std::hash<std::string>{}(p.name) ^
+               (std::hash<int>{}(p.age) << 1);
+    }
+};
+
+void unordered_custom_type() {
+    // 使用 std::hash 特化
+    std::unordered_set<Person> s1;
+    s1.insert(Person("Alice", 25));
+
+    std::unordered_map<Person, int> m1;
+    m1[Person("Alice", 25)] = 1;
+
+    // 使用自定义哈希函数对象
+    std::unordered_set<Person, PersonHash> s2;
+    std::unordered_map<Person, int, PersonHash> m2;
+}
+```
+
+**严格弱序要求（`operator<` 必须满足）：**
+
+```cpp
+// operator< 必须满足以下条件，否则导致未定义行为：
+// 1. 非自反性：!(a < a)
+// 2. 非对称性：若 a < b，则 !(b < a)
+// 3. 传递性：若 a < b 且 b < c，则 a < c
+// 4. 等价传递性：若 !(a<b) && !(b<a) 且 !(b<c) && !(c<b)，则 !(a<c) && !(c<a)
+
+// ❌ 错误示例：不满足严格弱序
+struct BadCompare {
+    bool operator()(int a, int b) const {
+        return a <= b;  // ❌ 违反非自反性：a <= a 为 true
+    }
+};
+
+// ✅ 正确示例
+struct GoodCompare {
+    bool operator()(int a, int b) const {
+        return a < b;  // ✅ 满足严格弱序
+    }
+};
+```
+
+**关键要点：**
+- `set`/`map`：只需 `operator<`（或比较器），用于排序和查找
+- `unordered_set`/`unordered_map`：需要 `operator==`（判断相等）+ `std::hash`（计算哈希值）
+- 哈希函数质量影响性能，好的哈希函数应尽量减少冲突
+
+**常见陷阱：**
+- 忘记实现 `operator==`（unordered 容器必需）
+- `operator<` 不满足严格弱序（导致未定义行为）
+- 哈希函数质量差导致性能下降（大量冲突）
 
 ---
 
@@ -767,9 +1078,241 @@ void safe_erase() {
 
 ---
 
-## 6. 性能优化技巧
+## 6. 各容器默认容量与扩容机制
 
-### 6.1 容器性能优化建议
+### 6.1 总览表
+
+| 容器 | 默认初始容量 | 扩容机制 | 扩容代价 |
+|------|-------------|---------|---------|
+| `vector` | 0 | GCC/Clang 2倍，MSVC 1.5倍 | O(n)，重新分配+拷贝全部元素 |
+| `deque` | 1个块（512字节/元素大小 个元素） | 新增固定大小的块 | O(1)，不移动已有元素 |
+| `list` | 0（无预分配） | 每次 insert/push 单独分配一个节点 | O(1)，无扩容概念 |
+| `forward_list` | 0（无预分配） | 每次 insert 单独分配一个节点 | O(1)，无扩容概念 |
+| `string` | SSO 缓冲区（GCC/MSVC 15字符，libc++ 22字符） | 类似 vector，GCC 2倍，MSVC 1.5倍 | O(n)，重新分配+拷贝 |
+| `set`/`map` | 0（无预分配） | 每次 insert 单独分配一个红黑树节点 | O(1)，无扩容概念 |
+| `unordered_set`/`unordered_map` | 实现相关（GCC 默认约 1 个桶） | 当 load_factor > max_load_factor(默认1.0) 时 rehash，桶数约翻倍 | O(n)，所有元素重新哈希 |
+
+### 6.2 各容器扩容机制详解
+
+#### vector 扩容
+
+```cpp
+#include <vector>
+#include <iostream>
+
+void vector_growth() {
+    std::vector<int> v;
+    size_t prev_cap = 0;
+    for (int i = 0; i < 100; ++i) {
+        v.push_back(i);
+        if (v.capacity() != prev_cap) {
+            std::cout << "size=" << v.size()
+                      << " capacity=" << v.capacity() << "\n";
+            prev_cap = v.capacity();
+        }
+    }
+}
+// GCC 输出:  1→1, 2→2, 3→4, 5→8, 9→16, 17→32, 33→64, 65→128
+// MSVC 输出: 1→1, 2→2, 3→3, 4→4, 5→6, 7→9, 10→13, 14→19, ...
+```
+
+- **GCC/Clang**：每次 capacity 不足时翻倍（×2）
+- **MSVC**：每次乘以约 1.5 倍（更节省内存，但扩容更频繁）
+- **扩容过程**：allocate 新内存 → move/copy 全部元素 → deallocate 旧内存
+- **均摊复杂度**：`push_back` 均摊 O(1)
+
+#### deque 扩容
+
+```cpp
+#include <deque>
+#include <iostream>
+
+void deque_growth() {
+    std::deque<int> d;
+    // deque 内部由多个固定大小的块(block/chunk)组成
+    // GCC libstdc++: 块大小 = max(512 / sizeof(T), 1) 个元素
+    //   int (4字节): 每块 128 个元素
+    //   char (1字节): 每块 512 个元素
+    //   大对象 (>512字节): 每块 1 个元素
+
+    // 扩容时只需分配一个新块，不移动已有数据
+    for (int i = 0; i < 1000; ++i) {
+        d.push_back(i);   // 当前块满了 → 分配新块，O(1)
+        d.push_front(-i); // 前端块满了 → 分配新块，O(1)
+    }
+
+    // deque 的中央映射表(map)也可能扩容
+    // 但映射表存的是指针，扩容代价远小于 vector
+}
+```
+
+- **块大小**：GCC 默认 `max(512 / sizeof(T), 1)` 个元素
+- **扩容方式**：新增一个块，**不需要移动已有元素**
+- **中央映射表**：存储各块指针的数组，满时翻倍扩容（代价很小）
+
+#### list / forward_list — 无扩容
+
+```cpp
+#include <list>
+#include <forward_list>
+
+void list_growth() {
+    std::list<int> lst;
+    // 每次 push_back/push_front/insert 都独立分配一个节点
+    // 节点结构(list): { T data; Node* prev; Node* next; }
+    // 节点结构(forward_list): { T data; Node* next; }
+
+    for (int i = 0; i < 1000; ++i) {
+        lst.push_back(i);  // 每次单独 new 一个节点，O(1)
+    }
+    // 无"扩容"概念，但大量小分配可能导致内存碎片
+}
+```
+
+- **无扩容**：每个元素独立分配/释放
+- **缺点**：大量小内存分配，cache 不友好，内存碎片
+
+#### string 扩容
+
+```cpp
+#include <string>
+#include <iostream>
+
+void string_growth() {
+    std::string s;
+    size_t prev_cap = 0;
+    for (int i = 0; i < 200; ++i) {
+        s += 'x';
+        if (s.capacity() != prev_cap) {
+            std::cout << "size=" << s.size()
+                      << " capacity=" << s.capacity() << "\n";
+            prev_cap = s.capacity();
+        }
+    }
+}
+// GCC 典型输出:
+// size=1  capacity=15   ← SSO 缓冲区（不分配堆内存）
+// size=16 capacity=30   ← 超过 SSO 阈值，堆分配，之后 2 倍增长
+// size=31 capacity=60
+// size=61 capacity=120
+// size=121 capacity=240
+```
+
+- **SSO 阶段**：GCC/MSVC 可存 15 字符，libc++ 可存 22 字符，无堆分配
+- **堆分配后**：扩容策略与 vector 一致（GCC 2倍，MSVC 1.5倍）
+
+#### unordered_set / unordered_map 扩容 (rehash)
+
+```cpp
+#include <unordered_set>
+#include <iostream>
+
+void unordered_growth() {
+    std::unordered_set<int> us;
+    std::cout << "初始 bucket_count: " << us.bucket_count() << "\n";
+    // GCC: 通常为 1
+    // MSVC: 通常为 8
+
+    std::cout << "max_load_factor: " << us.max_load_factor() << "\n";
+    // 默认 1.0
+
+    size_t prev_buckets = us.bucket_count();
+    for (int i = 0; i < 100; ++i) {
+        us.insert(i);
+        if (us.bucket_count() != prev_buckets) {
+            std::cout << "size=" << us.size()
+                      << " buckets=" << us.bucket_count()
+                      << " load_factor=" << us.load_factor() << "\n";
+            prev_buckets = us.bucket_count();
+        }
+    }
+    // GCC 典型桶数序列: 1→3→7→17→37→79→167→...（接近翻倍的质数）
+    // MSVC 典型桶数序列: 8→64→512→...（翻倍）
+
+    // 手动控制
+    us.reserve(10000);          // 预分配足够桶数以容纳 n 个元素
+    us.rehash(200);             // 直接设置桶数
+    us.max_load_factor(0.5f);   // 降低负载因子 → 更多桶 → 更少冲突
+}
+```
+
+- **触发条件**：`load_factor() = size() / bucket_count() > max_load_factor()` 时自动 rehash
+- **rehash 代价**：O(n)，所有元素重新计算哈希值并分配到新桶
+- **桶数增长**：GCC 使用接近 2 倍的**质数**序列，MSVC 使用 2 的幂次
+
+#### set / map — 无扩容
+
+```cpp
+#include <set>
+#include <map>
+
+void tree_growth() {
+    std::set<int> s;
+    // 底层红黑树，每次 insert 分配一个树节点
+    // 节点结构: { T data; Node* left; Node* right; Node* parent; Color color; }
+
+    for (int i = 0; i < 1000; ++i) {
+        s.insert(i);  // 分配一个节点 + O(log n) 旋转调整
+    }
+    // 无扩容概念，插入后通过旋转保持平衡
+}
+```
+
+- **无扩容**：每次插入分配一个独立节点，通过旋转保持红黑树平衡
+- 节点开销较大：每个节点除了数据还存储 3 个指针 + 颜色标记
+
+### 6.3 扩容策略面试要点
+
+**Q: 为什么 vector 选择 2 倍或 1.5 倍扩容，而不是固定增量？**
+
+```
+固定增量（如每次+100）：
+  - n 次 push_back 的总拷贝次数 ≈ n²/200 → O(n²)
+
+倍数增长（如每次 ×2）：
+  - n 次 push_back 的总拷贝次数 ≈ 2n → O(n)
+  - 均摊每次 push_back 为 O(1)
+```
+
+**Q: 2 倍 vs 1.5 倍的取舍？**
+
+```
+2 倍（GCC/Clang）：
+  - 优点：扩容次数更少
+  - 缺点：新 capacity 总是 > 之前所有 capacity 之和
+           → 之前释放的内存永远无法被复用
+
+1.5 倍（MSVC）：
+  - 优点：经过几次扩容后，之前释放的内存总和 > 新需要的大小
+           → 内存分配器有机会复用旧内存
+  - 缺点：扩容次数稍多
+
+实际差异在大多数场景下不显著，使用 reserve() 才是避免扩容的最佳实践。
+```
+
+**Q: 如何避免不必要的扩容？**
+
+```cpp
+// 1. vector/string: 使用 reserve()
+std::vector<int> v;
+v.reserve(10000);  // 预分配
+
+// 2. unordered 容器: 使用 reserve() 或 rehash()
+std::unordered_map<int, int> m;
+m.reserve(10000);  // 预分配足够桶
+
+// 3. 使用初始化列表或迭代器范围构造
+std::vector<int> v2(arr.begin(), arr.end());  // 一次分配
+
+// 4. shrink_to_fit() 释放多余空间（C++11，非强制）
+v.shrink_to_fit();
+```
+
+---
+
+## 7. 性能优化技巧
+
+### 7.1 容器性能优化建议
 
 **1. 预留空间**：
 
@@ -852,7 +1395,7 @@ for (int i = 0; i < 10000; ++i) {
 
 ---
 
-## 7. 常见面试题
+## 8. 常见面试题
 
 ### Q1：如何在 O(1) 时间内删除 `vector` 中的元素？
 
@@ -908,6 +1451,251 @@ public:
     const T& back() const { return buffer.back(); }
     size_t size() const { return buffer.size(); }
 };
+```
+
+---
+
+## 9. 小对象优化 (Small Object Optimization)
+
+### 9.1 什么是 SSO (Small String Optimization)？
+
+**问题描述**：`std::string` 如何优化短字符串的存储？
+
+**SSO 原理**：
+
+```cpp
+#include <string>
+#include <iostream>
+
+// std::string 的典型内存布局（简化）
+// 未优化版本：
+struct NaiveString {
+    char* data;         // 8 字节（64位）
+    size_t size;        // 8 字节
+    size_t capacity;    // 8 字节
+    // 总共 24 字节，但即使存 "hi" 也要 heap 分配
+};
+
+// SSO 优化版本（概念）：
+struct SSOString {
+    union {
+        struct {
+            char* data;
+            size_t size;
+            size_t capacity;
+        } heap;                  // 长字符串：堆分配
+        struct {
+            char buffer[23];     // 短字符串：栈内存
+            unsigned char size;  // 剩余 1 字节存长度
+        } local;                 // 短字符串直接存在对象内
+    };
+    // 通过某种标志位区分是 heap 还是 local
+};
+
+void sso_demo() {
+    std::string short_str = "hello";      // SSO：存在栈上
+    std::string long_str(100, 'x');       // 堆分配
+
+    // 验证 SSO 效果
+    std::cout << "sizeof(string): " << sizeof(std::string) << "\n";  // 通常 32 字节
+
+    // 短字符串不触发堆分配
+    std::string s1 = "short";
+    std::cout << "capacity: " << s1.capacity() << "\n";  // 通常 15 或 22
+
+    // 超过 SSO 阈值才分配
+    std::string s2(100, 'x');
+    std::cout << "capacity: " << s2.capacity() << "\n";  // >= 100
+}
+```
+
+**各实现的 SSO 阈值**：
+
+| 实现 | sizeof(string) | SSO 阈值（含 '\0'） |
+|------|---------------|-------------------|
+| GCC (libstdc++) | 32 字节 | **15 字符** |
+| Clang (libc++) | 24 字节 | **22 字符** |
+| MSVC | 32 字节 | **15 字符** |
+
+**验证 SSO**：
+
+```cpp
+#include <string>
+#include <iostream>
+
+void verify_sso() {
+    // 测试 SSO 边界
+    for (int len = 10; len <= 30; ++len) {
+        std::string s(len, 'x');
+        // 如果 capacity 远大于 len，说明发生了堆分配
+        std::cout << "len=" << len
+                  << ", capacity=" << s.capacity()
+                  << ", SSO=" << (s.capacity() < 32 ? "yes" : "no") << "\n";
+    }
+}
+
+// 输出示例（GCC）：
+// len=10, capacity=15, SSO=yes
+// len=15, capacity=15, SSO=yes
+// len=16, capacity=30, SSO=no  ← 超过阈值，堆分配
+```
+
+**SSO 的性能影响**：
+
+```cpp
+#include <chrono>
+#include <string>
+#include <vector>
+
+void sso_performance() {
+    const int N = 1000000;
+
+    // 短字符串（SSO）
+    auto start1 = std::chrono::high_resolution_clock::now();
+    for (int i = 0; i < N; ++i) {
+        std::string s = "hello";  // SSO，无堆分配
+    }
+    auto end1 = std::chrono::high_resolution_clock::now();
+
+    // 长字符串（堆分配）
+    auto start2 = std::chrono::high_resolution_clock::now();
+    for (int i = 0; i < N; ++i) {
+        std::string s = "this is a very long string that exceeds SSO threshold";
+    }
+    auto end2 = std::chrono::high_resolution_clock::now();
+
+    auto time1 = std::chrono::duration_cast<std::chrono::milliseconds>(end1 - start1).count();
+    auto time2 = std::chrono::duration_cast<std::chrono::milliseconds>(end2 - start2).count();
+
+    std::cout << "Short string (SSO): " << time1 << " ms\n";
+    std::cout << "Long string (heap): " << time2 << " ms\n";
+    // 短字符串通常快 2-5 倍
+}
+```
+
+**关键要点**：
+
+| 要点 | 说明 |
+|------|------|
+| SSO 目的 | 避免短字符串的堆分配，提升性能 |
+| SSO 阈值 | 通常 15-22 字符（取决于实现） |
+| 空间换时间 | `sizeof(string)` 增大，但短字符串无需 malloc |
+| 移动语义影响 | SSO 字符串移动时仍需拷贝数据 |
+
+**常见陷阱**：
+
+```cpp
+// 陷阱 1：SSO 字符串的移动并不总是 O(1)
+std::string s1 = "short";
+std::string s2 = std::move(s1);  // 实际是拷贝！因为 SSO
+
+std::string s3(100, 'x');
+std::string s4 = std::move(s3);  // 真正的移动（指针交换）
+
+// 陷阱 2：c_str() 返回的指针
+std::string s = "hello";
+const char* p = s.c_str();
+s += " world";  // 可能导致 SSO -> heap 迁移
+// p 可能失效！
+```
+
+---
+
+### 9.2 SBO (Small Buffer Optimization) 在其他容器中的应用？
+
+**问题描述**：SSO 的思想在其他地方的应用。
+
+**`std::function` 的 SBO**：
+
+```cpp
+#include <functional>
+#include <iostream>
+
+void sbo_function() {
+    // 小闭包：存在 std::function 内部
+    int x = 10;
+    std::function<int()> f1 = [x]() { return x; };  // SBO
+
+    // 大闭包：堆分配
+    int arr[100];
+    std::function<int()> f2 = [arr]() { return arr[0]; };  // 堆分配
+
+    std::cout << "sizeof(function): " << sizeof(f1) << "\n";  // 通常 32 字节
+}
+```
+
+**`std::any` 的 SBO**：
+
+```cpp
+#include <any>
+
+void sbo_any() {
+    // 小对象：存在 std::any 内部
+    std::any a1 = 42;           // SBO
+    std::any a2 = 3.14;         // SBO
+
+    // 大对象：堆分配
+    std::any a3 = std::string(100, 'x');  // 可能堆分配
+}
+```
+
+**SBO 的通用实现思路**：
+
+```cpp
+// SBO 容器的典型结构
+template<typename T, size_t BufferSize = 64>
+class SBOContainer {
+    union {
+        T* heap_ptr;                    // 堆指针
+        alignas(T) char buffer[BufferSize];  // 内部缓冲区
+    };
+    bool is_local;  // 标记是否使用内部缓冲区
+
+public:
+    template<typename U>
+    void store(U&& value) {
+        if constexpr (sizeof(U) <= BufferSize && std::is_nothrow_move_constructible_v<U>) {
+            // 小对象：放在内部缓冲区
+            new (buffer) T(std::forward<U>(value));
+            is_local = true;
+        } else {
+            // 大对象：堆分配
+            heap_ptr = new T(std::forward<U>(value));
+            is_local = false;
+        }
+    }
+
+    ~SBOContainer() {
+        if (is_local) {
+            reinterpret_cast<T*>(buffer)->~T();
+        } else {
+            delete heap_ptr;
+        }
+    }
+};
+```
+
+**关键要点**：
+
+| 容器 | SBO 阈值 | 说明 |
+|------|----------|------|
+| `std::string` | 15-22 字符 | SSO |
+| `std::function` | ~16-32 字节 | 小闭包优化 |
+| `std::any` | ~16-32 字节 | 小对象优化 |
+| 自定义容器 | 可配置 | 根据使用场景调整 |
+
+**SBO 的权衡**：
+
+```cpp
+// 优点：
+// - 避免小对象的堆分配
+// - 更好的缓存局部性
+// - 减少内存碎片
+
+// 缺点：
+// - 对象本身更大（sizeof 增加）
+// - 移动小对象时仍需拷贝
+// - 实现复杂度增加
 ```
 
 ---

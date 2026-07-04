@@ -11,6 +11,12 @@ namespace TwoSumSortedImpl {
 
 namespace Solution {
 
+/**
+ * twoSum - 有序数组两数之和
+ * 时间复杂度: O(n) - 双指针最多遍历n次
+ * 空间复杂度: O(1) - 常数空间
+ * 特点: 利用有序性，相向双指针
+ */
 std::vector<int> twoSum(std::vector<int>& numbers, int target) {
     int left = 0, right = static_cast<int>(numbers.size()) - 1;
     while (left < right) {

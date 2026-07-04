@@ -10,6 +10,12 @@ namespace ProducerConsumer {
 
 // ==================== 参考答案实现 ====================
 
+/**
+ * 题目1: BoundedBuffer - 有界缓冲区
+ * put/take: O(1) - 条件变量等待 + 队列操作
+ * tryPut/tryTake: O(1) - 非阻塞尝试
+ * 空间复杂度: O(capacity) - 缓冲区容量
+ */
 template <typename T>
 BoundedBufferSolution<T>::BoundedBufferSolution(size_t capacity) : capacity_(capacity) {}
 
@@ -71,6 +77,12 @@ bool BoundedBufferSolution<T>::full() const {
 // Explicit instantiation
 template class BoundedBufferSolution<int>;
 
+/**
+ * 题目2: TimedBoundedBuffer - 带超时的有界缓冲区
+ * putFor/takeFor: O(1) - 带超时的条件变量等待
+ * put/take: O(1) - 无限等待版本
+ * 空间复杂度: O(capacity) - 缓冲区容量
+ */
 template <typename T>
 TimedBoundedBufferSolution<T>::TimedBoundedBufferSolution(size_t capacity) : capacity_(capacity) {}
 

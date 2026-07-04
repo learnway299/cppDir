@@ -11,7 +11,11 @@ namespace LFUCacheProblems {
 
 // ==================== 参考答案实现 ====================
 
-// LFUCacheSolution 实现
+/**
+ * 题目1: LFU 缓存 - 哈希表 + 频率链表
+ * get/put: 时间 O(1)
+ * 空间复杂度: O(capacity) - 存储 capacity 个元素
+ */
 LFUCacheSolution::LFUCacheSolution(int capacity) : capacity_(capacity), minFreq_(0) {}
 
 void LFUCacheSolution::increaseFreq(int key) {
@@ -70,7 +74,11 @@ void LFUCacheSolution::put(int key, int value) {
     minFreq_ = 1;
 }
 
-// LFUCacheManualSolution 实现
+/**
+ * 题目2: LFU 缓存（手动双向链表）
+ * get/put: 时间 O(1)
+ * 空间复杂度: O(capacity) - 存储 capacity 个节点
+ */
 struct LFUCacheManualSolution::DLinkedNode {
     int key, value, freq;
     DLinkedNode* prev;

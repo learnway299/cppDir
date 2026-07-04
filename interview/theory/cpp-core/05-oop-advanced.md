@@ -87,7 +87,107 @@ int main() {
 
 ---
 
-### 1.2 多重继承 (Multiple Inheritance)
+### 1.2 构造与析构顺序
+
+**问题：继承体系中，基类、子类及其成员变量的构造与析构顺序是什么？**
+
+```cpp
+#include <iostream>
+#include <string>
+
+class Member {
+    std::string name_;
+public:
+    Member(const std::string& n) : name_(n) {
+        std::cout << "    Member [" << name_ << "] 构造" << std::endl;
+    }
+    ~Member() {
+        std::cout << "    Member [" << name_ << "] 析构" << std::endl;
+    }
+};
+
+class Base {
+    Member base_m1_{"Base::m1"};
+    Member base_m2_{"Base::m2"};
+public:
+    Base() { std::cout << "  Base 构造函数体" << std::endl; }
+    virtual ~Base() { std::cout << "  Base 析构函数体" << std::endl; }
+};
+
+class Derived : public Base {
+    Member derived_m1_{"Derived::m1"};
+    Member derived_m2_{"Derived::m2"};
+public:
+    Derived() { std::cout << "  Derived 构造函数体" << std::endl; }
+    ~Derived() { std::cout << "  Derived 析构函数体" << std::endl; }
+};
+
+int main() {
+    std::cout << "=== 创建对象 ===" << std::endl;
+    Derived d;
+    std::cout << "\n=== 销毁对象 ===" << std::endl;
+    return 0;
+}
+
+/*
+输出：
+=== 创建对象 ===
+    Member [Base::m1] 构造
+    Member [Base::m2] 构造
+  Base 构造函数体
+    Member [Derived::m1] 构造
+    Member [Derived::m2] 构造
+  Derived 构造函数体
+
+=== 销毁对象 ===
+  Derived 析构函数体
+    Member [Derived::m2] 析构
+    Member [Derived::m1] 析构
+  Base 析构函数体
+    Member [Base::m2] 析构
+    Member [Base::m1] 析构
+*/
+```
+
+**构造顺序（由基到派生，由外到内）：**
+1. **基类成员变量** - 按声明顺序构造
+2. **基类构造函数体** - 执行基类构造函数体
+3. **子类成员变量** - 按声明顺序构造
+4. **子类构造函数体** - 执行子类构造函数体
+
+**析构顺序（与构造完全相反）：**
+1. **子类析构函数体** - 先执行子类析构函数体
+2. **子类成员变量** - 按声明的**逆序**析构
+3. **基类析构函数体** - 执行基类析构函数体
+4. **基类成员变量** - 按声明的**逆序**析构
+
+**顺序图：**
+```
+构造顺序 ↓                          析构顺序 ↓
+─────────────────────────────────────────────────
+① 基类成员变量（声明序）            ④ 子类析构函数体
+② 基类构造函数体                    ③ 子类成员变量（逆序）
+③ 子类成员变量（声明序）            ② 基类析构函数体
+④ 子类构造函数体                    ① 基类成员变量（逆序）
+```
+
+**关键要点：**
+- **基类优先**：基类完全构造完成后，才开始子类构造
+- **成员先于函数体**：成员变量在构造函数体执行前已初始化
+- **声明顺序**：成员按**声明顺序**构造，与初始化列表顺序无关
+- **析构逆序**：析构顺序与构造顺序**完全相反**
+- **virtual 析构**：基类析构函数应为 `virtual`，确保多态删除正确
+
+**记忆口诀**：构造"从根到叶，从壳到核"，析构"从叶到根，从核到壳"。
+
+**常见陷阱：**
+- 初始化列表顺序与声明顺序不一致（编译器警告）
+- 在基类构造期间调用虚函数，不会调用派生类版本
+- 忘记将基类析构函数声明为 virtual
+
+---
+
+### 1.3 多重继承 (Multiple Inheritance)
 
 **问题：C++ 如何实现多重继承？有什么问题？**
 
@@ -132,7 +232,7 @@ int main() {
 
 ---
 
-### 1.3 菱形继承与虚继承
+### 1.4 菱形继承与虚继承
 
 **问题：什么是菱形继承？如何使用虚继承解决？**
 

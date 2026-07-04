@@ -13,7 +13,11 @@
 
 namespace StackImplProblems {
 
-// 题目1: 用栈实现队列（解答版本）
+/**
+ * 题目1: 用栈实现队列 - 双栈
+ * push: 时间 O(1)，空间 O(1)
+ * pop/peek: 时间均摊 O(1)，空间 O(1)
+ */
 class MyQueueSolutionImpl {
 private:
     std::stack<int> inStack;
@@ -58,7 +62,11 @@ int MyQueueSolution::pop() { return 0; }
 int MyQueueSolution::peek() { return 0; }
 bool MyQueueSolution::empty() { return true; }
 
-// 题目2: 用队列实现栈（解答版本）
+/**
+ * 题目2: 用队列实现栈 - 单队列
+ * push: 时间 O(n)，空间 O(1)
+ * pop/top: 时间 O(1)，空间 O(1)
+ */
 class MyStackSolutionImpl {
 private:
     std::queue<int> q;
@@ -96,7 +104,10 @@ int MyStackSolution::pop() { return 0; }
 int MyStackSolution::top() { return 0; }
 bool MyStackSolution::empty() { return true; }
 
-// 题目3: 最小栈（解答版本）
+/**
+ * 题目3: 最小栈 - 辅助栈
+ * 所有操作: 时间 O(1)，空间 O(n)
+ */
 class MinStackSolutionImpl {
 private:
     std::stack<int> dataStack;
@@ -134,7 +145,11 @@ void MinStackSolution::pop() {}
 int MinStackSolution::top() { return 0; }
 int MinStackSolution::getMin() { return 0; }
 
-// 题目4: 有效的括号
+/**
+ * 题目4: 有效的括号 - 栈匹配
+ * 时间复杂度: O(n) - 单次遍历
+ * 空间复杂度: O(n) - 栈最多存储 n/2 个字符
+ */
 bool isValidSolution(std::string s) {
     std::stack<char> stk;
     std::unordered_map<char, char> pairs = {
@@ -155,7 +170,11 @@ bool isValidSolution(std::string s) {
     return stk.empty();
 }
 
-// 题目5: 基本计算器
+/**
+ * 题目5: 基本计算器 - 栈处理括号
+ * 时间复杂度: O(n) - 单次遍历
+ * 空间复杂度: O(n) - 栈存储符号
+ */
 int calculateSolution(std::string s) {
     std::stack<int> signs;
     signs.push(1);
@@ -188,7 +207,11 @@ int calculateSolution(std::string s) {
     return result;
 }
 
-// 题目6: 逆波兰表达式求值
+/**
+ * 题目6: 逆波兰表达式求值 - 栈模拟
+ * 时间复杂度: O(n) - 遍历所有 token
+ * 空间复杂度: O(n) - 栈存储操作数
+ */
 int evalRPNSolution(std::vector<std::string>& tokens) {
     std::stack<int> stk;
 
@@ -209,7 +232,11 @@ int evalRPNSolution(std::vector<std::string>& tokens) {
     return stk.top();
 }
 
-// 题目7: 简化路径
+/**
+ * 题目7: 简化路径 - 栈模拟
+ * 时间复杂度: O(n) - 单次遍历
+ * 空间复杂度: O(n) - 栈存储目录
+ */
 std::string simplifyPathSolution(std::string path) {
     std::vector<std::string> stk;
     std::stringstream ss(path);
@@ -235,7 +262,11 @@ std::string simplifyPathSolution(std::string path) {
     return result.empty() ? "/" : result;
 }
 
-// 题目8: 字符串解码
+/**
+ * 题目8: 字符串解码 - 双栈
+ * 时间复杂度: O(n) - 单次遍历
+ * 空间复杂度: O(n) - 栈存储中间结果
+ */
 std::string decodeStringSolution(std::string s) {
     std::stack<int> numStack;
     std::stack<std::string> strStack;
@@ -269,7 +300,11 @@ std::string decodeStringSolution(std::string s) {
     return current;
 }
 
-// 题目9: 每日温度
+/**
+ * 题目9: 每日温度 - 单调栈
+ * 时间复杂度: O(n) - 每个元素最多入栈出栈一次
+ * 空间复杂度: O(n) - 栈存储索引
+ */
 std::vector<int> dailyTemperaturesSolution(std::vector<int>& temperatures) {
     int n = static_cast<int>(temperatures.size());
     std::vector<int> answer(n, 0);
@@ -287,7 +322,11 @@ std::vector<int> dailyTemperaturesSolution(std::vector<int>& temperatures) {
     return answer;
 }
 
-// 题目10: 验证栈序列
+/**
+ * 题目10: 验证栈序列 - 模拟
+ * 时间复杂度: O(n) - 遍历 pushed 数组
+ * 空间复杂度: O(n) - 栈存储元素
+ */
 bool validateStackSequencesSolution(std::vector<int>& pushed, std::vector<int>& popped) {
     std::stack<int> stk;
     int j = 0;

@@ -1,12 +1,12 @@
 # Qt Framework Knowledge
 
-Qt 框架知识 - 面试必备的 18 个主题。
+Qt 框架知识 - 面试必备的 25 个主题。
 
 ---
 
 ## 知识体系
 
-### 基础层 (Basic) - 6 个主题
+### 基础层 (Basic) - 7 个主题
 
 Qt 核心机制，必须掌握。
 
@@ -18,8 +18,9 @@ Qt 核心机制，必须掌握。
 | 04 | [事件系统](04-event-system.md) | 事件类型、传递机制、过滤器 |
 | 05 | [事件循环](05-event-loop.md) | QEventLoop、exec()、processEvents() |
 | 06 | [消息机制对比](06-message-mechanism.md) | Qt vs Win32 vs Cocoa |
+| 24 | [定时器](24-timer.md) | QTimer、QBasicTimer、精度与陷阱 |
 
-### 进阶层 (Intermediate) - 6 个主题
+### 进阶层 (Intermediate) - 7 个主题
 
 深入 Qt 应用开发。
 
@@ -31,8 +32,9 @@ Qt 核心机制，必须掌握。
 | 10 | [网络与 IO](10-network-io.md) | QNetworkAccessManager、异步 IO |
 | 11 | [高级主题](11-advanced.md) | 插件、资源系统、部署 |
 | 12 | [常用控件](12-widgets.md) | 布局、对话框、自定义控件 |
+| 23 | [QML/Qt Quick](23-qml-quick.md) | QML 语法、Scene Graph、C++ 交互 |
 
-### 深度层 (Advanced) - 6 个主题
+### 深度层 (Advanced) - 11 个主题
 
 Qt 内部机制与高级技巧。
 
@@ -44,6 +46,11 @@ Qt 内部机制与高级技巧。
 | 16 | [Qt 内部机制](16-qt-internals.md) | 源码分析、信号槽实现 |
 | 17 | [Qt 与现代 C++](17-qt-modern-cpp.md) | C++17/20 集成、最佳实践 |
 | 18 | [调试与性能](18-debug-profiling.md) | Qt Creator、Gammaray、性能分析 |
+| 19 | [绘制/渲染系统](19-painting-system.md) | QPaintDevice、坐标系、QPA、update/repaint |
+| 20 | [Windows 消息机制](20-windows-message.md) | 消息循环、WndProc、SendMessage/PostMessage、Qt 集成 |
+| 21 | [动画系统](21-animation.md) | QPropertyAnimation、缓动曲线、状态机 |
+| 22 | [智能指针](22-smart-pointer.md) | QPointer、QSharedPointer、与 std 对比 |
+| 25 | [布局与样式](25-layout-style.md) | 盒子模型、SizePolicy、QSS 原理、border-radius |
 
 ---
 
@@ -77,6 +84,9 @@ Qt 内部机制与高级技巧。
 2. 隐式共享 (Copy-on-Write)
 3. Qt 与 STL 的选择
 4. QML/Quick 基础
+5. 绘制系统原理（QPaintDevice、update vs repaint、QPA 跨平台渲染）
+6. Windows 消息机制（消息循环、WndProc、Qt nativeEvent 集成）
+7. 布局与样式深入（盒子模型、SizePolicy、border-radius 实现原理）
 
 ---
 
@@ -102,5 +112,12 @@ qt-framework/
 ├── 15-i18n.md
 ├── 16-qt-internals.md
 ├── 17-qt-modern-cpp.md
-└── 18-debug-profiling.md
+├── 18-debug-profiling.md
+├── 19-painting-system.md
+├── 20-windows-message.md
+├── 21-animation.md
+├── 22-smart-pointer.md
+├── 23-qml-quick.md
+├── 24-timer.md
+└── 25-layout-style.md
 ```

@@ -11,7 +11,12 @@ namespace SingleNumberImpl {
 namespace Solution {
 
 // ==================== 题目1: 只出现一次的数字 I ====================
-// 其他数字都出现两次
+/**
+ * singleNumber - 只出现一次的数字I（其他出现两次）
+ * 时间复杂度: O(n) - 遍历数组一次
+ * 空间复杂度: O(1) - 常数空间
+ * 特点: 异或性质 a^a=0, a^0=a
+ */
 int singleNumber(std::vector<int>& nums) {
     int result = 0;
     for (int n : nums) result ^= n;
@@ -19,7 +24,12 @@ int singleNumber(std::vector<int>& nums) {
 }
 
 // ==================== 题目2: 只出现一次的数字 II ====================
-// 其他数字都出现三次
+/**
+ * singleNumber2 - 只出现一次的数字II（其他出现三次）
+ * 时间复杂度: O(32n) = O(n) - 32位各遍历一次
+ * 空间复杂度: O(1) - 常数空间
+ * 特点: 位统计法，每位1的个数模3
+ */
 int singleNumber2(std::vector<int>& nums) {
     int result = 0;
     for (int i = 0; i < 32; ++i) {
@@ -33,7 +43,12 @@ int singleNumber2(std::vector<int>& nums) {
 }
 
 // ==================== 题目3: 只出现一次的数字 III ====================
-// 有两个数字只出现一次
+/**
+ * singleNumber3 - 只出现一次的数字III（两个只出现一次）
+ * 时间复杂度: O(n) - 遍历数组两次
+ * 空间复杂度: O(1) - 常数空间
+ * 特点: 分组异或，按lowBit分成两组
+ */
 std::vector<int> singleNumber3(std::vector<int>& nums) {
     unsigned int xorAll = 0;
     for (int n : nums) xorAll ^= n;

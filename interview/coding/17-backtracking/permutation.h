@@ -19,6 +19,16 @@ std::vector<std::vector<int>> permuteSolution(std::vector<int>& nums);
 std::vector<std::vector<int>> permuteUniqueSolution(std::vector<int>& nums);
 void nextPermutationSolution(std::vector<int>& nums);
 
+// 不同实现方式
+// 全排列 - 递归（回溯/交换法）
+std::vector<std::vector<int>> permuteRecursive(std::vector<int>& nums);
+// 全排列 - 迭代（基于 nextPermutation）
+std::vector<std::vector<int>> permuteIterative(std::vector<int>& nums);
+// 全排列 II - 递归（回溯 + 去重）
+std::vector<std::vector<int>> permuteUniqueRecursive(std::vector<int>& nums);
+// 全排列 II - 迭代（基于 nextPermutation）
+std::vector<std::vector<int>> permuteUniqueIterative(std::vector<int>& nums);
+
 // 测试函数
 void runTests();
 

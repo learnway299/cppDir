@@ -19,6 +19,11 @@ namespace TopK {
 
 // ==================== 参考答案实现 ====================
 
+/**
+ * 题目1: 第 K 大元素 - 快速选择
+ * 时间复杂度: O(n) 平均，O(n²) 最坏
+ * 空间复杂度: O(1) - 原地操作
+ */
 int findKthLargestSolution(std::vector<int>& nums, int k) {
     static std::mt19937 rng{std::random_device{}()};
 
@@ -54,6 +59,11 @@ int findKthLargestSolution(std::vector<int>& nums, int k) {
     return -1;
 }
 
+/**
+ * 题目2: 前 K 个高频元素 - 桶排序
+ * 时间复杂度: O(n)
+ * 空间复杂度: O(n) - 桶和哈希表
+ */
 std::vector<int> topKFrequentSolution(std::vector<int>& nums, int k) {
     std::unordered_map<int, int> freq;
     for (int num : nums) {
@@ -77,6 +87,11 @@ std::vector<int> topKFrequentSolution(std::vector<int>& nums, int k) {
     return result;
 }
 
+/**
+ * 题目3: 前 K 个高频单词 - 最小堆
+ * 时间复杂度: O(n log k)
+ * 空间复杂度: O(n) - 哈希表 + 堆
+ */
 std::vector<std::string> topKFrequentWordsSolution(std::vector<std::string>& words, int k) {
     std::unordered_map<std::string, int> freq;
     for (const auto& word : words) {
@@ -108,6 +123,11 @@ std::vector<std::string> topKFrequentWordsSolution(std::vector<std::string>& wor
     return result;
 }
 
+/**
+ * 题目4: 最接近原点的 K 个点 - 最大堆
+ * 时间复杂度: O(n log k)
+ * 空间复杂度: O(k) - 堆大小
+ */
 std::vector<std::vector<int>> kClosestSolution(std::vector<std::vector<int>>& points, int k) {
     auto cmp = [](const std::vector<int>& a, const std::vector<int>& b) {
         return a[0] * a[0] + a[1] * a[1] < b[0] * b[0] + b[1] * b[1];
@@ -129,6 +149,11 @@ std::vector<std::vector<int>> kClosestSolution(std::vector<std::vector<int>>& po
     return result;
 }
 
+/**
+ * 题目5: 第 K 小的素数分数 - 二分查找
+ * 时间复杂度: O(n log(max_value))
+ * 空间复杂度: O(1)
+ */
 std::vector<int> kthSmallestPrimeFractionSolution(std::vector<int>& arr, int k) {
     int n = static_cast<int>(arr.size());
     double left = 0, right = 1;
@@ -159,6 +184,11 @@ std::vector<int> kthSmallestPrimeFractionSolution(std::vector<int>& arr, int k) 
     return {};
 }
 
+/**
+ * 题目6: 数据流中的第 K 大元素 - 最小堆
+ * 构造: 时间 O(n log k)
+ * add: 时间 O(log k)，空间 O(k)
+ */
 KthLargestStreamSolution::KthLargestStreamSolution(int k, std::vector<int>& nums) : k_(k) {
     for (int num : nums) {
         add(num);
@@ -173,6 +203,11 @@ int KthLargestStreamSolution::add(int val) {
     return minHeap_.top();
 }
 
+/**
+ * 题目7: 查找和最小的 K 对数字 - 最小堆
+ * 时间复杂度: O(k log k)
+ * 空间复杂度: O(k) - 堆大小
+ */
 std::vector<std::vector<int>> kSmallestPairsSolution(std::vector<int>& nums1,
                                                       std::vector<int>& nums2, int k) {
     if (nums1.empty() || nums2.empty()) return {};
@@ -202,6 +237,11 @@ std::vector<std::vector<int>> kSmallestPairsSolution(std::vector<int>& nums1,
     return result;
 }
 
+/**
+ * 题目8: 有序矩阵中第 K 小的元素 - 二分查找
+ * 时间复杂度: O(n log(max - min))
+ * 空间复杂度: O(1)
+ */
 int kthSmallestSolution(std::vector<std::vector<int>>& matrix, int k) {
     int n = static_cast<int>(matrix.size());
     int left = matrix[0][0], right = matrix[n - 1][n - 1];
@@ -226,6 +266,11 @@ int kthSmallestSolution(std::vector<std::vector<int>>& matrix, int k) {
     return left;
 }
 
+/**
+ * 题目9: 丑数 II - 三指针 DP
+ * 时间复杂度: O(n)
+ * 空间复杂度: O(n) - DP 数组
+ */
 int nthUglyNumberSolution(int n) {
     std::vector<int> dp(n);
     dp[0] = 1;
@@ -247,6 +292,11 @@ int nthUglyNumberSolution(int n) {
     return dp[n - 1];
 }
 
+/**
+ * 题目10: 超级丑数 - 多指针 DP
+ * 时间复杂度: O(n * m) - m 为质数个数
+ * 空间复杂度: O(n + m) - DP 数组 + 指针数组
+ */
 int nthSuperUglyNumberSolution(int n, std::vector<int>& primes) {
     int m = static_cast<int>(primes.size());
     std::vector<int> pointers(m, 0);
@@ -270,6 +320,12 @@ int nthSuperUglyNumberSolution(int n, std::vector<int>& primes) {
     return static_cast<int>(dp[n - 1]);
 }
 
+/**
+ * 题目11: 数据流的中位数 - 对顶堆
+ * addNum: 时间 O(log n)
+ * findMedian: 时间 O(1)
+ * 空间复杂度: O(n) - 存储所有元素
+ */
 void MedianFinderSolution::addNum(int num) {
     maxHeap_.push(num);
     minHeap_.push(maxHeap_.top());

@@ -1,4 +1,4 @@
-/**
+ /**
  * @file container_water_solution.cpp
  * @brief 盛最多水的容器 - 参考答案
  */
@@ -12,6 +12,12 @@ namespace ContainerWaterImpl {
 
 namespace Solution {
 
+/**
+ * maxArea - 盛最多水的容器
+ * 时间复杂度: O(n) - 双指针单次遍历
+ * 空间复杂度: O(1) - 常数空间
+ * 特点: 相向双指针，每次移动较矮的边
+ */
 int maxArea(std::vector<int>& height) {
     int left = 0, right = static_cast<int>(height.size()) - 1;
     int maxWater = 0;

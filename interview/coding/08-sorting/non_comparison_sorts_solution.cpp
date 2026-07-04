@@ -15,6 +15,11 @@ namespace NonComparisonSorts {
 
 // ==================== 参考答案实现 ====================
 
+/**
+ * 题目1: 计数排序
+ * 时间复杂度: O(n + k) - k 为数据范围
+ * 空间复杂度: O(k) - 计数数组
+ */
 void countingSortSolution(std::vector<int>& nums) {
     if (nums.empty()) return;
 
@@ -36,6 +41,11 @@ void countingSortSolution(std::vector<int>& nums) {
     }
 }
 
+/**
+ * 题目2: 桶排序
+ * 时间复杂度: O(n + k) 平均，O(n²) 最坏（桶内退化）
+ * 空间复杂度: O(n + k) - 桶存储
+ */
 void bucketSortSolution(std::vector<float>& nums) {
     if (nums.empty()) return;
 
@@ -60,6 +70,11 @@ void bucketSortSolution(std::vector<float>& nums) {
     }
 }
 
+/**
+ * 题目3: 基数排序
+ * 时间复杂度: O(d * (n + k)) - d 为位数，k 为基数（10）
+ * 空间复杂度: O(n + k) - 辅助数组
+ */
 void radixSortSolution(std::vector<int>& nums) {
     if (nums.empty()) return;
 
@@ -117,6 +132,11 @@ void radixSortSolution(std::vector<int>& nums) {
     }
 }
 
+/**
+ * 题目4: 最大间距 - 桶排序思想
+ * 时间复杂度: O(n)
+ * 空间复杂度: O(n) - 桶存储
+ */
 int maximumGapSolution(std::vector<int>& nums) {
     int n = static_cast<int>(nums.size());
     if (n < 2) return 0;
@@ -150,6 +170,11 @@ int maximumGapSolution(std::vector<int>& nums) {
     return maxGap;
 }
 
+/**
+ * 题目5: 第 K 大元素 - 快速选择
+ * 时间复杂度: O(n) 平均，O(n²) 最坏
+ * 空间复杂度: O(1) - 原地操作
+ */
 int findKthLargestSolution(std::vector<int>& nums, int k) {
     static std::mt19937 rng{std::random_device{}()};
 
@@ -185,6 +210,11 @@ int findKthLargestSolution(std::vector<int>& nums, int k) {
     return -1;
 }
 
+/**
+ * 题目6: 按奇偶排序数组 - 双指针
+ * 时间复杂度: O(n)
+ * 空间复杂度: O(1) - 原地操作
+ */
 std::vector<int> sortArrayByParitySolution(std::vector<int>& nums) {
     int left = 0, right = static_cast<int>(nums.size()) - 1;
     while (left < right) {
@@ -197,6 +227,11 @@ std::vector<int> sortArrayByParitySolution(std::vector<int>& nums) {
     return nums;
 }
 
+/**
+ * 题目7: 按奇偶排序数组 II - 双指针
+ * 时间复杂度: O(n)
+ * 空间复杂度: O(1) - 原地操作
+ */
 std::vector<int> sortArrayByParityIISolution(std::vector<int>& nums) {
     int n = static_cast<int>(nums.size());
     int even = 0, odd = 1;
@@ -211,6 +246,11 @@ std::vector<int> sortArrayByParityIISolution(std::vector<int>& nums) {
     return nums;
 }
 
+/**
+ * 题目8: H 指数 - 计数排序
+ * 时间复杂度: O(n)
+ * 空间复杂度: O(n) - 计数数组
+ */
 int hIndexSolution(std::vector<int>& citations) {
     int n = static_cast<int>(citations.size());
     std::vector<int> count(n + 1, 0);
@@ -229,6 +269,11 @@ int hIndexSolution(std::vector<int>& citations) {
     return 0;
 }
 
+/**
+ * 题目9: 根据字符出现频率排序 - 桶排序
+ * 时间复杂度: O(n)
+ * 空间复杂度: O(n) - 桶和频率表
+ */
 std::string frequencySortSolution(std::string s) {
     std::unordered_map<char, int> freq;
     for (char c : s) {
@@ -253,6 +298,11 @@ std::string frequencySortSolution(std::string s) {
     return result;
 }
 
+/**
+ * 题目10: 颜色分类（荷兰国旗问题）- 三路划分
+ * 时间复杂度: O(n)
+ * 空间复杂度: O(1) - 原地操作
+ */
 void sortColorsSolution(std::vector<int>& nums) {
     // 荷兰国旗问题：三路划分
     int p0 = 0, p2 = static_cast<int>(nums.size()) - 1;
@@ -270,6 +320,11 @@ void sortColorsSolution(std::vector<int>& nums) {
     }
 }
 
+/**
+ * 题目11: 字母异位词分组 - 计数排序生成 key
+ * 时间复杂度: O(n * k) - n 为字符串数，k 为最长字符串长度
+ * 空间复杂度: O(n * k) - 哈希表存储
+ */
 std::vector<std::vector<std::string>> groupAnagramsSolution(std::vector<std::string>& strs) {
     std::unordered_map<std::string, std::vector<std::string>> groups;
 

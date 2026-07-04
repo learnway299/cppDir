@@ -10,6 +10,13 @@
 namespace Singleton {
 
 // ==================== EagerSingletonSolution ====================
+
+/**
+ * 题目1: EagerSingleton - 饿汉式单例（Meyers实现）
+ * getInstance: O(1) - 静态局部变量（C++11线程安全）
+ * 空间复杂度: O(1) - 单个实例
+ * 特点: 线程安全，无需加锁
+ */
 EagerSingletonSolution::EagerSingletonSolution() : called_(false) {}
 
 EagerSingletonSolution& EagerSingletonSolution::getInstance() {
@@ -26,6 +33,14 @@ bool EagerSingletonSolution::wasCalled() const {
 }
 
 // ==================== LazySingletonSolution ====================
+
+/**
+ * 题目2: LazySingleton - 懒汉式单例（双重检查锁定）
+ * getInstance: O(1) - 首次需要加锁，之后无锁
+ * cleanup: O(1) - 原子交换+删除
+ * 空间复杂度: O(1) - 单个实例 + 原子指针 + 互斥锁
+ * 特点: 延迟初始化，双重检查避免重复加锁
+ */
 std::atomic<LazySingletonSolution*> LazySingletonSolution::instance_{nullptr};
 std::mutex LazySingletonSolution::mutex_;
 
@@ -59,6 +74,13 @@ bool LazySingletonSolution::wasCalled() const {
 }
 
 // ==================== MeyersSingletonSolution ====================
+
+/**
+ * 题目3: MeyersSingleton - Meyers单例
+ * getInstance: O(1) - 静态局部变量（C++11保证线程安全）
+ * 空间复杂度: O(1) - 单个实例
+ * 特点: 最简洁的线程安全实现
+ */
 MeyersSingletonSolution::MeyersSingletonSolution() : called_(false) {}
 
 MeyersSingletonSolution& MeyersSingletonSolution::getInstance() {
@@ -75,6 +97,14 @@ bool MeyersSingletonSolution::wasCalled() const {
 }
 
 // ==================== DestructibleSingletonSolution ====================
+
+/**
+ * 题目4: DestructibleSingleton - 可销毁单例
+ * getInstance/destroyInstance: O(1) - 加锁操作
+ * exists: O(1) - 加锁检查
+ * 空间复杂度: O(1) - 单个实例 + 互斥锁
+ * 特点: 支持显式销毁和重新创建
+ */
 DestructibleSingletonSolution* DestructibleSingletonSolution::instance_ = nullptr;
 std::mutex DestructibleSingletonSolution::mutex_;
 
@@ -108,6 +138,13 @@ bool DestructibleSingletonSolution::wasCalled() const {
 }
 
 // ==================== LoggerSolution ====================
+
+/**
+ * 题目5: CRTP Singleton - CRTP模板单例
+ * getInstance: O(1) - 静态局部变量
+ * 空间复杂度: O(1) - 每个派生类一个实例
+ * 特点: 可复用的单例基类模板
+ */
 void LoggerSolution::log(const std::string& message) {
     lastMessage_ = message;
 }

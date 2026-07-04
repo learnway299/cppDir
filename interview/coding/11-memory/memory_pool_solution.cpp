@@ -16,6 +16,12 @@ namespace Solution {
 
 // ==================== 固定大小内存池 ====================
 
+/**
+ * 题目1: FixedSizePool - 固定大小内存池
+ * allocate: O(1) - 从空闲链表头取块
+ * deallocate: O(1) - 插入空闲链表头
+ * 空间复杂度: O(n) - n个固定大小块
+ */
 class FixedSizePool {
 public:
     FixedSizePool(size_t blockSize, size_t blockCount)
@@ -85,6 +91,12 @@ private:
 
 // ==================== 模板化对象池 ====================
 
+/**
+ * 题目2: ObjectPool - 模板化对象池
+ * construct: O(1) - 分配 + 构造
+ * destroy: O(1) - 析构 + 回收
+ * 空间复杂度: O(n * sizeof(T)) - 固定容量
+ */
 template <typename T, size_t BlockCount = 32>
 class ObjectPool {
 public:
@@ -122,6 +134,12 @@ private:
 
 // ==================== 可增长内存池 ====================
 
+/**
+ * 题目3: GrowablePool - 可增长内存池
+ * allocate: O(1) 摊还 - 增长时O(n)，通常O(1)
+ * deallocate: O(1) - 插入空闲链表
+ * 空间复杂度: O(n) - 动态增长
+ */
 class GrowablePool {
 public:
     GrowablePool(size_t blockSize, size_t initialBlocks = 32)
@@ -195,6 +213,12 @@ private:
 
 // ==================== 自旋锁 ====================
 
+/**
+ * 题目4: SpinLock - 自旋锁
+ * lock: O(1) 无竞争，有竞争时自旋等待
+ * unlock: O(1) - 原子操作
+ * 空间复杂度: O(1) - 一个atomic_flag
+ */
 class SpinLock {
 public:
     void lock() {
@@ -213,6 +237,12 @@ private:
 
 // ==================== 线程安全的内存池 ====================
 
+/**
+ * 题目5: ThreadSafePool - 线程安全的内存池
+ * allocate/deallocate: O(1) + 锁开销
+ * 空间复杂度: O(n) - 内存池 + 锁
+ * 线程安全: 使用自旋锁保护
+ */
 class ThreadSafePool {
 public:
     ThreadSafePool(size_t blockSize, size_t blockCount)

@@ -14,8 +14,13 @@ namespace FindMedianImpl {
 namespace Solution {
 
 // ==================== 数据流中位数 ====================
-// 使用两个堆: 大顶堆存较小的一半，小顶堆存较大的一半
-
+/**
+ * MedianFinder - 数据流中位数
+ * addNum:     时间O(logn) - 堆操作
+ * findMedian: 时间O(1) - 取堆顶
+ * 空间复杂度: O(n) - 两个堆存储所有元素
+ * 特点: 大顶堆存小半部分，小顶堆存大半部分
+ */
 class MedianFinder {
     std::priority_queue<int> maxHeap;                             // 较小的一半
     std::priority_queue<int, std::vector<int>, std::greater<int>> minHeap;  // 较大的一半

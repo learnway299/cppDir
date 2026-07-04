@@ -15,7 +15,11 @@ namespace Knapsack {
 
 // ==================== 参考答案实现 ====================
 
-// 题目1: 0-1 背包问题
+/**
+ * 题目1: 0-1 背包问题 - 空间优化 DP
+ * 时间复杂度: O(n * W) - n 为物品数，W 为容量
+ * 空间复杂度: O(W) - 一维 DP 数组
+ */
 int knapsack01Solution(int W, std::vector<int>& weight, std::vector<int>& value) {
     int n = static_cast<int>(weight.size());
     std::vector<int> dp(W + 1, 0);
@@ -27,7 +31,11 @@ int knapsack01Solution(int W, std::vector<int>& weight, std::vector<int>& value)
     return dp[W];
 }
 
-// 题目2: 分割等和子集
+/**
+ * 题目2: 分割等和子集 - 0-1 背包变体
+ * 时间复杂度: O(n * sum/2) - n 为数组长度
+ * 空间复杂度: O(sum/2) - 一维 DP 数组
+ */
 bool canPartitionSolution(std::vector<int>& nums) {
     int sum = std::accumulate(nums.begin(), nums.end(), 0);
     if (sum % 2 != 0) return false;
@@ -42,7 +50,11 @@ bool canPartitionSolution(std::vector<int>& nums) {
     return dp[target];
 }
 
-// 题目3: 目标和
+/**
+ * 题目3: 目标和 - 0-1 背包变体（转化为子集和）
+ * 时间复杂度: O(n * P) - P = (sum + target) / 2
+ * 空间复杂度: O(P) - 一维 DP 数组
+ */
 int findTargetSumWaysSolution(std::vector<int>& nums, int target) {
     int sum = std::accumulate(nums.begin(), nums.end(), 0);
     if ((sum + target) % 2 != 0 || sum + target < 0) return 0;
@@ -58,7 +70,11 @@ int findTargetSumWaysSolution(std::vector<int>& nums, int target) {
     return dp[P];
 }
 
-// 题目4: 最后一块石头的重量 II
+/**
+ * 题目4: 最后一块石头的重量 II - 0-1 背包变体
+ * 时间复杂度: O(n * sum/2) - n 为石头数
+ * 空间复杂度: O(sum/2) - 一维 DP 数组
+ */
 int lastStoneWeightIISolution(std::vector<int>& stones) {
     int sum = std::accumulate(stones.begin(), stones.end(), 0);
     int target = sum / 2;
@@ -71,7 +87,11 @@ int lastStoneWeightIISolution(std::vector<int>& stones) {
     return sum - 2 * dp[target];
 }
 
-// 题目5: 完全背包 - 零钱兑换 II（组合数）
+/**
+ * 题目5: 完全背包 - 零钱兑换 II（组合数）
+ * 时间复杂度: O(n * amount) - n 为硬币种类数
+ * 空间复杂度: O(amount) - 一维 DP 数组
+ */
 int changeSolution(int amount, std::vector<int>& coins) {
     std::vector<int> dp(amount + 1, 0);
     dp[0] = 1;
@@ -83,7 +103,11 @@ int changeSolution(int amount, std::vector<int>& coins) {
     return dp[amount];
 }
 
-// 题目6: 完全背包 - 组合总和 IV（排列数）
+/**
+ * 题目6: 完全背包 - 组合总和 IV（排列数）
+ * 时间复杂度: O(n * target) - n 为数组长度
+ * 空间复杂度: O(target) - 一维 DP 数组
+ */
 int combinationSum4Solution(std::vector<int>& nums, int target) {
     std::vector<unsigned long long> dp(target + 1, 0);
     dp[0] = 1;
@@ -97,7 +121,11 @@ int combinationSum4Solution(std::vector<int>& nums, int target) {
     return static_cast<int>(dp[target]);
 }
 
-// 题目7: 完全平方数
+/**
+ * 题目7: 完全平方数 - 完全背包 DP
+ * 时间复杂度: O(n * sqrt(n)) - 完全平方数个数为 sqrt(n)
+ * 空间复杂度: O(n) - 一维 DP 数组
+ */
 int numSquaresSolution(int n) {
     std::vector<int> dp(n + 1, INT_MAX);
     dp[0] = 0;
@@ -112,7 +140,11 @@ int numSquaresSolution(int n) {
     return dp[n];
 }
 
-// 题目8: 单词拆分
+/**
+ * 题目8: 单词拆分 - 完全背包变体
+ * 时间复杂度: O(n² * m) - n 为字符串长度，m 为平均单词长度
+ * 空间复杂度: O(n + k) - DP 数组 + 哈希表（k 为字典大小）
+ */
 bool wordBreakSolution(std::string s, std::vector<std::string>& wordDict) {
     std::unordered_set<std::string> wordSet(wordDict.begin(), wordDict.end());
     int n = static_cast<int>(s.size());
@@ -129,7 +161,11 @@ bool wordBreakSolution(std::string s, std::vector<std::string>& wordDict) {
     return dp[n];
 }
 
-// 题目9: 一和零
+/**
+ * 题目9: 一和零 - 二维 0-1 背包
+ * 时间复杂度: O(k * m * n) - k 为字符串数量
+ * 空间复杂度: O(m * n) - 二维 DP 数组
+ */
 int findMaxFormSolution(std::vector<std::string>& strs, int m, int n) {
     std::vector<std::vector<int>> dp(m + 1, std::vector<int>(n + 1, 0));
     for (const std::string& str : strs) {

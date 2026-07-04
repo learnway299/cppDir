@@ -29,6 +29,12 @@ namespace Solution {
 
 // ==================== ControlBlock ====================
 
+/**
+ * ControlBlock - 控制块（支持强弱引用）
+ * 所有操作: O(1) - 原子计数操作
+ * try_add_strong: O(1) 平均 - CAS 循环通常很快
+ * 空间复杂度: O(1) - 指针 + 两个原子计数器
+ */
 template <typename T>
 struct ControlBlock {
     T* ptr;
@@ -86,6 +92,11 @@ template <typename T> class WeakPtr;
 
 // ==================== SharedPtr（支持 WeakPtr） ====================
 
+/**
+ * 题目1: SharedPtr（支持WeakPtr版本）
+ * 所有操作: O(1) - 原子计数操作
+ * 空间复杂度: O(1) - 控制块指针
+ */
 template <typename T>
 class SharedPtr {
 public:
@@ -145,6 +156,13 @@ private:
 
 // ==================== WeakPtr ====================
 
+/**
+ * 题目2: WeakPtr - 弱引用智能指针
+ * 构造/析构/拷贝: O(1) - 原子计数操作
+ * lock: O(1) 平均 - CAS 循环，竞争时可能重试
+ * expired: O(1) - 原子读取
+ * 空间复杂度: O(1) - 控制块指针
+ */
 template <typename T>
 class WeakPtr {
 public:
@@ -225,6 +243,11 @@ private:
 
 // ==================== NodeWithCycle ====================
 
+/**
+ * 题目3: NodeWithCycle - 使用WeakPtr打破循环引用
+ * 场景: 双向链表、父子关系等循环引用场景
+ * 解决方案: 一个方向用SharedPtr，另一个用WeakPtr
+ */
 struct NodeWithCycle {
     int value;
     SharedPtr<NodeWithCycle> next;      // 强引用向前
@@ -243,6 +266,12 @@ int NodeWithCycle::instanceCount = 0;
 
 // ==================== EnableSharedFromThis ====================
 
+/**
+ * 题目4: EnableSharedFromThis - 从this获取shared_ptr
+ * shared_from_this: O(1) - 调用weak_ptr::lock
+ * weak_from_this: O(1) - 返回弱引用
+ * 使用场景: 对象需要将自身作为shared_ptr传递
+ */
 template <typename T>
 class EnableSharedFromThis {
 public:

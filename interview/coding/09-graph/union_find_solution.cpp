@@ -15,6 +15,12 @@ namespace UnionFindProblems {
 
 // ==================== 并查集模板实现 ====================
 
+/**
+ * 并查集模板类
+ * find: 时间复杂度 O(α(n)) ≈ O(1) - 路径压缩
+ * unite: 时间复杂度 O(α(n)) ≈ O(1) - 按秩合并
+ * 空间复杂度: O(n) - parent + rank 数组
+ */
 // 在头文件中声明，这里在 solution 中提供辅助实现
 class UnionFindHelper {
 public:
@@ -63,6 +69,11 @@ public:
 
 // ==================== 参考答案实现 ====================
 
+/**
+ * 题目1: 省份数量 - 并查集
+ * 时间复杂度: O(n² * α(n)) - 遍历矩阵，每次合并O(α(n))
+ * 空间复杂度: O(n) - 并查集数组
+ */
 int findCircleNumSolution(std::vector<std::vector<int>>& isConnected) {
     int n = static_cast<int>(isConnected.size());
     UnionFindHelper uf(n);
@@ -78,6 +89,11 @@ int findCircleNumSolution(std::vector<std::vector<int>>& isConnected) {
     return uf.getCount();
 }
 
+/**
+ * 题目2: 冗余连接 - 并查集检测环
+ * 时间复杂度: O(n * α(n)) - 遍历n条边
+ * 空间复杂度: O(n) - 并查集数组
+ */
 std::vector<int> findRedundantConnectionSolution(std::vector<std::vector<int>>& edges) {
     int n = static_cast<int>(edges.size());
     UnionFindHelper uf(n + 1);  // 节点从 1 开始
@@ -91,6 +107,11 @@ std::vector<int> findRedundantConnectionSolution(std::vector<std::vector<int>>& 
     return {};
 }
 
+/**
+ * 题目3: 账户合并 - 并查集 + 哈希表
+ * 时间复杂度: O(n * k * α(n * k) + n * k * log(n * k)) - 合并 + 排序
+ * 空间复杂度: O(n * k) - 邮箱映射 + 并查集
+ */
 std::vector<std::vector<std::string>> accountsMergeSolution(std::vector<std::vector<std::string>>& accounts) {
     std::unordered_map<std::string, int> emailToIndex;
     std::unordered_map<std::string, std::string> emailToName;
@@ -138,6 +159,11 @@ std::vector<std::vector<std::string>> accountsMergeSolution(std::vector<std::vec
     return result;
 }
 
+/**
+ * 题目4: 等式方程的可满足性 - 并查集
+ * 时间复杂度: O(n * α(26)) ≈ O(n) - n为方程数
+ * 空间复杂度: O(1) - 固定26个字母的并查集
+ */
 bool equationsPossibleSolution(std::vector<std::string>& equations) {
     UnionFindHelper uf(26);
 
@@ -160,6 +186,11 @@ bool equationsPossibleSolution(std::vector<std::string>& equations) {
     return true;
 }
 
+/**
+ * 题目5: 最长连续序列 - 哈希集合
+ * 时间复杂度: O(n) - 每个元素最多访问两次
+ * 空间复杂度: O(n) - 哈希集合存储所有元素
+ */
 int longestConsecutiveSolution(std::vector<int>& nums) {
     // 使用哈希集合解法（更简洁）
     std::unordered_set<int> numSet(nums.begin(), nums.end());

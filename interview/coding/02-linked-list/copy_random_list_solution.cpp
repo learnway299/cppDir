@@ -12,7 +12,11 @@ namespace CopyRandomList {
 
 // ==================== 参考答案实现 ====================
 
-// 解法1: 哈希表 O(n) 时间，O(n) 空间
+/**
+ * 解法1: 复制带随机指针的链表 - 哈希表法
+ * 时间复杂度: O(n) - 两次遍历
+ * 空间复杂度: O(n) - 哈希表存储 n 个映射
+ */
 RandomListNode* copyRandomListHashSolution(RandomListNode* head) {
     if (!head) return nullptr;
     std::unordered_map<RandomListNode*, RandomListNode*> oldToNew;
@@ -31,7 +35,11 @@ RandomListNode* copyRandomListHashSolution(RandomListNode* head) {
     return oldToNew[head];
 }
 
-// 解法2: 原地复制 O(n) 时间，O(1) 空间
+/**
+ * 解法2: 复制带随机指针的链表 - 原地复制法
+ * 时间复杂度: O(n) - 三次遍历（插入、设置 random、分离）
+ * 空间复杂度: O(1) - 不计输出，仅用常数指针
+ */
 RandomListNode* copyRandomListSolution(RandomListNode* head) {
     if (!head) return nullptr;
     // 步骤1：在每个节点后插入复制节点

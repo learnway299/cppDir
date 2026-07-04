@@ -11,8 +11,12 @@ namespace MissingNumberImpl {
 namespace Solution {
 
 // ==================== 方法1: 异或法 ====================
-// a ^ a = 0, 0 ^ a = a
-// 将 [0,n] 与数组所有元素异或，成对的抵消
+/**
+ * missingNumber - 丢失的数字（异或法）
+ * 时间复杂度: O(n) - 遍历数组一次
+ * 空间复杂度: O(1) - 常数空间
+ * 特点: 0~n与数组元素全部异或，成对抵消
+ */
 int missingNumber(std::vector<int>& nums) {
     int n = nums.size();
     int xorAll = n;  // 从n开始
@@ -23,6 +27,12 @@ int missingNumber(std::vector<int>& nums) {
 }
 
 // ==================== 方法2: 数学公式 ====================
+/**
+ * missingNumberSum - 丢失的数字（数学公式）
+ * 时间复杂度: O(n) - 遍历数组求和
+ * 空间复杂度: O(1) - 常数空间
+ * 特点: 期望和n*(n+1)/2减去实际和
+ */
 int missingNumberSum(std::vector<int>& nums) {
     int n = nums.size();
     int expectedSum = n * (n + 1) / 2;

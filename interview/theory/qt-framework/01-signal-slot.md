@@ -133,9 +133,240 @@ thread->start();
 - 自定义类型需要 `qRegisterMetaType<T>()`
 - 槽函数在接收者所属线程的事件循环中执行
 
+### 连接类型的组合使用
+
+**面试问题**：Qt::ConnectionType 能否组合使用？
+
+```cpp
+// ✅ 可以组合：UniqueConnection 可以与其他类型按位或组合
+connect(sender, &Sender::signal,
+        receiver, &Receiver::slot,
+        Qt::QueuedConnection | Qt::UniqueConnection);
+
+connect(sender, &Sender::signal,
+        receiver, &Receiver::slot,
+        Qt::DirectConnection | Qt::UniqueConnection);
+
+// ❌ 不能组合：Direct/Queued/Auto/BlockingQueued 互斥
+// 这些是不同的调用模式，只能选择其一
+// Qt::DirectConnection | Qt::QueuedConnection  // 无意义！
+
+// 组合使用示例
+void setupUniqueConnection() {
+    // 确保跨线程通信且只连接一次
+    connect(worker, &Worker::progress,
+            this, &Controller::updateProgress,
+            Qt::QueuedConnection | Qt::UniqueConnection);
+
+    // 再次调用不会创建重复连接
+    connect(worker, &Worker::progress,
+            this, &Controller::updateProgress,
+            Qt::QueuedConnection | Qt::UniqueConnection);
+    // 第二次返回无效的 QMetaObject::Connection
+}
+```
+
+**组合规则表：**
+
+| 组合 | 是否有效 | 说明 |
+|------|----------|------|
+| `Auto \| Unique` | ✅ | 自动选择 + 防重复 |
+| `Direct \| Unique` | ✅ | 直接调用 + 防重复 |
+| `Queued \| Unique` | ✅ | 队列调用 + 防重复 |
+| `BlockingQueued \| Unique` | ✅ | 阻塞调用 + 防重复 |
+| `Direct \| Queued` | ❌ | 互斥，无意义 |
+| `Auto \| Direct` | ❌ | 互斥，无意义 |
+
 ---
 
-## 3. 信号槽的实现原理
+## 3. 信号参数类型
+
+### 3.1 可作为信号参数的类型
+
+**面试问题**：哪些类型可以作为信号的参数传递？
+
+```cpp
+// 1. 基本类型 - 直接支持
+signals:
+    void intSignal(int value);
+    void doubleSignal(double value);
+    void boolSignal(bool value);
+
+// 2. Qt 内置类型 - 已注册
+signals:
+    void stringSignal(const QString& text);
+    void listSignal(const QStringList& items);
+    void pointSignal(const QPoint& pos);
+    void rectSignal(const QRect& rect);
+    void variantSignal(const QVariant& data);
+
+// 3. 指针类型 - 直接支持（但跨线程危险）
+signals:
+    void objectSignal(QObject* obj);
+    void widgetSignal(QWidget* widget);
+
+// 4. 枚举类型 - Qt 枚举已注册，自定义需 Q_ENUM
+signals:
+    void alignmentChanged(Qt::Alignment align);
+    void stateChanged(MyState state);  // 需要 Q_ENUM
+```
+
+**类型要求：**
+
+| 连接类型 | 类型要求 |
+|----------|----------|
+| DirectConnection | 任意可拷贝类型 |
+| QueuedConnection | 必须是 QMetaType 已注册类型 |
+| BlockingQueuedConnection | 必须是 QMetaType 已注册类型 |
+
+### 3.2 自定义类型作为信号参数
+
+**面试问题**：如何让自定义类作为信号参数传递？
+
+```cpp
+// 步骤 1：定义自定义类型
+class UserData {
+public:
+    UserData() = default;
+    UserData(const QString& name, int age)
+        : m_name(name), m_age(age) {}
+
+    QString name() const { return m_name; }
+    int age() const { return m_age; }
+
+private:
+    QString m_name;
+    int m_age = 0;
+};
+
+// 步骤 2：声明元类型（头文件末尾）
+Q_DECLARE_METATYPE(UserData)
+
+// 步骤 3：注册元类型（程序启动时，通常在 main() 或构造函数）
+// 仅 QueuedConnection 需要，DirectConnection 可省略
+qRegisterMetaType<UserData>("UserData");
+
+// 步骤 4：在信号中使用
+class UserManager : public QObject {
+    Q_OBJECT
+signals:
+    void userCreated(const UserData& user);
+    void usersLoaded(const QList<UserData>& users);
+};
+```
+
+**完整示例：**
+
+```cpp
+// --- userdata.h ---
+#pragma once
+#include <QString>
+#include <QMetaType>
+
+class UserData {
+public:
+    UserData() = default;
+    UserData(const QString& name, int age)
+        : m_name(name), m_age(age) {}
+
+    // 必须：默认构造函数
+    // 必须：拷贝构造函数（编译器生成即可）
+    // 必须：析构函数（编译器生成即可）
+
+    QString name() const { return m_name; }
+    int age() const { return m_age; }
+
+private:
+    QString m_name;
+    int m_age = 0;
+};
+
+// 声明为元类型
+Q_DECLARE_METATYPE(UserData)
+
+// --- main.cpp ---
+#include "userdata.h"
+
+int main(int argc, char* argv[]) {
+    QApplication app(argc, argv);
+
+    // 注册元类型（跨线程信号需要）
+    qRegisterMetaType<UserData>("UserData");
+    qRegisterMetaType<QList<UserData>>("QList<UserData>");
+
+    // ...
+    return app.exec();
+}
+```
+
+**自定义枚举类型：**
+
+```cpp
+class Device : public QObject {
+    Q_OBJECT
+public:
+    // 使用 Q_ENUM 自动注册枚举
+    enum State {
+        Disconnected,
+        Connecting,
+        Connected,
+        Error
+    };
+    Q_ENUM(State)
+
+signals:
+    void stateChanged(State newState);  // 无需额外注册
+};
+
+// 对于非 QObject 类中的枚举
+namespace MyApp {
+    Q_NAMESPACE
+
+    enum class LogLevel {
+        Debug,
+        Info,
+        Warning,
+        Error
+    };
+    Q_ENUM_NS(LogLevel)
+}
+
+// 注册后可用于信号
+qRegisterMetaType<MyApp::LogLevel>("MyApp::LogLevel");
+```
+
+**常见错误：**
+
+```cpp
+// ❌ 错误：未注册就用于 QueuedConnection
+class BadExample : public QObject {
+    Q_OBJECT
+signals:
+    void dataReady(CustomClass data);  // 跨线程时运行时错误
+};
+
+// 运行时警告：
+// QObject::connect: Cannot queue arguments of type 'CustomClass'
+// (Make sure 'CustomClass' is registered using qRegisterMetaType().)
+
+// ❌ 错误：类型没有默认构造函数
+class NoDefaultCtor {
+public:
+    NoDefaultCtor(int required);  // 没有默认构造函数
+};
+Q_DECLARE_METATYPE(NoDefaultCtor)  // 编译错误！
+
+// ✅ 正确：提供默认构造函数
+class WithDefaultCtor {
+public:
+    WithDefaultCtor() = default;
+    WithDefaultCtor(int value);
+};
+```
+
+---
+
+## 4. 信号槽的实现原理
 
 ### MOC (Meta-Object Compiler) 的作用
 
@@ -195,9 +426,107 @@ void QMetaObject::activate(QObject* sender,
 
 ---
 
-## 4. 常见面试问题
+## 5. 常见面试问题
 
-### Q1: 信号可以连接信号吗？
+### Q1: 信号与槽绑定多次会怎样？会去重吗？
+
+**面试问题**：如果同一个信号和槽连接多次，信号发射时槽会被调用几次？
+
+```cpp
+// ❌ 默认行为：不会去重！多次连接 = 多次调用
+Counter sender;
+Counter receiver;
+
+connect(&sender, &Counter::valueChanged, &receiver, &Counter::setValue);
+connect(&sender, &Counter::valueChanged, &receiver, &Counter::setValue);
+connect(&sender, &Counter::valueChanged, &receiver, &Counter::setValue);
+
+emit sender.valueChanged(42);
+// receiver.setValue 被调用 3 次！
+
+// ✅ 使用 UniqueConnection 防止重复
+connect(&sender, &Counter::valueChanged,
+        &receiver, &Counter::setValue,
+        Qt::UniqueConnection);
+connect(&sender, &Counter::valueChanged,
+        &receiver, &Counter::setValue,
+        Qt::UniqueConnection);  // 这次连接失败，返回无效 Connection
+
+emit sender.valueChanged(42);
+// receiver.setValue 只被调用 1 次
+```
+
+**验证连接是否成功：**
+
+```cpp
+QMetaObject::Connection conn = connect(
+    &sender, &Counter::valueChanged,
+    &receiver, &Counter::setValue,
+    Qt::UniqueConnection);
+
+if (!conn) {
+    qDebug() << "Connection already exists!";
+}
+
+// 实用模式：封装防重复连接
+template<typename... Args>
+bool connectUnique(Args&&... args) {
+    auto conn = QObject::connect(std::forward<Args>(args)...,
+                                  Qt::UniqueConnection);
+    return static_cast<bool>(conn);
+}
+```
+
+**Lambda 连接的特殊情况：**
+
+```cpp
+// ⚠️ Lambda 连接无法使用 UniqueConnection 去重
+connect(button, &QPushButton::clicked, []() {
+    qDebug() << "Clicked!";
+});
+connect(button, &QPushButton::clicked, []() {
+    qDebug() << "Clicked!";
+});
+// 两个 Lambda 是不同的对象，UniqueConnection 无效
+// 点击按钮会输出两次 "Clicked!"
+
+// 解决方案：使用成员函数或手动管理连接
+class MyClass : public QObject {
+    QMetaObject::Connection m_buttonConnection;
+
+    void setupButton(QPushButton* button) {
+        // 先断开旧连接
+        if (m_buttonConnection) {
+            disconnect(m_buttonConnection);
+        }
+        // 建立新连接
+        m_buttonConnection = connect(button, &QPushButton::clicked,
+                                      this, &MyClass::onButtonClicked);
+    }
+};
+```
+
+**多次连接的合法用途：**
+
+```cpp
+// 有时故意多次连接是有意义的
+class Logger : public QObject {
+    Q_OBJECT
+public slots:
+    void log(const QString& msg) { qDebug() << msg; }
+};
+
+// 让一个信号触发多个不同的槽
+Logger fileLogger, consoleLogger, networkLogger;
+connect(&app, &App::message, &fileLogger, &Logger::log);
+connect(&app, &App::message, &consoleLogger, &Logger::log);
+connect(&app, &App::message, &networkLogger, &Logger::log);
+// 这是三个不同的接收者，不是重复连接
+```
+
+---
+
+### Q2: 信号可以连接信号吗？
 
 ```cpp
 // 可以！信号可以连接到另一个信号
@@ -212,7 +541,7 @@ connect(&counter, &Counter::valueChanged,
         &wrapper, &Wrapper::wrapperSignal);
 ```
 
-### Q2: 如何断开连接？
+### Q3: 如何断开连接？
 
 ```cpp
 // 方法1：断开特定连接
@@ -233,7 +562,7 @@ QObject::disconnect(conn);
 // QObject 析构函数会自动处理
 ```
 
-### Q3: 槽函数可以有返回值吗？
+### Q4: 槽函数可以有返回值吗？
 
 ```cpp
 // 技术上可以，但通常没有意义
@@ -248,7 +577,7 @@ public slots:
 // 2. QueuedConnection 是异步的，无法获取返回值
 ```
 
-### Q4: 如何在非 QObject 类中使用信号槽？
+### Q5: 如何在非 QObject 类中使用信号槽？
 
 ```cpp
 // 不能直接使用，但有替代方案：
@@ -271,7 +600,7 @@ private:
 };
 ```
 
-### Q5: 信号槽的线程安全性？
+### Q6: 信号槽的线程安全性？
 
 ```cpp
 // connect/disconnect 是线程安全的
@@ -292,7 +621,7 @@ qRegisterMetaType<MyType>("MyType");
 
 ---
 
-## 5. Qt5 vs Qt4 语法对比
+## 6. Qt5 vs Qt4 语法对比
 
 ### 新语法优势
 
@@ -318,7 +647,7 @@ connect(spinBox, qOverload<int>(&QSpinBox::valueChanged),
 
 ---
 
-## 6. 性能优化
+## 7. 性能优化
 
 ### 信号槽性能考量
 
@@ -349,7 +678,7 @@ connect(a, &A::sig, b, &B::slot, Qt::DirectConnection);
 
 ---
 
-## 7. 常见陷阱
+## 8. 常见陷阱
 
 ### 陷阱1：忘记 Q_OBJECT 宏
 
@@ -407,7 +736,7 @@ emit mySignal();  // 永远阻塞
 
 ---
 
-## 8. 总结
+## 9. 总结
 
 | 特性 | 说明 |
 |------|------|

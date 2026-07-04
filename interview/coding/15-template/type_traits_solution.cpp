@@ -27,6 +27,12 @@ using false_type = integral_constant<bool, false>;
 
 // ==================== 题目1: is_same ====================
 
+/**
+ * 题目1: my_is_same - 类型相同检测
+ * 编译期: O(1) - 模板特化匹配
+ * 空间复杂度: O(1) - 类型特征无运行时开销
+ * 特点: 主模板返回false，T==T特化返回true
+ */
 template <typename T, typename U>
 struct my_is_same : false_type {};
 
@@ -38,6 +44,12 @@ constexpr bool my_is_same_v = my_is_same<T, U>::value;
 
 // ==================== 题目2: remove_const ====================
 
+/**
+ * 题目2: my_remove_const/volatile/cv - 移除CV限定符
+ * 编译期: O(1) - 模板特化匹配
+ * 空间复杂度: O(1) - 类型特征无运行时开销
+ * 特点: 通过偏特化匹配const/volatile T并提取T
+ */
 template <typename T>
 struct my_remove_const { using type = T; };
 
@@ -68,6 +80,12 @@ using my_remove_cv_t = typename my_remove_cv<T>::type;
 
 // ==================== 题目3: remove_reference ====================
 
+/**
+ * 题目3: my_remove_reference - 移除引用
+ * 编译期: O(1) - 模板特化匹配
+ * 空间复杂度: O(1) - 类型特征无运行时开销
+ * 特点: 偏特化T&和T&&提取原始类型
+ */
 template <typename T>
 struct my_remove_reference { using type = T; };
 
@@ -82,6 +100,12 @@ using my_remove_reference_t = typename my_remove_reference<T>::type;
 
 // ==================== 题目4: is_pointer ====================
 
+/**
+ * 题目4: my_is_pointer - 指针类型检测
+ * 编译期: O(1) - 模板特化匹配
+ * 空间复杂度: O(1) - 类型特征无运行时开销
+ * 特点: 先移除cv再匹配T*特化
+ */
 template <typename T>
 struct my_is_pointer_helper : false_type {};
 
@@ -96,6 +120,12 @@ constexpr bool my_is_pointer_v = my_is_pointer<T>::value;
 
 // ==================== 题目5: is_array ====================
 
+/**
+ * 题目5: my_is_array/extent - 数组类型检测
+ * 编译期: O(1) - 模板特化匹配
+ * 空间复杂度: O(1) - 类型特征无运行时开销
+ * 特点: 特化T[]和T[N]，extent获取数组维度
+ */
 template <typename T>
 struct my_is_array : false_type {};
 
@@ -126,6 +156,12 @@ struct my_extent<T[I], N> : my_extent<T, N - 1> {};
 
 // ==================== 题目6: conditional ====================
 
+/**
+ * 题目6: my_conditional - 编译期条件选择
+ * 编译期: O(1) - 模板特化匹配
+ * 空间复杂度: O(1) - 类型特征无运行时开销
+ * 特点: true选T，false选F（偏特化实现）
+ */
 template <bool Cond, typename T, typename F>
 struct my_conditional { using type = T; };
 
@@ -137,6 +173,12 @@ using my_conditional_t = typename my_conditional<Cond, T, F>::type;
 
 // ==================== 题目7: enable_if ====================
 
+/**
+ * 题目7: my_enable_if - SFINAE控制
+ * 编译期: O(1) - 模板特化匹配
+ * 空间复杂度: O(1) - 类型特征无运行时开销
+ * 特点: true时提供type，false时无type触发SFINAE
+ */
 template <bool Cond, typename T = void>
 struct my_enable_if {};
 
@@ -148,6 +190,12 @@ using my_enable_if_t = typename my_enable_if<Cond, T>::type;
 
 // ==================== 题目8: decay ====================
 
+/**
+ * 题目8: my_decay - 类型衰减
+ * 编译期: O(1) - 模板组合
+ * 空间复杂度: O(1) - 类型特征无运行时开销
+ * 特点: 移除引用→数组转指针/函数转指针→移除cv
+ */
 template <typename T>
 struct my_decay {
 private:

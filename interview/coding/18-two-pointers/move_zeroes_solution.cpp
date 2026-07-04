@@ -12,6 +12,12 @@ namespace MoveZeroesImpl {
 
 namespace Solution {
 
+/**
+ * moveZeroes - 移动零到末尾
+ * 时间复杂度: O(n) - 单次遍历
+ * 空间复杂度: O(1) - 原地修改
+ * 特点: 快慢指针 + 交换，保持非零元素相对顺序
+ */
 void moveZeroes(std::vector<int>& nums) {
     int slow = 0;
     for (size_t fast = 0; fast < nums.size(); ++fast) {

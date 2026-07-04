@@ -62,6 +62,12 @@ static void dfsFindWords(std::vector<std::vector<char>>& board, int i, int j,
 
 // ==================== 参考答案实现 ====================
 
+/**
+ * exist - 单词搜索I
+ * 时间复杂度: O(m*n*4^L) - m*n起点，每步4方向，L为单词长度
+ * 空间复杂度: O(L) - 递归栈深度
+ * 特点: DFS + 原地标记回溯
+ */
 bool existSolution(std::vector<std::vector<char>>& board, const std::string& word) {
     int m = static_cast<int>(board.size());
     int n = static_cast<int>(board[0].size());
@@ -73,6 +79,12 @@ bool existSolution(std::vector<std::vector<char>>& board, const std::string& wor
     return false;
 }
 
+/**
+ * findWords - 单词搜索II
+ * 时间复杂度: O(m*n*4^L) - 但Trie剪枝大幅优化
+ * 空间复杂度: O(sum(word.length)) - Trie空间
+ * 特点: Trie + DFS，一次搜索多词
+ */
 std::vector<std::string> findWordsSolution(std::vector<std::vector<char>>& board,
                                             std::vector<std::string>& words) {
     TrieNode* root = new TrieNode();

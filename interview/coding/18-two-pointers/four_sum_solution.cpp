@@ -12,6 +12,12 @@ namespace FourSumImpl {
 
 namespace Solution {
 
+/**
+ * fourSum - 四数之和
+ * 时间复杂度: O(n³) - 两层循环O(n²) + 双指针O(n)
+ * 空间复杂度: O(1) - 不计结果空间
+ * 特点: 排序 + 固定两个数 + 双指针，用long long防溢出
+ */
 std::vector<std::vector<int>> fourSum(std::vector<int>& nums, int target) {
     std::vector<std::vector<int>> result;
     int n = static_cast<int>(nums.size());

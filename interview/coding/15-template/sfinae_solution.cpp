@@ -26,6 +26,12 @@ using void_t = std::void_t<Ts...>;
 
 // ==================== 题目1: 检测 size() 成员函数 ====================
 
+/**
+ * 题目1: has_size - SFINAE检测成员函数
+ * 编译期: O(1) - 模板实例化
+ * 空间复杂度: O(1) - 类型特征无运行时开销
+ * 特点: 使用void_t检测size()成员是否存在
+ */
 template <typename T, typename = void>
 struct has_size : std::false_type {};
 
@@ -37,6 +43,12 @@ constexpr bool has_size_v = has_size<T>::value;
 
 // ==================== 题目2: 检测可打印类型 ====================
 
+/**
+ * 题目2: is_printable - 检测operator<<重载
+ * 编译期: O(1) - 模板实例化
+ * 空间复杂度: O(1) - 类型特征无运行时开销
+ * 特点: 检测类型是否可通过ostream输出
+ */
 template <typename T, typename = void>
 struct is_printable : std::false_type {};
 
@@ -49,6 +61,12 @@ constexpr bool is_printable_v = is_printable<T>::value;
 
 // ==================== 题目3: 根据类型选择实现 ====================
 
+/**
+ * 题目3: multiply_by_two - 条件编译选择实现
+ * 时间复杂度: O(1) - 单次运算
+ * 空间复杂度: O(1) - 无额外空间
+ * 特点: 展示enable_if/if constexpr/tag dispatch三种方案
+ */
 // 方法1: enable_if
 template <typename T>
 std::enable_if_t<std::is_integral_v<T>, T>
@@ -90,6 +108,12 @@ T multiply_by_two_v3(T value) {
 
 // ==================== 题目4: 检测成员类型 ====================
 
+/**
+ * 题目4: has_value_type - 检测嵌套类型
+ * 编译期: O(1) - 模板实例化
+ * 空间复杂度: O(1) - 类型特征无运行时开销
+ * 特点: 使用void_t检测typename T::value_type是否存在
+ */
 template <typename T, typename = void>
 struct has_value_type : std::false_type {};
 
@@ -101,6 +125,12 @@ constexpr bool has_value_type_v = has_value_type<T>::value;
 
 // ==================== 题目5: 检测成员函数 ====================
 
+/**
+ * 题目5: has_method_begin/end - 检测迭代器接口
+ * 编译期: O(1) - 模板实例化
+ * 空间复杂度: O(1) - 类型特征无运行时开销
+ * 特点: 检测类型是否具有begin()/end()成员函数
+ */
 template <typename T, typename = void>
 struct has_method_begin : std::false_type {};
 
@@ -123,6 +153,12 @@ constexpr bool has_method_end_v = has_method_end<T>::value;
 
 // ==================== 题目6: 检测两类型可相加 ====================
 
+/**
+ * 题目6: can_add - 检测二元运算符
+ * 编译期: O(1) - 模板实例化
+ * 空间复杂度: O(1) - 类型特征无运行时开销
+ * 特点: 检测T+U是否合法，并提供结果类型add_result_t
+ */
 template <typename T, typename U, typename = void>
 struct can_add : std::false_type {};
 
@@ -147,6 +183,12 @@ using add_result_t = typename add_result<T, U>::type;
 
 // ==================== 题目7: SFINAE 函数重载 ====================
 
+/**
+ * 题目7: insert_element - 根据容器特性选择插入方式
+ * 时间复杂度: O(1) 摊还 - 取决于具体容器
+ * 空间复杂度: O(1) - 无额外空间
+ * 特点: 自动选择push_back或insert，适配不同容器
+ */
 // 检测 push_back
 template <typename C, typename = void>
 struct has_push_back : std::false_type {};

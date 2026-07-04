@@ -14,6 +14,13 @@ namespace Solution {
 
 // ==================== 题目1: 完整 Task<T> 实现 ====================
 
+/**
+ * 题目1: Task<T> - 异步任务协程
+ * co_await: O(1) - 协程挂起/恢复
+ * get(): O(1) - 同步获取结果
+ * 空间复杂度: O(1) - 协程帧 + 结果存储
+ * 特点: 支持co_await链式调用，异常传播
+ */
 template <typename T>
 class Task {
 public:
@@ -115,6 +122,11 @@ private:
 
 // ==================== Task<void> 特化 ====================
 
+/**
+ * TaskVoid - 无返回值任务协程
+ * 操作复杂度同Task<T>
+ * 特点: return_void代替return_value
+ */
 class TaskVoid {
 public:
     struct promise_type {
@@ -191,6 +203,12 @@ private:
 
 // ==================== 题目3: 简单异步操作 ====================
 
+/**
+ * 题目3: async_add/async_multiply - 简单异步函数
+ * 时间复杂度: O(1) - 单次运算
+ * 空间复杂度: O(1) - 协程帧
+ * 特点: 演示co_return基本用法
+ */
 Task<int> async_add(int a, int b) {
     co_return a + b;
 }
@@ -201,6 +219,12 @@ Task<int> async_multiply(int a, int b) {
 
 // ==================== 题目4: 任务链 ====================
 
+/**
+ * 题目4: chained_task - 任务链式调用
+ * 时间复杂度: O(n) - n个co_await
+ * 空间复杂度: O(n) - 协程链挂起时栈深度
+ * 特点: continuation模式实现任务链
+ */
 Task<int> chained_task() {
     int sum = co_await async_add(1, 2);           // 3
     int product = co_await async_multiply(sum, 4); // 12

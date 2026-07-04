@@ -12,7 +12,11 @@
 
 namespace MonotonicQueueProblems {
 
-// 题目1: 滑动窗口最大值
+/**
+ * 题目1: 滑动窗口最大值 - 单调递减队列
+ * 时间复杂度: O(n) - 每个元素最多入队出队一次
+ * 空间复杂度: O(k) - 队列最多存储 k 个元素
+ */
 std::vector<int> maxSlidingWindowSolution(std::vector<int>& nums, int k) {
     std::deque<int> dq;
     std::vector<int> result;
@@ -36,7 +40,11 @@ std::vector<int> maxSlidingWindowSolution(std::vector<int>& nums, int k) {
     return result;
 }
 
-// 题目2: 滑动窗口最小值
+/**
+ * 题目2: 滑动窗口最小值 - 单调递增队列
+ * 时间复杂度: O(n) - 每个元素最多入队出队一次
+ * 空间复杂度: O(k) - 队列最多存储 k 个元素
+ */
 std::vector<int> minSlidingWindowSolution(std::vector<int>& nums, int k) {
     std::deque<int> dq;
     std::vector<int> result;
@@ -60,7 +68,11 @@ std::vector<int> minSlidingWindowSolution(std::vector<int>& nums, int k) {
     return result;
 }
 
-// 题目3: 跳跃游戏 VI
+/**
+ * 题目3: 跳跃游戏 VI - 单调队列优化 DP
+ * 时间复杂度: O(n) - 每个元素最多入队出队一次
+ * 空间复杂度: O(n) - DP 数组和队列
+ */
 int maxResultSolution(std::vector<int>& nums, int k) {
     int n = static_cast<int>(nums.size());
     std::deque<int> dq;
@@ -86,7 +98,11 @@ int maxResultSolution(std::vector<int>& nums, int k) {
     return dp[n - 1];
 }
 
-// 题目4: 绝对差不超过限制的最长连续子数组
+/**
+ * 题目4: 绝对差不超过限制的最长连续子数组 - 双单调队列 + 滑动窗口
+ * 时间复杂度: O(n) - 每个元素最多入队出队一次
+ * 空间复杂度: O(n) - 两个单调队列
+ */
 int longestSubarraySolution(std::vector<int>& nums, int limit) {
     std::deque<int> maxDq, minDq;
     int left = 0, result = 0;
@@ -114,7 +130,11 @@ int longestSubarraySolution(std::vector<int>& nums, int limit) {
     return result;
 }
 
-// 题目5: 和至少为 K 的最短子数组
+/**
+ * 题目5: 和至少为 K 的最短子数组 - 前缀和 + 单调队列
+ * 时间复杂度: O(n) - 每个元素最多入队出队一次
+ * 空间复杂度: O(n) - 前缀和数组和队列
+ */
 int shortestSubarraySolution(std::vector<int>& nums, int k) {
     int n = static_cast<int>(nums.size());
     std::vector<long long> prefix(n + 1, 0);
@@ -142,7 +162,11 @@ int shortestSubarraySolution(std::vector<int>& nums, int k) {
     return result == INT_MAX ? -1 : result;
 }
 
-// 题目6: 带限制的子序列和
+/**
+ * 题目6: 带限制的子序列和 - 单调队列优化 DP
+ * 时间复杂度: O(n) - 每个元素最多入队出队一次
+ * 空间复杂度: O(n) - DP 数组和队列
+ */
 int constrainedSubsetSumSolution(std::vector<int>& nums, int k) {
     int n = static_cast<int>(nums.size());
     std::vector<int> dp(n);
@@ -172,7 +196,12 @@ int constrainedSubsetSumSolution(std::vector<int>& nums, int k) {
     return result;
 }
 
-// 题目7: 实现单调队列类（解答版本）
+/**
+ * 题目7: 实现单调队列类 - 单调递减队列
+ * push: 时间均摊 O(1)，空间 O(1)
+ * pop: 时间 O(1)，空间 O(1)
+ * max: 时间 O(1)，空间 O(1)
+ */
 class MonotonicQueueSolutionImpl {
 private:
     std::deque<int> data;
@@ -203,7 +232,11 @@ void MonotonicQueueSolution::push(int x) {}
 void MonotonicQueueSolution::pop(int x) {}
 int MonotonicQueueSolution::max() { return 0; }
 
-// 题目8: 滑动窗口中位数
+/**
+ * 题目8: 滑动窗口中位数 - 双 multiset（对顶堆思想）
+ * 时间复杂度: O(n log k) - 每次插入/删除 O(log k)
+ * 空间复杂度: O(k) - 两个 multiset 存储窗口元素
+ */
 std::vector<double> medianSlidingWindowSolution(std::vector<int>& nums, int k) {
     std::multiset<int> small, large;
     std::vector<double> result;

@@ -14,7 +14,11 @@ namespace EasyProblems {
 
 // ==================== 参考答案实现 ====================
 
-// 题目1: 两数之和 - 哈希表 O(n)
+/**
+ * 题目1: 两数之和 - 哈希表法
+ * 时间复杂度: O(n) - 遍历数组一次，哈希表查找 O(1)
+ * 空间复杂度: O(n) - 最坏情况存储 n-1 个元素到哈希表
+ */
 std::vector<int> twoSumSolution(std::vector<int>& nums, int target) {
     std::unordered_map<int, int> numToIndex;
     for (int i = 0; i < static_cast<int>(nums.size()); ++i) {
@@ -28,7 +32,11 @@ std::vector<int> twoSumSolution(std::vector<int>& nums, int target) {
     return {};
 }
 
-// 题目2: 反转字符串 - 双指针 O(n)
+/**
+ * 题目2: 反转字符串 - 双指针法
+ * 时间复杂度: O(n) - 遍历一半数组
+ * 空间复杂度: O(1) - 原地交换，仅用常数额外空间
+ */
 void reverseStringSolution(std::vector<char>& s) {
     int left = 0, right = static_cast<int>(s.size()) - 1;
     while (left < right) {
@@ -36,7 +44,11 @@ void reverseStringSolution(std::vector<char>& s) {
     }
 }
 
-// 题目3: 回文数判断 - 反转一半 O(log n)
+/**
+ * 题目3: 回文数判断 - 反转一半数字
+ * 时间复杂度: O(log n) - 数字位数为 log₁₀(n)，只处理一半
+ * 空间复杂度: O(1) - 仅用常数额外空间
+ */
 bool isPalindromeSolution(int x) {
     if (x < 0 || (x % 10 == 0 && x != 0)) return false;
     int reversed = 0;
@@ -47,7 +59,11 @@ bool isPalindromeSolution(int x) {
     return x == reversed || x == reversed / 10;
 }
 
-// 题目4: 有效的括号 - 栈 O(n)
+/**
+ * 题目4: 有效的括号 - 栈匹配法
+ * 时间复杂度: O(n) - 遍历字符串一次
+ * 空间复杂度: O(n) - 最坏情况全是左括号，栈存储 n 个元素
+ */
 bool isValidSolution(const std::string& s) {
     std::stack<char> stk;
     for (char c : s) {
@@ -67,7 +83,11 @@ bool isValidSolution(const std::string& s) {
     return stk.empty();
 }
 
-// 题目5: 合并两个有序数组 - 从后向前双指针 O(m+n)
+/**
+ * 题目5: 合并两个有序数组 - 从后向前双指针法
+ * 时间复杂度: O(m+n) - 每个元素最多访问一次
+ * 空间复杂度: O(1) - 原地合并，利用 nums1 预留空间
+ */
 void mergeSolution(std::vector<int>& nums1, int m, std::vector<int>& nums2, int n) {
     int p1 = m - 1, p2 = n - 1, p = m + n - 1;
     while (p2 >= 0) {
@@ -79,7 +99,11 @@ void mergeSolution(std::vector<int>& nums1, int m, std::vector<int>& nums2, int 
     }
 }
 
-// 题目6: 移除元素 - 快慢指针 O(n)
+/**
+ * 题目6: 移除元素 - 快慢指针法
+ * 时间复杂度: O(n) - 遍历数组一次
+ * 空间复杂度: O(1) - 原地修改，仅用常数额外空间
+ */
 int removeElementSolution(std::vector<int>& nums, int val) {
     int slow = 0;
     for (int fast = 0; fast < static_cast<int>(nums.size()); ++fast) {
@@ -90,7 +114,11 @@ int removeElementSolution(std::vector<int>& nums, int val) {
     return slow;
 }
 
-// 题目7: 加一 O(n)
+/**
+ * 题目7: 加一 - 从低位向高位进位
+ * 时间复杂度: O(n) - 最坏情况遍历所有位（如 999 → 1000）
+ * 空间复杂度: O(1) - 原地修改；若需扩容则 O(n)（insert 操作）
+ */
 std::vector<int> plusOneSolution(std::vector<int>& digits) {
     for (int i = static_cast<int>(digits.size()) - 1; i >= 0; --i) {
         if (digits[i] < 9) {
@@ -103,7 +131,11 @@ std::vector<int> plusOneSolution(std::vector<int>& digits) {
     return digits;
 }
 
-// 题目8: 最大子数组和 - Kadane算法 O(n)
+/**
+ * 题目8: 最大子数组和 - Kadane 算法（动态规划优化）
+ * 时间复杂度: O(n) - 遍历数组一次
+ * 空间复杂度: O(1) - 仅用两个变量记录状态
+ */
 int maxSubArraySolution(std::vector<int>& nums) {
     int maxSum = nums[0], currentSum = nums[0];
     for (size_t i = 1; i < nums.size(); ++i) {

@@ -6,6 +6,251 @@
 
 ---
 
+## 0. 面向对象三要素 (Three Pillars of OOP)
+
+### 面试高频问题：面向对象的三大特性是什么？
+
+面向对象编程 (OOP) 的三要素是：**封装 (Encapsulation)**、**继承 (Inheritance)**、**多态 (Polymorphism)**。
+
+#### 0.1 封装 (Encapsulation)
+
+**定义**：将数据（成员变量）和操作数据的方法（成员函数）捆绑在一起，并对外隐藏内部实现细节，只暴露必要的接口。
+
+**实现方式**：通过 `public`、`protected`、`private` 访问控制。
+
+```cpp
+class BankAccount {
+public:
+    // 对外接口 —— 用户只需知道如何调用
+    void deposit(double amount) {
+        if (amount > 0) {
+            balance_ += amount;
+            log("deposit", amount);
+        }
+    }
+
+    bool withdraw(double amount) {
+        if (amount > 0 && amount <= balance_) {
+            balance_ -= amount;
+            log("withdraw", amount);
+            return true;
+        }
+        return false;  // 余额不足
+    }
+
+    double getBalance() const { return balance_; }
+
+private:
+    // 内部实现 —— 对外不可见
+    double balance_ = 0.0;
+
+    void log(const std::string& op, double amount) {
+        // 内部日志实现，调用者无需关心
+        std::cout << op << ": " << amount << ", balance: " << balance_ << "\n";
+    }
+};
+
+// 使用：用户只能通过公有接口操作
+BankAccount acc;
+acc.deposit(1000);
+acc.withdraw(200);
+// acc.balance_ = 999999;  // ❌ 编译错误，无法绕过接口直接修改
+```
+
+**封装的好处**：
+- **数据安全**：外部无法直接修改内部数据，必须通过接口，可在接口中做校验
+- **降低耦合**：内部实现变更不影响调用方（例如将 `balance_` 从 `double` 改为高精度类型）
+- **简化使用**：调用者无需了解内部细节
+
+#### 0.2 继承 (Inheritance)
+
+**定义**：子类（派生类）继承父类（基类）的属性和方法，实现代码复用和层次化设计。
+
+**实现方式**：`class Derived : public/protected/private Base`
+
+```cpp
+// 基类
+class Shape {
+public:
+    Shape(const std::string& color) : color_(color) {}
+
+    std::string getColor() const { return color_; }
+
+    virtual double area() const = 0;  // 纯虚函数，子类必须实现
+
+    virtual ~Shape() = default;
+
+protected:
+    std::string color_;
+};
+
+// 派生类继承基类的属性和方法
+class Circle : public Shape {
+public:
+    Circle(const std::string& color, double radius)
+        : Shape(color), radius_(radius) {}
+
+    double area() const override {
+        return 3.14159 * radius_ * radius_;
+    }
+
+private:
+    double radius_;
+};
+
+class Rectangle : public Shape {
+public:
+    Rectangle(const std::string& color, double w, double h)
+        : Shape(color), width_(w), height_(h) {}
+
+    double area() const override {
+        return width_ * height_;
+    }
+
+private:
+    double width_, height_;
+};
+
+// Circle 和 Rectangle 自动拥有 getColor()，无需重复编写
+```
+
+**C++ 三种继承方式的区别**：
+
+| 继承方式 | 基类 public | 基类 protected | 基类 private | 语义 |
+|---------|------------|---------------|-------------|------|
+| `public` 继承 | → public | → protected | 不可访问 | **is-a** 关系（最常用） |
+| `protected` 继承 | → protected | → protected | 不可访问 | 实现继承 |
+| `private` 继承 | → private | → private | 不可访问 | **has-a** 的替代（组合优先） |
+
+**继承的好处**：
+- **代码复用**：子类继承父类的通用功能
+- **层次结构**：自然表达"is-a"关系（Dog is an Animal）
+- **可扩展性**：新增子类不修改已有代码
+
+#### 0.3 多态 (Polymorphism)
+
+**定义**：同一接口，不同实现。通过基类指针/引用调用方法时，实际调用的是对象的真实类型对应的实现。
+
+**C++ 多态分类**：
+
+| 类型 | 时机 | 实现方式 |
+|------|------|---------|
+| **编译期多态（静态多态）** | 编译时 | 函数重载、运算符重载、模板 |
+| **运行时多态（动态多态）** | 运行时 | 虚函数 + 继承 |
+
+```cpp
+// ============ 运行时多态（核心考点） ============
+
+class Animal {
+public:
+    // 虚函数 —— 动态多态的基础
+    virtual void speak() const {
+        std::cout << "..." << "\n";
+    }
+    virtual ~Animal() = default;
+};
+
+class Dog : public Animal {
+public:
+    void speak() const override {
+        std::cout << "Woof!" << "\n";
+    }
+};
+
+class Cat : public Animal {
+public:
+    void speak() const override {
+        std::cout << "Meow!" << "\n";
+    }
+};
+
+// 关键：通过基类指针/引用调用，执行派生类的实现
+void makeSound(const Animal& animal) {
+    animal.speak();  // 运行时根据实际类型决定调用哪个 speak()
+}
+
+int main() {
+    Dog dog;
+    Cat cat;
+    makeSound(dog);  // 输出：Woof!
+    makeSound(cat);  // 输出：Meow!
+    // 同一个 makeSound 函数，不同的行为 —— 这就是多态
+}
+```
+
+```cpp
+// ============ 编译期多态 ============
+
+// 1. 函数重载
+int add(int a, int b) { return a + b; }
+double add(double a, double b) { return a + b; }
+// 编译器根据参数类型选择调用哪个 add
+
+// 2. 模板（泛型编程）
+template<typename T>
+T add(T a, T b) { return a + b; }
+// 编译器为不同类型生成不同的函数实例
+
+// 3. CRTP（奇异递归模板模式）— 静态多态
+template<typename Derived>
+class Base {
+public:
+    void interface() {
+        static_cast<Derived*>(this)->implementation();
+    }
+};
+
+class Impl : public Base<Impl> {
+public:
+    void implementation() {
+        std::cout << "CRTP implementation\n";
+    }
+};
+```
+
+**运行时多态的实现原理 — 虚函数表 (vtable)**：
+
+```
+              Animal 对象
+              ┌──────────┐
+              │ vptr ─────┼──→ Animal vtable
+              │ ...       │    ┌──────────────┐
+              └──────────┘    │ &Animal::speak│
+                              └──────────────┘
+
+              Dog 对象
+              ┌──────────┐
+              │ vptr ─────┼──→ Dog vtable
+              │ ...       │    ┌──────────────┐
+              └──────────┘    │ &Dog::speak   │ ← 指向 Dog 的实现
+                              └──────────────┘
+
+编译器：animal.speak() → (*animal.vptr[0])() → 调用实际类型的 speak
+```
+
+- 每个含虚函数的类有一个 vtable（虚函数表），存放虚函数指针
+- 每个对象有一个 vptr（虚表指针），指向所属类的 vtable
+- 调用虚函数时通过 vptr → vtable → 函数指针间接调用，这就是动态绑定
+
+#### 0.4 三要素的关系
+
+```
+封装 ──→ 提供抽象接口，隐藏实现细节
+  │
+  └─→ 继承 ──→ 子类复用父类的封装，扩展新功能
+         │
+         └─→ 多态 ──→ 基于继承，通过虚函数实现"同一接口，不同行为"
+```
+
+**面试答题模板**：
+
+> 面向对象三大特性是封装、继承、多态。
+> - **封装**是将数据和操作绑定在一起，通过访问控制隐藏实现细节，对外提供接口。
+> - **继承**是子类复用父类的属性和方法，表达"is-a"关系，实现代码复用和层次化设计。
+> - **多态**是同一接口的不同实现，C++ 通过虚函数实现运行时多态——基类指针/引用调用虚函数时，根据对象的实际类型执行对应的实现，底层通过虚函数表（vtable）实现动态绑定。
+
+---
+
 ## 1. 类的定义与对象创建
 
 ### 1.1 类的基本结构
@@ -1332,6 +1577,22 @@ int main() {
 - Rule of Three/Five/Zero 是什么？
 - 全局 new/delete 和类重载 new/delete 的区别？
 - 基础类型和自定义类调用 new/delete 有什么区别？
+
+构造顺序：从基类到派生类 
+当创建派生类对象时，构造顺序遵循以下规则：
+  
+    基类构造：首先调用基类的构造函数（按继承层次从最顶层基类开始，逐层向下）。
+    成员变量构造：基类构造完成后，按声明顺序初始化派生类的成员变量（与它们在类中的定义顺序一致，而非初始化列表的顺序）。
+    派生类构造：最后调用派生类自身的构造函数体。
+
+析构顺序：与构造相反
+
+析构顺序是构造的逆过程：
+
+    派生类析构：首先调用派生类的析构函数体。
+    成员变量析构：按声明顺序的逆序销毁派生类的成员变量（最后声明的成员先析构）。
+    基类析构：最后调用基类的析构函数。
+
 
 ---
 

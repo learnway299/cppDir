@@ -12,7 +12,11 @@ namespace MergeLists {
 
 // ==================== 参考答案实现 ====================
 
-// 题目1: 合并两个有序链表 - 迭代 O(m+n)
+/**
+ * 题目1: 合并两个有序链表 - 迭代法
+ * 时间复杂度: O(m+n) - 遍历两个链表
+ * 空间复杂度: O(1) - 仅用常数指针
+ */
 ListNode* mergeTwoListsSolution(ListNode* l1, ListNode* l2) {
     ListNode dummy;
     ListNode* tail = &dummy;
@@ -30,7 +34,11 @@ ListNode* mergeTwoListsSolution(ListNode* l1, ListNode* l2) {
     return dummy.next;
 }
 
-// 题目2: 合并 K 个升序链表 - 优先队列 O(N log k)
+/**
+ * 题目2: 合并 K 个升序链表 - 优先队列（最小堆）
+ * 时间复杂度: O(N log k) - N 为总节点数，每次堆操作 O(log k)
+ * 空间复杂度: O(k) - 堆中最多 k 个节点
+ */
 ListNode* mergeKListsSolution(std::vector<ListNode*>& lists) {
     auto cmp = [](ListNode* a, ListNode* b) { return a->val > b->val; };
     std::priority_queue<ListNode*, std::vector<ListNode*>, decltype(cmp)> pq(cmp);
@@ -49,7 +57,11 @@ ListNode* mergeKListsSolution(std::vector<ListNode*>& lists) {
     return dummy.next;
 }
 
-// 题目3: 排序链表 - 归并排序 O(n log n)
+/**
+ * 题目3: 排序链表 - 归并排序（递归）
+ * 时间复杂度: O(n log n) - 分治，每层 O(n) 合并
+ * 空间复杂度: O(log n) - 递归栈深度
+ */
 ListNode* sortListSolution(ListNode* head) {
     if (!head || !head->next) return head;
     ListNode* slow = head;
@@ -65,7 +77,11 @@ ListNode* sortListSolution(ListNode* head) {
     return mergeTwoListsSolution(left, right);
 }
 
-// 题目4: 合并两个链表（区间替换）
+/**
+ * 题目4: 合并两个链表 - 区间替换
+ * 时间复杂度: O(m+n) - 遍历两个链表
+ * 空间复杂度: O(1) - 仅用常数指针
+ */
 ListNode* mergeInBetweenSolution(ListNode* list1, int a, int b, ListNode* list2) {
     ListNode* prevA = list1;
     for (int i = 0; i < a - 1; ++i) prevA = prevA->next;
@@ -78,7 +94,11 @@ ListNode* mergeInBetweenSolution(ListNode* list1, int a, int b, ListNode* list2)
     return list1;
 }
 
-// 题目5: 两数相加 O(max(m,n))
+/**
+ * 题目5: 两数相加 - 模拟进位
+ * 时间复杂度: O(max(m,n)) - 遍历较长链表
+ * 空间复杂度: O(max(m,n)) - 新建结果链表
+ */
 ListNode* addTwoNumbersSolution(ListNode* l1, ListNode* l2) {
     ListNode dummy;
     ListNode* curr = &dummy;

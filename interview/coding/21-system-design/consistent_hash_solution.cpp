@@ -10,6 +10,14 @@
 namespace ConsistentHashImpl {
 namespace Solution {
 
+/**
+ * ConsistentHash - 一致性哈希
+ * addNode:    时间O(v*logn) - v为虚拟节点数，n为环上节点数
+ * removeNode: 时间O(v*logn)
+ * getNode:    时间O(logn) - map的lower_bound
+ * 空间复杂度: O(n*v) - n个物理节点*v个虚拟节点
+ * 特点: 负载均衡，节点增删影响小
+ */
 class ConsistentHash {
 private:
     std::map<size_t, std::string> ring_;   // 哈希环

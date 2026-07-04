@@ -14,7 +14,12 @@ namespace TrieProblems {
 
 // ==================== 参考答案实现 ====================
 
-// TrieSolution 实现
+/**
+ * 题目1: 实现 Trie（前缀树） - 数组实现
+ * insert: 时间 O(m)，空间 O(m)，m 为单词长度
+ * search: 时间 O(m)，空间 O(1)
+ * startsWith: 时间 O(m)，空间 O(1)
+ */
 struct TrieSolution::TrieNode {
     TrieNode* children[26] = {nullptr};
     bool isEnd = false;
@@ -68,7 +73,11 @@ TrieSolution::TrieNode* TrieSolution::searchPrefix(const std::string& prefix) {
     return node;
 }
 
-// WordDictionarySolution 实现
+/**
+ * 题目2: 添加与搜索单词 - Trie + DFS
+ * addWord: 时间 O(m)，空间 O(m)
+ * search: 时间 O(26^m) 最坏（含 '.'），O(m) 平均
+ */
 struct WordDictionarySolution::TrieNode {
     TrieNode* children[26] = {nullptr};
     bool isEnd = false;
@@ -123,7 +132,11 @@ bool WordDictionarySolution::searchHelper(const std::string& word, int pos, Trie
     }
 }
 
-// findWordsSolution
+/**
+ * 题目3: 单词搜索 II - Trie + DFS 回溯
+ * 时间复杂度: O(m * n * 4^L + k * L) - m*n 为网格大小，L 为单词最大长度
+ * 空间复杂度: O(k * L) - Trie 存储 k 个单词
+ */
 std::vector<std::string> findWordsSolution(std::vector<std::vector<char>>& board, std::vector<std::string>& words) {
     struct TrieNode {
         TrieNode* children[26] = {nullptr};
@@ -177,7 +190,11 @@ std::vector<std::string> findWordsSolution(std::vector<std::vector<char>>& board
     return result;
 }
 
-// MapSumSolution 实现
+/**
+ * 题目4: 键值映射 - Trie + 增量更新
+ * insert: 时间 O(m)，空间 O(m)
+ * sum: 时间 O(m)，空间 O(1)
+ */
 struct MapSumSolution::TrieNode {
     TrieNode* children[26] = {nullptr};
     int val = 0;
@@ -219,7 +236,11 @@ int MapSumSolution::sum(const std::string& prefix) {
     return node->val;
 }
 
-// longestWordSolution
+/**
+ * 题目5: 词典中最长的单词 - Trie + DFS
+ * 时间复杂度: O(n * m) - n 为单词数，m 为平均长度
+ * 空间复杂度: O(n * m) - Trie 存储
+ */
 std::string longestWordSolution(std::vector<std::string>& words) {
     struct TrieNode {
         TrieNode* children[26] = {nullptr};
@@ -264,7 +285,11 @@ std::string longestWordSolution(std::vector<std::string>& words) {
     return result;
 }
 
-// replaceWordsSolution
+/**
+ * 题目6: 单词替换 - Trie 前缀查找
+ * 时间复杂度: O(d + n * m) - d 为字典总长度，n 为单词数，m 为平均长度
+ * 空间复杂度: O(d) - Trie 存储字典
+ */
 std::string replaceWordsSolution(std::vector<std::string>& dictionary, const std::string& sentence) {
     struct TrieNode {
         TrieNode* children[26] = {nullptr};
@@ -311,7 +336,11 @@ std::string replaceWordsSolution(std::vector<std::string>& dictionary, const std
     return result;
 }
 
-// findMaximumXORSolution
+/**
+ * 题目7: 数组中两个数的最大异或值 - 位 Trie
+ * 时间复杂度: O(n * 32) = O(n) - n 为数组长度
+ * 空间复杂度: O(n * 32) = O(n) - 位 Trie 存储
+ */
 int findMaximumXORSolution(std::vector<int>& nums) {
     struct TrieNode {
         TrieNode* children[2] = {nullptr};
@@ -356,7 +385,11 @@ int findMaximumXORSolution(std::vector<int>& nums) {
     return maxResult;
 }
 
-// MagicDictionarySolution 实现
+/**
+ * 题目8: 实现一个魔法字典 - Trie + DFS
+ * buildDict: 时间 O(n * m)，空间 O(n * m)
+ * search: 时间 O(26 * m) = O(m)
+ */
 struct MagicDictionarySolution::TrieNode {
     TrieNode* children[26] = {nullptr};
     bool isEnd = false;

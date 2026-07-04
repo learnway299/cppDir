@@ -14,6 +14,12 @@ namespace Barrier {
 
 // ==================== 参考答案实现 ====================
 
+/**
+ * 题目1: Barrier - 基本屏障
+ * wait: O(1) - 条件变量等待
+ * 空间复杂度: O(1) - 互斥锁 + 条件变量 + 计数器
+ * 特点: 可重用，通过generation防止虚假唤醒
+ */
 // 题目1: 基本屏障
 BarrierSolution::BarrierSolution(int count)
     : threshold_(count), count_(count), generation_(0) {}
@@ -31,6 +37,11 @@ void BarrierSolution::wait() {
     }
 }
 
+/**
+ * 题目2: BarrierWithCallback - 带回调的屏障
+ * wait: O(1) - 最后到达者执行回调
+ * 空间复杂度: O(1) - 基础屏障 + 回调函数
+ */
 // 题目2: 带回调的屏障
 BarrierWithCallbackSolution::BarrierWithCallbackSolution(int count, std::function<void()> callback)
     : threshold_(count), count_(count), generation_(0), callback_(callback) {}
@@ -51,6 +62,12 @@ void BarrierWithCallbackSolution::wait() {
     }
 }
 
+/**
+ * 题目3: ResetableBarrier - 可重置屏障
+ * wait: O(1) - 条件变量等待
+ * reset: O(1) - 重置计数和generation
+ * 空间复杂度: O(1) - 基础屏障结构
+ */
 // 题目3: 可重置的屏障
 ResetableBarrierSolution::ResetableBarrierSolution(int count)
     : threshold_(count), count_(count), generation_(0) {}
@@ -76,6 +93,13 @@ void ResetableBarrierSolution::reset(int newCount) {
     cv_.notify_all();
 }
 
+/**
+ * 题目4: CountDownLatch - 倒计数门闩
+ * countDown: O(1) - 原子递减
+ * wait: O(1) - 条件变量等待
+ * 空间复杂度: O(1) - 互斥锁 + 条件变量 + 计数器
+ * 特点: 一次性使用，不可重置
+ */
 // 题目4: CountDownLatch
 CountDownLatchSolution::CountDownLatchSolution(int count) : count_(count) {}
 
@@ -105,6 +129,14 @@ int CountDownLatchSolution::getCount() const {
     return count_;
 }
 
+/**
+ * 题目5: CyclicBarrier - 循环屏障
+ * await: O(1) - 条件变量等待，返回到达序号
+ * await(timeout): O(1) - 带超时等待
+ * reset: O(1) - 重置屏障状态
+ * 空间复杂度: O(1) - 互斥锁 + 条件变量 + 状态
+ * 特点: 可重用，支持超时和broken状态
+ */
 // 题目5: CyclicBarrier
 CyclicBarrierSolution::CyclicBarrierSolution(int parties)
     : parties_(parties), count_(parties), generation_(0), broken_(false) {}

@@ -16,6 +16,11 @@ namespace SmartPointer {
 
 namespace Solution {
 
+/**
+ * 题目1: UniquePtr - 独占所有权智能指针
+ * 所有操作时间复杂度: O(1) - 指针操作
+ * 空间复杂度: O(1) - 仅存储一个裸指针
+ */
 template <typename T>
 class UniquePtr {
 public:
@@ -86,6 +91,11 @@ private:
     T* ptr_;
 };
 
+/**
+ * 题目2: UniquePtrWithDeleter - 带自定义删除器的UniquePtr
+ * 所有操作时间复杂度: O(1) - 指针操作
+ * 空间复杂度: O(1) - 指针 + 删除器（通常为空基类优化）
+ */
 template <typename T, typename Deleter = std::default_delete<T>>
 class UniquePtrWithDeleter {
 public:
@@ -145,6 +155,12 @@ private:
     Deleter deleter_;
 };
 
+/**
+ * 题目3: UniquePtrArray - 数组版本UniquePtr
+ * 所有操作时间复杂度: O(1) - 指针操作
+ * 空间复杂度: O(1) - 仅存储一个裸指针
+ * 析构: O(n) - delete[] 需要析构n个元素
+ */
 template <typename T>
 class UniquePtrArray {
 public:
@@ -196,11 +212,21 @@ private:
     T* ptr_;
 };
 
+/**
+ * 题目4: makeUnique - 工厂函数
+ * 时间复杂度: O(1) - 一次分配 + 构造
+ * 空间复杂度: O(1) - 栈上创建UniquePtr
+ */
 template <typename T, typename... Args>
 UniquePtr<T> makeUnique(Args&&... args) {
     return UniquePtr<T>(new T(std::forward<Args>(args)...));
 }
 
+/**
+ * 题目5: makeUniqueArray - 数组工厂函数
+ * 时间复杂度: O(n) - 分配并默认初始化n个元素
+ * 空间复杂度: O(1) - 栈上创建UniquePtrArray
+ */
 template <typename T>
 UniquePtrArray<T> makeUniqueArray(size_t size) {
     return UniquePtrArray<T>(new T[size]());

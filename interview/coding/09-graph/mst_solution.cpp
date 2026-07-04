@@ -17,6 +17,12 @@ namespace MST {
 
 // ==================== 并查集辅助类 ====================
 
+/**
+ * 并查集辅助类
+ * find: 时间复杂度 O(α(n)) ≈ O(1) - 路径压缩
+ * unite: 时间复杂度 O(α(n)) ≈ O(1) - 按秩合并
+ * 空间复杂度: O(n) - parent + rank 数组
+ */
 class UnionFind {
 private:
     std::vector<int> parent, rank_;
@@ -50,6 +56,11 @@ public:
 
 // ==================== 参考答案实现 ====================
 
+/**
+ * 题目1: 最小生成树 - Kruskal 算法
+ * 时间复杂度: O(E log E) - 边排序主导
+ * 空间复杂度: O(V) - 并查集数组
+ */
 int minCostKruskalSolution(int n, std::vector<std::vector<int>>& edges) {
     // 按权重排序
     std::sort(edges.begin(), edges.end(), [](auto& a, auto& b) {
@@ -71,6 +82,11 @@ int minCostKruskalSolution(int n, std::vector<std::vector<int>>& edges) {
     return edgesUsed == n - 1 ? cost : -1;
 }
 
+/**
+ * 题目2: 最小生成树 - Prim 算法 (优先队列)
+ * 时间复杂度: O((V + E) log V) - 优先队列实现
+ * 空间复杂度: O(V + E) - 邻接表 + 优先队列
+ */
 int minCostPrimSolution(int n, std::vector<std::vector<int>>& edges) {
     // 建邻接表
     std::vector<std::vector<std::pair<int, int>>> adj(n);
@@ -106,6 +122,11 @@ int minCostPrimSolution(int n, std::vector<std::vector<int>>& edges) {
     return edgesUsed == n ? cost : -1;
 }
 
+/**
+ * 题目3: 最低成本联通所有城市 - Kruskal
+ * 时间复杂度: O(E log E) - 边排序
+ * 空间复杂度: O(V) - 并查集数组
+ */
 int minimumCostSolution(int n, std::vector<std::vector<int>>& connections) {
     std::sort(connections.begin(), connections.end(), [](auto& a, auto& b) {
         return a[2] < b[2];
@@ -126,6 +147,11 @@ int minimumCostSolution(int n, std::vector<std::vector<int>>& connections) {
     return edgesUsed == n - 1 ? cost : -1;
 }
 
+/**
+ * 题目4: 连接所有点的最小费用 - Prim 算法 (朴素实现)
+ * 时间复杂度: O(V²) - 朴素Prim，适合稠密图
+ * 空间复杂度: O(V) - 距离数组 + visited数组
+ */
 int minCostConnectPointsSolution(std::vector<std::vector<int>>& points) {
     int n = static_cast<int>(points.size());
     std::vector<int> minDist(n, INT_MAX);
@@ -159,6 +185,11 @@ int minCostConnectPointsSolution(std::vector<std::vector<int>>& points) {
     return cost;
 }
 
+/**
+ * 题目5: 水资源分配优化 - 虚拟节点 + Kruskal
+ * 时间复杂度: O((V + E) log(V + E)) - 边排序
+ * 空间复杂度: O(V + E) - 边数组 + 并查集
+ */
 int minCostToSupplyWaterSolution(int n, std::vector<int>& wells, std::vector<std::vector<int>>& pipes) {
     // 构建边：虚拟节点 0 到各房子的边（建井成本）
     std::vector<std::tuple<int, int, int>> edges;

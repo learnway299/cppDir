@@ -13,6 +13,12 @@ namespace Solution {
 
 // ==================== 简单对象池 ====================
 
+/**
+ * 题目1: SimpleObjectPool - 简单对象池
+ * acquire: O(1) - 从可用列表末尾取
+ * release: O(1) - 追加到可用列表末尾
+ * 空间复杂度: O(n) - 预分配n个对象
+ */
 template <typename T>
 class SimpleObjectPool {
 public:
@@ -57,6 +63,12 @@ private:
 
 // ==================== 带重置功能的对象池 ====================
 
+/**
+ * 题目2: ResettableObjectPool - 带重置功能的对象池
+ * acquire: O(1)
+ * release: O(1) + 重置函数时间
+ * 空间复杂度: O(n) - 预分配对象 + 重置函数
+ */
 template <typename T>
 class ResettableObjectPool {
 public:
@@ -103,6 +115,12 @@ private:
 
 // ==================== RAII 包装的对象池 ====================
 
+/**
+ * 题目3: SmartObjectPool - RAII包装的对象池
+ * acquire: O(1) - 返回带自定义删除器的unique_ptr
+ * 自动release: O(1) - 智能指针析构时自动归还
+ * 空间复杂度: O(n) - 预分配对象
+ */
 template <typename T>
 class SmartObjectPool {
 public:
@@ -157,6 +175,11 @@ private:
 
 // ==================== 线程安全的对象池 ====================
 
+/**
+ * 题目4: ThreadSafeObjectPool - 线程安全的对象池
+ * acquire/release: O(1) + 互斥锁开销
+ * 空间复杂度: O(n) - 预分配对象 + 互斥锁
+ */
 template <typename T>
 class ThreadSafeObjectPool {
 public:
@@ -202,6 +225,12 @@ private:
 
 // ==================== 可增长的对象池 ====================
 
+/**
+ * 题目5: GrowableObjectPool - 可增长的对象池
+ * acquire: O(1) 摊还 - 增长时O(n)
+ * release: O(1)
+ * 空间复杂度: O(n) - 最大容量限制
+ */
 template <typename T>
 class GrowableObjectPool {
 public:

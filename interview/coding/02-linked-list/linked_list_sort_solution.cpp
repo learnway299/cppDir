@@ -42,7 +42,11 @@ static ListNode* getMiddle(ListNode* head) {
 
 // ==================== 参考答案实现 ====================
 
-// 题目1: 排序链表 - 自顶向下归并 O(n log n)
+/**
+ * 题目1: 排序链表 - 自顶向下归并排序
+ * 时间复杂度: O(n log n) - 分治，每层 O(n) 合并
+ * 空间复杂度: O(log n) - 递归栈深度
+ */
 ListNode* sortListSolution(ListNode* head) {
     if (!head || !head->next) return head;
     ListNode* mid = getMiddle(head);
@@ -53,7 +57,11 @@ ListNode* sortListSolution(ListNode* head) {
     return merge(left, right);
 }
 
-// 题目2: 插入排序链表 O(n^2)
+/**
+ * 题目2: 插入排序链表
+ * 时间复杂度: O(n²) - 每个元素需要找插入位置
+ * 空间复杂度: O(1) - 原地排序
+ */
 ListNode* insertionSortListSolution(ListNode* head) {
     if (!head || !head->next) return head;
     ListNode dummy(0);
@@ -71,7 +79,11 @@ ListNode* insertionSortListSolution(ListNode* head) {
     return dummy.next;
 }
 
-// 题目3: 合并K个升序链表 - 优先队列 O(N log K)
+/**
+ * 题目3: 合并K个升序链表 - 优先队列（最小堆）
+ * 时间复杂度: O(N log k) - N 为总节点数，每次堆操作 O(log k)
+ * 空间复杂度: O(k) - 堆中最多 k 个节点
+ */
 ListNode* mergeKListsSolution(std::vector<ListNode*>& lists) {
     auto cmp = [](ListNode* a, ListNode* b) { return a->val > b->val; };
     std::priority_queue<ListNode*, std::vector<ListNode*>, decltype(cmp)> pq(cmp);
@@ -90,7 +102,11 @@ ListNode* mergeKListsSolution(std::vector<ListNode*>& lists) {
     return dummy.next;
 }
 
-// 题目4: 链表中的第 K 大节点
+/**
+ * 题目4: 链表中的第 K 大节点 - 最小堆
+ * 时间复杂度: O(n log k) - 遍历链表，维护大小为 k 的堆
+ * 空间复杂度: O(k) - 堆中最多 k 个元素
+ */
 int findKthLargestSolution(ListNode* head, int k) {
     std::priority_queue<int, std::vector<int>, std::greater<int>> minHeap;
     while (head) {
@@ -101,7 +117,11 @@ int findKthLargestSolution(ListNode* head, int k) {
     return minHeap.empty() ? -1 : minHeap.top();
 }
 
-// 题目5: 链表中的前 K 大节点
+/**
+ * 题目5: 链表中的前 K 大节点 - 最小堆 + 排序
+ * 时间复杂度: O(n log k + k log k) - 遍历 + 堆排序输出
+ * 空间复杂度: O(k) - 堆和结果数组
+ */
 std::vector<int> topKLargestSolution(ListNode* head, int k) {
     std::priority_queue<int, std::vector<int>, std::greater<int>> minHeap;
     while (head) {
@@ -118,7 +138,11 @@ std::vector<int> topKLargestSolution(ListNode* head, int k) {
     return result;
 }
 
-// 题目6: 链表三路划分
+/**
+ * 题目6: 链表三路划分 - 三链表法
+ * 时间复杂度: O(n) - 遍历链表一次
+ * 空间复杂度: O(1) - 仅用常数指针
+ */
 ListNode* partitionThreeWaySolution(ListNode* head, int pivot) {
     ListNode smallDummy, equalDummy, largeDummy;
     ListNode* small = &smallDummy;
@@ -143,7 +167,11 @@ ListNode* partitionThreeWaySolution(ListNode* head, int pivot) {
     return smallDummy.next;
 }
 
-// 题目7: 有序链表交集
+/**
+ * 题目7: 有序链表交集 - 双指针
+ * 时间复杂度: O(m+n) - 同时遍历两个链表
+ * 空间复杂度: O(min(m,n)) - 交集结果链表
+ */
 ListNode* getIntersectionSortedSolution(ListNode* l1, ListNode* l2) {
     ListNode dummy;
     ListNode* curr = &dummy;
@@ -162,7 +190,11 @@ ListNode* getIntersectionSortedSolution(ListNode* l1, ListNode* l2) {
     return dummy.next;
 }
 
-// 题目8: 删除重复元素
+/**
+ * 题目8: 删除重复元素（保留一个）
+ * 时间复杂度: O(n) - 遍历链表一次
+ * 空间复杂度: O(1) - 原地删除
+ */
 ListNode* deleteDuplicatesSolution(ListNode* head) {
     ListNode* curr = head;
     while (curr && curr->next) {
@@ -177,7 +209,11 @@ ListNode* deleteDuplicatesSolution(ListNode* head) {
     return head;
 }
 
-// 题目9: 删除所有重复元素
+/**
+ * 题目9: 删除所有重复元素（一个不留）
+ * 时间复杂度: O(n) - 遍历链表一次
+ * 空间复杂度: O(1) - 原地删除
+ */
 ListNode* deleteDuplicatesIISolution(ListNode* head) {
     ListNode dummy(0, head);
     ListNode* prev = &dummy;
@@ -197,7 +233,11 @@ ListNode* deleteDuplicatesIISolution(ListNode* head) {
     return dummy.next;
 }
 
-// 题目10: 旋转链表
+/**
+ * 题目10: 旋转链表 - 成环后断开
+ * 时间复杂度: O(n) - 遍历链表两次（求长度 + 找断点）
+ * 空间复杂度: O(1) - 仅用常数指针
+ */
 ListNode* rotateRightSolution(ListNode* head, int k) {
     if (!head || !head->next || k == 0) return head;
     int len = 1;

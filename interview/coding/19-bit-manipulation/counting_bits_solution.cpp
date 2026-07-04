@@ -11,6 +11,12 @@ namespace CountingBitsImpl {
 namespace Solution {
 
 // ==================== 题目1: 位1的个数 (Hamming Weight) ====================
+/**
+ * hammingWeight - 位1的个数
+ * 时间复杂度: O(k) - k为1的个数，最多32
+ * 空间复杂度: O(1) - 常数空间
+ * 特点: Brian Kernighan算法，n&(n-1)消除最低位1
+ */
 int hammingWeight(uint32_t n) {
     int count = 0;
     while (n) {
@@ -21,7 +27,12 @@ int hammingWeight(uint32_t n) {
 }
 
 // ==================== 题目2: 比特位计数 ====================
-// dp[i] = dp[i >> 1] + (i & 1)
+/**
+ * countBits - 比特位计数（0到n）
+ * 时间复杂度: O(n) - 遍历0到n
+ * 空间复杂度: O(n) - 存储n+1个结果
+ * 特点: DP递推 dp[i]=dp[i>>1]+(i&1)
+ */
 std::vector<int> countBits(int n) {
     std::vector<int> dp(n + 1);
     for (int i = 1; i <= n; ++i) {

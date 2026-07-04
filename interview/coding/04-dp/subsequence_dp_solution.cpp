@@ -12,7 +12,11 @@ namespace SubsequenceDP {
 
 // ==================== 参考答案实现 ====================
 
-// 题目1: 最长公共子序列 (LCS)
+/**
+ * 题目1: 最长公共子序列 (LCS) - 二维 DP
+ * 时间复杂度: O(m * n) - 遍历两个字符串
+ * 空间复杂度: O(m * n) - 二维 DP 数组
+ */
 int longestCommonSubsequenceSolution(const std::string& text1, const std::string& text2) {
     int m = static_cast<int>(text1.size()), n = static_cast<int>(text2.size());
     std::vector<std::vector<int>> dp(m + 1, std::vector<int>(n + 1, 0));
@@ -30,7 +34,11 @@ int longestCommonSubsequenceSolution(const std::string& text1, const std::string
     return dp[m][n];
 }
 
-// 题目2: 最长公共子串
+/**
+ * 题目2: 最长公共子串 - 二维 DP
+ * 时间复杂度: O(m * n) - 遍历两个字符串
+ * 空间复杂度: O(m * n) - 二维 DP 数组
+ */
 int longestCommonSubstringSolution(const std::string& str1, const std::string& str2) {
     int m = static_cast<int>(str1.size()), n = static_cast<int>(str2.size());
     std::vector<std::vector<int>> dp(m + 1, std::vector<int>(n + 1, 0));
@@ -48,7 +56,11 @@ int longestCommonSubstringSolution(const std::string& str1, const std::string& s
     return maxLen;
 }
 
-// 题目3: 编辑距离
+/**
+ * 题目3: 编辑距离 - 二维 DP
+ * 时间复杂度: O(m * n) - 遍历两个字符串
+ * 空间复杂度: O(m * n) - 二维 DP 数组
+ */
 int minDistanceSolution(const std::string& word1, const std::string& word2) {
     int m = static_cast<int>(word1.size()), n = static_cast<int>(word2.size());
     std::vector<std::vector<int>> dp(m + 1, std::vector<int>(n + 1));
@@ -69,13 +81,21 @@ int minDistanceSolution(const std::string& word1, const std::string& word2) {
     return dp[m][n];
 }
 
-// 题目4: 两个字符串的删除操作 - 基于 LCS
+/**
+ * 题目4: 两个字符串的删除操作 - 基于 LCS
+ * 时间复杂度: O(m * n) - LCS 复杂度
+ * 空间复杂度: O(m * n) - LCS 数组
+ */
 int minDeleteDistanceSolution(const std::string& word1, const std::string& word2) {
     int lcs = longestCommonSubsequenceSolution(word1, word2);
     return static_cast<int>(word1.size() + word2.size()) - 2 * lcs;
 }
 
-// 题目5: 不同的子序列
+/**
+ * 题目5: 不同的子序列 - 二维 DP
+ * 时间复杂度: O(m * n) - m, n 分别为 s, t 长度
+ * 空间复杂度: O(m * n) - 二维 DP 数组
+ */
 int numDistinctSolution(const std::string& s, const std::string& t) {
     int m = static_cast<int>(s.size()), n = static_cast<int>(t.size());
     if (m < n) return 0;
@@ -96,7 +116,11 @@ int numDistinctSolution(const std::string& s, const std::string& t) {
     return static_cast<int>(dp[m][n]);
 }
 
-// 题目6: 判断子序列 - 双指针
+/**
+ * 题目6: 判断子序列 - 双指针
+ * 时间复杂度: O(n) - n 为 t 的长度
+ * 空间复杂度: O(1) - 仅用两个指针
+ */
 bool isSubsequenceSolution(const std::string& s, const std::string& t) {
     int i = 0, j = 0;
     while (i < static_cast<int>(s.size()) && j < static_cast<int>(t.size())) {
@@ -108,7 +132,11 @@ bool isSubsequenceSolution(const std::string& s, const std::string& t) {
     return i == static_cast<int>(s.size());
 }
 
-// 题目7: 最长回文子序列 - 区间 DP
+/**
+ * 题目7: 最长回文子序列 - 区间 DP
+ * 时间复杂度: O(n²) - 枚举所有区间
+ * 空间复杂度: O(n²) - 二维 DP 数组
+ */
 int longestPalindromeSubseqSolution(const std::string& s) {
     int n = static_cast<int>(s.size());
     std::vector<std::vector<int>> dp(n, std::vector<int>(n, 0));
@@ -129,7 +157,11 @@ int longestPalindromeSubseqSolution(const std::string& s) {
     return dp[0][n - 1];
 }
 
-// 题目8: 最长递增子序列的个数
+/**
+ * 题目8: 最长递增子序列的个数 - DP + 计数
+ * 时间复杂度: O(n²) - 双重循环
+ * 空间复杂度: O(n) - dp 和 count 数组
+ */
 int findNumberOfLISSolution(std::vector<int>& nums) {
     int n = static_cast<int>(nums.size());
     if (n == 0) return 0;
@@ -163,7 +195,11 @@ int findNumberOfLISSolution(std::vector<int>& nums) {
     return result;
 }
 
-// 题目9: 俄罗斯套娃信封问题
+/**
+ * 题目9: 俄罗斯套娃信封问题 - 排序 + LIS（二分优化）
+ * 时间复杂度: O(n log n) - 排序 + 二分查找
+ * 空间复杂度: O(n) - tails 数组
+ */
 int maxEnvelopesSolution(std::vector<std::vector<int>>& envelopes) {
     if (envelopes.empty()) return 0;
 

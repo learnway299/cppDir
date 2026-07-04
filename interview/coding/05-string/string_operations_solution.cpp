@@ -15,7 +15,11 @@ namespace StringOperations {
 
 // ==================== 参考答案实现 ====================
 
-// 题目1: 反转字符串
+/**
+ * 题目1: 反转字符串 - 双指针
+ * 时间复杂度: O(n) - 遍历一半字符
+ * 空间复杂度: O(1) - 原地交换
+ */
 void reverseStringSolution(std::vector<char>& s) {
     int left = 0, right = static_cast<int>(s.size()) - 1;
     while (left < right) {
@@ -25,7 +29,11 @@ void reverseStringSolution(std::vector<char>& s) {
     }
 }
 
-// 题目2: 反转字符串中的单词
+/**
+ * 题目2: 反转字符串中的单词 - 双指针倒序遍历
+ * 时间复杂度: O(n) - 单次遍历
+ * 空间复杂度: O(n) - 结果字符串
+ */
 std::string reverseWordsSolution(const std::string& s) {
     std::string result;
     int n = static_cast<int>(s.size());
@@ -53,7 +61,11 @@ std::string reverseWordsSolution(const std::string& s) {
     return result;
 }
 
-// 题目3: 反转字符串中的单词 III
+/**
+ * 题目3: 反转字符串中的单词 III - 原地反转
+ * 时间复杂度: O(n) - 单次遍历
+ * 空间复杂度: O(1) - 原地修改
+ */
 std::string reverseWordsIIISolution(std::string s) {
     int start = 0;
     for (int i = 0; i <= static_cast<int>(s.size()); ++i) {
@@ -65,7 +77,11 @@ std::string reverseWordsIIISolution(std::string s) {
     return s;
 }
 
-// 题目4: 字符串转换整数 (atoi)
+/**
+ * 题目4: 字符串转换整数 (atoi) - 模拟
+ * 时间复杂度: O(n) - 单次遍历
+ * 空间复杂度: O(1) - 仅用常数变量
+ */
 int myAtoiSolution(const std::string& s) {
     int n = static_cast<int>(s.size());
     int i = 0;
@@ -101,7 +117,11 @@ int myAtoiSolution(const std::string& s) {
     return static_cast<int>(sign * result);
 }
 
-// 题目5: 整数转罗马数字
+/**
+ * 题目5: 整数转罗马数字 - 贪心
+ * 时间复杂度: O(1) - 最多 15 次循环
+ * 空间复杂度: O(1) - 固定映射表
+ */
 std::string intToRomanSolution(int num) {
     std::vector<std::pair<int, std::string>> mapping = {
         {1000, "M"}, {900, "CM"}, {500, "D"}, {400, "CD"},
@@ -120,7 +140,11 @@ std::string intToRomanSolution(int num) {
     return result;
 }
 
-// 题目6: 罗马数字转整数
+/**
+ * 题目6: 罗马数字转整数 - 从右向左遍历
+ * 时间复杂度: O(n) - 单次遍历
+ * 空间复杂度: O(1) - 固定映射表
+ */
 int romanToIntSolution(const std::string& s) {
     std::unordered_map<char, int> values = {
         {'I', 1}, {'V', 5}, {'X', 10}, {'L', 50},
@@ -143,7 +167,11 @@ int romanToIntSolution(const std::string& s) {
     return result;
 }
 
-// 题目7: 字符串压缩
+/**
+ * 题目7: 字符串压缩 - 双指针计数
+ * 时间复杂度: O(n) - 单次遍历
+ * 空间复杂度: O(n) - 压缩结果字符串
+ */
 std::string compressStringSolution(const std::string& s) {
     if (s.empty()) return s;
 
@@ -163,7 +191,11 @@ std::string compressStringSolution(const std::string& s) {
     return compressed.size() < s.size() ? compressed : s;
 }
 
-// 题目8: 字符串相加
+/**
+ * 题目8: 字符串相加 - 模拟加法
+ * 时间复杂度: O(max(m, n)) - 遍历较长字符串
+ * 空间复杂度: O(max(m, n)) - 结果字符串
+ */
 std::string addStringsSolution(const std::string& num1, const std::string& num2) {
     std::string result;
     int i = static_cast<int>(num1.size()) - 1;
@@ -189,7 +221,11 @@ std::string addStringsSolution(const std::string& num1, const std::string& num2)
     return result;
 }
 
-// 题目9: 字符串相乘
+/**
+ * 题目9: 字符串相乘 - 模拟乘法
+ * 时间复杂度: O(m * n) - 双重循环
+ * 空间复杂度: O(m + n) - 结果数组
+ */
 std::string multiplySolution(const std::string& num1, const std::string& num2) {
     if (num1 == "0" || num2 == "0") return "0";
 
@@ -217,7 +253,11 @@ std::string multiplySolution(const std::string& num1, const std::string& num2) {
     return str.empty() ? "0" : str;
 }
 
-// 题目10: 基本计算器 II
+/**
+ * 题目10: 基本计算器 II - 栈模拟
+ * 时间复杂度: O(n) - 单次遍历
+ * 空间复杂度: O(n) - 栈存储中间结果
+ */
 int calculateSolution(const std::string& s) {
     std::stack<int> nums;
     int num = 0;
@@ -257,7 +297,11 @@ int calculateSolution(const std::string& s) {
     return result;
 }
 
-// 题目11: 比较版本号
+/**
+ * 题目11: 比较版本号 - 双指针
+ * 时间复杂度: O(m + n) - 遍历两个版本号
+ * 空间复杂度: O(1) - 仅用常数变量
+ */
 int compareVersionSolution(const std::string& version1, const std::string& version2) {
     int i = 0, j = 0;
     int m = static_cast<int>(version1.size()), n = static_cast<int>(version2.size());
@@ -284,7 +328,11 @@ int compareVersionSolution(const std::string& version1, const std::string& versi
     return 0;
 }
 
-// 题目12: 有效的括号
+/**
+ * 题目12: 有效的括号 - 栈匹配
+ * 时间复杂度: O(n) - 单次遍历
+ * 空间复杂度: O(n) - 栈最多存储 n/2 个字符
+ */
 bool isValidSolution(const std::string& s) {
     std::stack<char> stk;
     std::unordered_map<char, char> pairs = {

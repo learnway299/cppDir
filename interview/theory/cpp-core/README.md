@@ -1,6 +1,6 @@
 # C++ Core Knowledge
 
-C++ 核心知识 - 面试必备的 26 个主题。
+C++ 核心知识 - 面试必备的 28 个主题。
 
 ---
 
@@ -33,12 +33,12 @@ C++ 核心知识 - 面试必备的 26 个主题。
 | 12 | [多线程进阶](12-thread-advanced.md) | 原子操作、内存序、无锁编程 |
 | 13 | [编译与链接](13-compile-link.md) | 预处理、编译单元、符号、动态库 |
 | 14 | [异常处理](14-exception.md) | 异常机制与错误处理策略 |
-| 15 | [现代 C++](15-modern-cpp.md) | C++11/14/17/20/23 新特性 |
+| 15 | [现代 C++](15-modern-cpp.md) | C++11/14/17/20/23 新特性、值类别、RVO/NRVO |
 | 16 | [性能优化](16-performance.md) | 缓存、内联、分支预测 |
 | 17 | [调试工具](17-debug-tools.md) | GDB、Sanitizer、Profiler |
 | 18 | [设计模式](18-design-pattern.md) | RAII、Pimpl、CRTP |
 
-### 深度层 (Advanced) - 8 个主题
+### 深度层 (Advanced) - 10 个主题
 
 高级话题，展示专家级理解。
 
@@ -52,6 +52,8 @@ C++ 核心知识 - 面试必备的 26 个主题。
 | 24 | [时间与日期](24-time-date.md) | chrono、时区、高精度计时 |
 | 25 | [元编程](25-reflection-metaprogramming.md) | 反射、编译期计算 |
 | 26 | [跨语言互操作](26-cross-language.md) | C/Python/Rust 互操作 |
+| 27 | [进程](27-process.md) | 进程/线程/协程对比、IPC、僵尸进程 |
+| 28 | [智能指针面试专项](28-smart-pointer-interview.md) | 引用计数、循环引用、生命周期设计 |
 
 ---
 
@@ -64,6 +66,7 @@ C++ 核心知识 - 面试必备的 26 个主题。
 3. **模板** - 基本用法、SFINAE、类型萃取
 4. **多线程** - 同步原语、死锁、条件变量
 5. **STL** - 容器选择、迭代器失效、算法复杂度
+6. **进程/线程/协程** - 区别、适用场景、IPC
 
 ### 加分项 (体现深度)
 
@@ -104,5 +107,7 @@ cpp-core/
 ├── 23-file-io.md
 ├── 24-time-date.md
 ├── 25-reflection-metaprogramming.md
-└── 26-cross-language.md
+├── 26-cross-language.md
+├── 27-process.md
+└── 28-smart-pointer-interview.md
 ```

@@ -60,7 +60,11 @@ static void breakCycle(ListNode* head, int pos) {
 
 // ==================== 参考答案实现 ====================
 
-// 题目1: 环形链表 - Floyd快慢指针 O(n)
+/**
+ * 题目1: 环形链表 - Floyd 快慢指针
+ * 时间复杂度: O(n) - 快指针最多走 n 步
+ * 空间复杂度: O(1) - 仅用两个指针
+ */
 bool hasCycleSolution(ListNode* head) {
     if (!head || !head->next) return false;
     ListNode* slow = head;
@@ -73,7 +77,11 @@ bool hasCycleSolution(ListNode* head) {
     return false;
 }
 
-// 题目2: 环形链表 II - 找入环点
+/**
+ * 题目2: 环形链表 II - 找入环点
+ * 时间复杂度: O(n) - 相遇后再走 n 步找入口
+ * 空间复杂度: O(1) - 仅用常数指针
+ */
 ListNode* detectCycleSolution(ListNode* head) {
     if (!head || !head->next) return nullptr;
     ListNode* slow = head;
@@ -94,7 +102,11 @@ ListNode* detectCycleSolution(ListNode* head) {
     return nullptr;
 }
 
-// 题目3: 快乐数 - 转化为环检测
+/**
+ * 题目3: 快乐数 - 转化为环检测（Floyd 算法）
+ * 时间复杂度: O(log n) - 数字位数平方和序列有限
+ * 空间复杂度: O(1) - 仅用两个变量
+ */
 bool isHappySolution(int n) {
     int slow = n;
     int fast = getNext(n);
@@ -105,7 +117,11 @@ bool isHappySolution(int n) {
     return fast == 1;
 }
 
-// 题目4: 相交链表 - 双指针
+/**
+ * 题目4: 相交链表 - 双指针交替遍历
+ * 时间复杂度: O(m+n) - 两指针各走 m+n 步
+ * 空间复杂度: O(1) - 仅用两个指针
+ */
 ListNode* getIntersectionNodeSolution(ListNode* headA, ListNode* headB) {
     if (!headA || !headB) return nullptr;
     ListNode* ptrA = headA;

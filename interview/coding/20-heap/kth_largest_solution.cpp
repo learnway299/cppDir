@@ -13,7 +13,12 @@ namespace KthLargestImpl {
 namespace Solution {
 
 // ==================== 方法1: 最小堆 ====================
-
+/**
+ * findKthLargest - 第K大元素（最小堆法）
+ * 时间复杂度: O(nlogk) - 遍历n个元素，堆操作O(logk)
+ * 空间复杂度: O(k) - 堆大小为k
+ * 特点: 最小堆维护前K大元素，堆顶即第K大
+ */
 int findKthLargest(std::vector<int>& nums, int k) {
     std::priority_queue<int, std::vector<int>, std::greater<int>> minHeap;
     for (int n : nums) {
@@ -24,7 +29,12 @@ int findKthLargest(std::vector<int>& nums, int k) {
 }
 
 // ==================== 方法2: 快速选择 ====================
-
+/**
+ * quickSelect - 快速选择算法
+ * 时间复杂度: O(n)平均，O(n²)最坏
+ * 空间复杂度: O(logn) - 递归栈
+ * 特点: 类快排分区，期望线性时间
+ */
 int quickSelect(std::vector<int>& nums, int left, int right, int k) {
     int pivot = nums[right];
     int i = left;
@@ -45,7 +55,12 @@ int findKthLargestQuickSelect(std::vector<int>& nums, int k) {
 }
 
 // ==================== 数据流中的第K大 ====================
-
+/**
+ * KthLargestSolution - 数据流中第K大元素
+ * add: 时间O(logk) - 堆插入和调整
+ * 空间复杂度: O(k) - 维护大小为k的堆
+ * 特点: 最小堆实时维护前K大
+ */
 class KthLargestSolution {
     std::priority_queue<int, std::vector<int>, std::greater<int>> minHeap;
     int k_;

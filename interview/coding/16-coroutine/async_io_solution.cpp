@@ -14,6 +14,12 @@ namespace Solution {
 
 // ==================== Task<T> 实现 ====================
 
+/**
+ * Task<T> - 异步IO任务协程
+ * co_await: O(1) - 协程挂起/恢复
+ * 空间复杂度: O(1) - 协程帧 + 结果存储
+ * 特点: 惰性启动，支持continuation链
+ */
 template <typename T>
 class Task {
 public:
@@ -130,6 +136,14 @@ private:
 
 // ==================== 题目2: 事件循环 ====================
 
+/**
+ * 题目2: EventLoop - 事件循环
+ * schedule: O(1) - 任务入队
+ * schedule_after: O(log n) - 定时器插入(multimap)
+ * run: O(n) - 处理所有事件直到空闲
+ * 空间复杂度: O(n + m) - n个即时任务 + m个定时器
+ * 特点: 管理即时任务和定时器，驱动异步操作
+ */
 class EventLoop {
 public:
     using TimePoint = std::chrono::steady_clock::time_point;
@@ -196,6 +210,12 @@ private:
 
 // ==================== 题目1: async_sleep ====================
 
+/**
+ * 题目1: async_sleep - 异步睡眠
+ * await_suspend: O(log n) - 注册定时器
+ * 空间复杂度: O(1) - Awaiter仅存储loop和ms
+ * 特点: 非阻塞等待，到期后恢复协程
+ */
 struct SleepAwaiter {
     EventLoop& loop;
     int ms;
@@ -217,6 +237,12 @@ SleepAwaiter async_sleep(EventLoop& loop, int ms) {
 
 // ==================== 题目3: 异步文件读取（模拟）====================
 
+/**
+ * 题目3: async_read_file - 异步文件读取
+ * await_suspend: O(1) - 注册异步操作
+ * 空间复杂度: O(文件大小) - 结果存储
+ * 特点: 模拟异步IO，实际应用需集成epoll/IOCP
+ */
 struct FileReadAwaiter {
     EventLoop& loop;
     std::string filename;

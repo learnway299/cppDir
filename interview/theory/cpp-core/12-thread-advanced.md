@@ -1,4 +1,4 @@
-# 12 - 多线程高级 (Thread Advanced)
+  # 12 - 多线程高级 (Thread Advanced)
 
 ## 简介
 
@@ -1012,6 +1012,875 @@ void log(const std::string& msg) {
 
 ---
 
+## 8. 锁机制深入考察 (Lock Mechanisms In-Depth)
+
+### 8.1 锁的分类全景图
+
+**问题描述**：C++ 中有哪些锁？各自的定位是什么？
+
+```
+锁的分类
+├── 按阻塞策略
+│   ├── 互斥锁 (std::mutex)        — 获取失败则阻塞（睡眠）
+│   ├── 自旋锁 (SpinLock)          — 获取失败则忙等（循环）
+│   └── 混合锁 (Adaptive Mutex)     — 先自旋，超时后阻塞
+│
+├── 按功能特性
+│   ├── 基本互斥锁 (std::mutex)
+│   ├── 递归锁 (std::recursive_mutex)      — 允许同一线程多次加锁
+│   ├── 定时锁 (std::timed_mutex)          — 支持超时
+│   ├── 读写锁 (std::shared_mutex)         — 读共享，写独占
+│   └── 递归定时锁 (std::recursive_timed_mutex)
+│
+├── 按思想策略
+│   ├── 悲观锁 — 先加锁再操作（mutex）
+│   └── 乐观锁 — 先操作再检测冲突（CAS）
+│
+└── 按粒度
+    ├── 粗粒度锁 — 一把大锁保护所有数据
+    ├── 细粒度锁 — 多把锁保护不同数据段
+    └── 分段锁   — 按 hash 分桶加锁
+```
+
+---
+
+### 8.2 自旋锁 vs 互斥锁：原理与选择
+
+**问题描述**：自旋锁和互斥锁的底层区别？什么时候用哪个？
+
+**互斥锁原理**：
+
+```
+线程 A 加锁成功 → 进入临界区
+线程 B 加锁失败 → 系统调用 → 进入等待队列（睡眠）
+线程 A 解锁 → 唤醒线程 B → 线程 B 被调度 → 加锁成功
+
+开销：用户态 ↔ 内核态切换（~微秒级）
+```
+
+**自旋锁原理**：
+
+```
+线程 A 加锁成功 → 进入临界区
+线程 B 加锁失败 → 循环检查（忙等），不让出 CPU
+线程 A 解锁 → 线程 B 立即获得锁
+
+开销：CPU 空转（无上下文切换）
+```
+
+**自旋锁实现**：
+
+```cpp
+// 基础版
+class SpinLock {
+    std::atomic_flag flag = ATOMIC_FLAG_INIT;
+
+public:
+    void lock() {
+        while (flag.test_and_set(std::memory_order_acquire)) {
+            // 忙等
+        }
+    }
+
+    void unlock() {
+        flag.clear(std::memory_order_release);
+    }
+};
+
+// 优化版：减少缓存行争用（TTAS - Test and Test-And-Set）
+class SpinLockTTAS {
+    std::atomic<bool> flag{false};
+
+public:
+    void lock() {
+        for (;;) {
+            // 第一层：只读检查（不产生缓存失效）
+            if (!flag.load(std::memory_order_relaxed)) {
+                // 第二层：尝试获取
+                if (!flag.exchange(true, std::memory_order_acquire)) {
+                    return;  // 获取成功
+                }
+            }
+            // 可选：让出 CPU 时间片
+            // std::this_thread::yield();
+        }
+    }
+
+    void unlock() {
+        flag.store(false, std::memory_order_release);
+    }
+};
+```
+
+**为什么 TTAS 更快？**
+- 简单自旋锁：每次 `test_and_set` 都要独占缓存行（写操作），导致其他核的缓存失效
+- TTAS：先用 `load`（读操作）检查，读操作不会独占缓存行，减少总线流量
+
+**核心对比**：
+
+| 维度 | 互斥锁 (mutex) | 自旋锁 (spinlock) |
+|------|----------------|-------------------|
+| 等待方式 | 阻塞睡眠 | 忙等循环 |
+| 上下文切换 | 有（开销大） | 无 |
+| CPU 占用 | 不占用（睡眠） | 持续占用 |
+| 适合场景 | 临界区较大、持锁时间长 | 临界区极小、持锁时间 < 上下文切换 |
+| 公平性 | 通常公平（FIFO 唤醒） | 不公平（谁先抢到谁得） |
+| 多核要求 | 无 | **必须多核**（单核自旋无意义） |
+
+**选择决策**：
+
+```
+临界区执行时间 < 上下文切换时间（~1-2μs）？
+├─ 是 → 自旋锁（避免切换开销）
+└─ 否 → 互斥锁（避免浪费 CPU）
+
+是否在中断上下文 / 内核态？
+├─ 是 → 自旋锁（不能睡眠）
+└─ 否 → 互斥锁（通常更好）
+
+竞争激烈程度？
+├─ 低竞争 → 两者差异不大
+└─ 高竞争 → 互斥锁（自旋浪费严重）
+```
+
+**面试高频问**：自旋锁在单核 CPU 上能工作吗？
+> 能编译运行，但**毫无意义**。单核上，持锁线程被抢占后，自旋线程占满 CPU 时间片，持锁线程反而无法运行解锁，白白浪费 CPU。
+
+---
+
+### 8.3 读写锁 (`std::shared_mutex`)
+
+**问题描述**：读多写少的场景如何优化？
+
+**原理**：
+
+```
+读锁（共享锁）：多个读线程可以同时持有
+写锁（独占锁）：写线程必须独占，排斥所有读和写
+
+状态转换：
+  无锁 → 读锁：✅（可多个读者）
+  无锁 → 写锁：✅（独占）
+  读锁 → 读锁：✅（读者并发）
+  读锁 → 写锁：❌（等待所有读者释放）
+  写锁 → 读锁：❌（等待写者释放）
+  写锁 → 写锁：❌（等待写者释放）
+```
+
+**用法**：
+
+```cpp
+#include <shared_mutex>
+#include <unordered_map>
+
+class ThreadSafeCache {
+    mutable std::shared_mutex mtx_;
+    std::unordered_map<std::string, std::string> cache_;
+
+public:
+    // 读操作：shared_lock（多线程可并发读）
+    std::string get(const std::string& key) const {
+        std::shared_lock<std::shared_mutex> lock(mtx_);
+        auto it = cache_.find(key);
+        return (it != cache_.end()) ? it->second : "";
+    }
+
+    // 写操作：unique_lock（独占）
+    void put(const std::string& key, const std::string& value) {
+        std::unique_lock<std::shared_mutex> lock(mtx_);
+        cache_[key] = value;
+    }
+
+    // 读 + 条件写：先读锁，需要时升级为写锁
+    void put_if_absent(const std::string& key, const std::string& value) {
+        // 先用读锁检查
+        {
+            std::shared_lock<std::shared_mutex> lock(mtx_);
+            if (cache_.count(key)) return;
+        }
+        // 释放读锁后再加写锁（注意：中间可能有其他线程写入）
+        {
+            std::unique_lock<std::shared_mutex> lock(mtx_);
+            cache_.emplace(key, value);  // emplace 不覆盖已有 key
+        }
+    }
+};
+```
+
+**读写锁的陷阱**：
+
+```cpp
+// ❌ 陷阱 1：写饥饿
+// 如果读请求不断，写线程可能永远拿不到锁
+// 解决：某些实现支持"写优先"策略
+
+// ❌ 陷阱 2：锁升级导致死锁
+void dangerous() {
+    std::shared_lock<std::shared_mutex> read_lock(mtx_);
+    // ... 读数据 ...
+    // 想升级为写锁？std::shared_mutex 不支持！
+    // std::unique_lock<std::shared_mutex> write_lock(mtx_);  // 💀 死锁！
+    // 正确做法：释放读锁，再获取写锁
+}
+
+// ❌ 陷阱 3：读写比太低时反而更慢
+// 读写锁本身比普通 mutex 更重（维护读者计数）
+// 只有读操作占比 > 90% 时才值得使用
+```
+
+**面试高频问**：读写锁内部如何实现？
+
+> 典型实现：一个 `mutex` + 一个 `condition_variable` + 一个 `int reader_count` + 一个 `bool writer_active`。
+> 读加锁时：`reader_count++`；读解锁时：`reader_count--`，如果降到 0 则唤醒等待的写者。
+> 写加锁时：等待 `reader_count == 0 && !writer_active`，然后设 `writer_active = true`。
+
+---
+
+### 8.4 递归锁 (`std::recursive_mutex`)
+
+**问题描述**：为什么需要递归锁？什么时候用？为什么要尽量避免？
+
+**问题场景**：
+
+```cpp
+std::mutex mtx;
+
+void funcB() {
+    std::lock_guard<std::mutex> lock(mtx);  // 💀 死锁！mtx 已被 funcA 持有
+    // ...
+}
+
+void funcA() {
+    std::lock_guard<std::mutex> lock(mtx);
+    funcB();  // 同一线程再次加锁
+}
+```
+
+**递归锁解决**：
+
+```cpp
+std::recursive_mutex rmtx;
+
+void funcB() {
+    std::lock_guard<std::recursive_mutex> lock(rmtx);  // ✅ 同一线程可重入
+    // ...
+}
+
+void funcA() {
+    std::lock_guard<std::recursive_mutex> lock(rmtx);
+    funcB();  // 不会死锁
+}
+```
+
+**原理**：
+- 内部维护一个 `owner_thread_id` 和 `lock_count`
+- 同一线程再次加锁时：`lock_count++`
+- 解锁时：`lock_count--`，降到 0 时真正释放
+
+**为什么要避免使用递归锁？**
+
+```cpp
+// 原因 1：掩盖设计问题
+// 需要递归锁通常说明调用关系混乱，应该重构
+
+// 原因 2：性能更差
+// 每次加锁要检查线程 ID、维护计数器，比普通 mutex 多约 10-20% 开销
+
+// 原因 3：容易造成逻辑错误
+void transfer(Account& from, Account& to, int amount) {
+    std::lock_guard<std::recursive_mutex> lock(rmtx);
+    from.balance -= amount;
+    // 这里如果异常，to 没加上，但 from 已经扣了
+    // 递归锁让你以为"安全"，实际上事务完整性没保证
+    to.balance += amount;
+}
+
+// ✅ 更好的做法：拆分公共接口和内部实现
+class SafeClass {
+    std::mutex mtx_;
+
+    void do_work_impl() {  // 内部方法：不加锁
+        // ... 实际逻辑 ...
+    }
+
+public:
+    void do_work() {  // 公共方法：加锁
+        std::lock_guard<std::mutex> lock(mtx_);
+        do_work_impl();
+    }
+
+    void do_combined_work() {
+        std::lock_guard<std::mutex> lock(mtx_);
+        do_work_impl();  // 调用内部无锁版本，不会死锁
+    }
+};
+```
+
+---
+
+### 8.5 定时锁 (`std::timed_mutex`)
+
+**问题描述**：如何避免永远等不到锁？
+
+```cpp
+#include <mutex>
+#include <chrono>
+
+std::timed_mutex tmtx;
+
+void try_with_timeout() {
+    // 尝试加锁，最多等 100ms
+    if (tmtx.try_lock_for(std::chrono::milliseconds(100))) {
+        // 获取成功
+        // ... 临界区 ...
+        tmtx.unlock();
+    } else {
+        // 超时，执行降级逻辑
+        std::cout << "Lock timeout, fallback\n";
+    }
+
+    // 也可以指定绝对时间
+    auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(1);
+    if (tmtx.try_lock_until(deadline)) {
+        // ...
+        tmtx.unlock();
+    }
+}
+```
+
+**适用场景**：
+- 避免死锁：超时后放弃，记录日志
+- 实时系统：不能无限等待
+- 优雅降级：获取不到锁时走备用逻辑
+
+---
+
+### 8.6 锁的底层实现：Futex 机制
+
+**问题描述**：`std::mutex` 在操作系统层面是怎么实现的？
+
+**传统方式的问题**：
+
+```
+方案 1：纯用户态自旋 → 浪费 CPU
+方案 2：纯内核态信号量 → 每次加锁都要系统调用，即使没有竞争
+```
+
+**Futex（Fast Userspace Mutex）—— 两全其美**：
+
+```
+核心思想：无竞争时在用户态完成，有竞争时才陷入内核
+
+        ┌─────────────┐
+        │  atomic var  │   用户态：一个原子变量
+        └──────┬──────┘
+               │
+    ┌──────────┼──────────┐
+    │ 无竞争   │          │ 有竞争
+    ▼          │          ▼
+  CAS 成功     │      CAS 失败
+  直接进入     │      调用 futex(WAIT)
+  临界区       │      进入内核等待队列
+  （零系统     │      （阻塞睡眠）
+   调用）      │
+               │
+             解锁时：
+          ┌────┴────┐
+          │ 无等待者 │ 有等待者
+          ▼         ▼
+        直接返回  futex(WAKE)
+        （零系统   唤醒一个线程
+         调用）
+```
+
+**伪代码**：
+
+```cpp
+// 简化的 Futex-based mutex
+class FutexMutex {
+    // 0: 未锁, 1: 已锁无等待者, 2: 已锁有等待者
+    std::atomic<int> state{0};
+
+public:
+    void lock() {
+        // Fast path：无竞争，CAS 0→1
+        int expected = 0;
+        if (state.compare_exchange_strong(expected, 1)) {
+            return;  // 拿到锁，零系统调用
+        }
+
+        // Slow path：有竞争，进入内核等待
+        while (state.exchange(2) != 0) {
+            // futex_wait(&state, 2);  // 内核：如果 state==2 则睡眠
+        }
+    }
+
+    void unlock() {
+        if (state.exchange(0) == 2) {
+            // 有线程在等待，唤醒一个
+            // futex_wake(&state, 1);
+        }
+        // 如果之前是 1（无等待者），直接返回，零系统调用
+    }
+};
+```
+
+**关键要点**：
+- **无竞争时**（最常见）：仅一次原子操作，性能接近自旋锁
+- **有竞争时**：陷入内核睡眠等待，不浪费 CPU
+- Linux 的 `pthread_mutex`、glibc 的 `std::mutex` 底层都基于 Futex
+- Windows 上对应机制是 `SRWLock`（Slim Reader/Writer Lock）和 `WaitOnAddress`
+
+**面试高频问**：`std::mutex` 的 `lock()` 是系统调用吗？
+
+> **不一定**。无竞争时只是一个用户态的原子操作（CAS），不涉及系统调用。只有当锁已被其他线程持有时，才会进入内核态（Futex WAIT）。这就是为什么无竞争的 mutex 性能非常好。
+
+---
+
+### 8.7 乐观锁 vs 悲观锁
+
+**问题描述**：两种完全不同的并发控制思想。
+
+**悲观锁（Pessimistic Locking）**：
+
+```
+假设冲突一定会发生 → 先加锁再操作
+
+特点：安全但保守，有锁等待开销
+```
+
+```cpp
+std::mutex mtx;
+int balance = 1000;
+
+void withdraw_pessimistic(int amount) {
+    std::lock_guard<std::mutex> lock(mtx);  // 先锁
+    if (balance >= amount) {
+        balance -= amount;  // 再操作
+    }
+}
+```
+
+**乐观锁（Optimistic Locking）**：
+
+```
+假设冲突很少发生 → 先操作，提交时检测冲突
+
+特点：无等待，但冲突时需要重试
+```
+
+```cpp
+std::atomic<int> balance{1000};
+
+void withdraw_optimistic(int amount) {
+    int old_val = balance.load();
+    int new_val;
+    do {
+        if (old_val < amount) return;  // 余额不足
+        new_val = old_val - amount;
+    } while (!balance.compare_exchange_weak(old_val, new_val));
+    // CAS 失败说明有其他线程修改了 balance，重试
+}
+```
+
+**版本号乐观锁（适用于复合数据）**：
+
+```cpp
+struct Data {
+    int value;
+    int version;  // 版本号
+};
+
+std::mutex mtx;
+Data shared_data{0, 0};
+
+void optimistic_update(int new_value) {
+    while (true) {
+        // 1. 读取当前版本（无锁）
+        int old_version = shared_data.version;
+        int old_value = shared_data.value;
+
+        // 2. 计算新值（无锁，可以很耗时）
+        int computed = old_value + new_value;
+
+        // 3. 提交时加锁检查版本
+        std::lock_guard<std::mutex> lock(mtx);
+        if (shared_data.version == old_version) {
+            shared_data.value = computed;
+            shared_data.version++;
+            return;  // 成功
+        }
+        // 版本变了，重试
+    }
+}
+```
+
+**对比**：
+
+| 维度 | 悲观锁 | 乐观锁 |
+|------|--------|--------|
+| 冲突假设 | 总会冲突 | 很少冲突 |
+| 实现方式 | mutex / lock | CAS / 版本号 |
+| 读性能 | 加锁开销 | 无开销 |
+| 写冲突时 | 排队等待 | 重试 |
+| 适合场景 | 写多、冲突频繁 | 读多写少、冲突罕见 |
+| 风险 | 死锁 | 活锁（不断重试） |
+
+---
+
+### 8.8 锁的粒度与分段锁
+
+**问题描述**：如何选择锁的粒度？分段锁怎么实现？
+
+**粒度对比**：
+
+```cpp
+// ❌ 粗粒度：一把锁保护整个 map
+class CoarseMap {
+    std::mutex mtx_;
+    std::unordered_map<int, int> map_;
+
+public:
+    void put(int k, int v) {
+        std::lock_guard<std::mutex> lock(mtx_);  // 所有操作串行
+        map_[k] = v;
+    }
+    int get(int k) {
+        std::lock_guard<std::mutex> lock(mtx_);
+        return map_[k];
+    }
+};
+
+// ✅ 分段锁：按 key 的 hash 分桶，不同桶可并发
+class StripedMap {
+    static constexpr int NUM_STRIPES = 16;
+
+    struct Stripe {
+        std::mutex mtx;
+        std::unordered_map<int, int> map;
+    };
+
+    std::array<Stripe, NUM_STRIPES> stripes_;
+
+    Stripe& get_stripe(int key) {
+        return stripes_[std::hash<int>{}(key) % NUM_STRIPES];
+    }
+
+public:
+    void put(int k, int v) {
+        auto& stripe = get_stripe(k);
+        std::lock_guard<std::mutex> lock(stripe.mtx);
+        stripe.map[k] = v;
+    }
+
+    int get(int k) {
+        auto& stripe = get_stripe(k);
+        std::lock_guard<std::mutex> lock(stripe.mtx);
+        return stripe.map[k];
+    }
+};
+// 理论上并发度提升 NUM_STRIPES 倍
+```
+
+**粒度选择原则**：
+
+```
+锁粒度太粗 → 并发度低（串行化严重）
+锁粒度太细 → 锁管理开销大、死锁风险增加
+
+经验法则：
+1. 先用粗粒度锁保证正确性
+2. 性能测试发现锁竞争是瓶颈
+3. 再针对性地细化锁粒度
+4. 不要过早优化
+```
+
+---
+
+### 8.9 Double-Checked Locking Pattern (DCLP)
+
+**问题描述**：经典的单例模式中的锁优化。
+
+```cpp
+// ❌ 版本 1：每次都加锁（太慢）
+class Singleton_V1 {
+    static Singleton_V1* instance;
+    static std::mutex mtx;
+
+public:
+    static Singleton_V1* getInstance() {
+        std::lock_guard<std::mutex> lock(mtx);  // 每次调用都加锁
+        if (!instance) {
+            instance = new Singleton_V1();
+        }
+        return instance;
+    }
+};
+
+// ⚠️ 版本 2：经典 DCLP（C++11 之前有问题）
+class Singleton_V2 {
+    static Singleton_V2* instance;
+    static std::mutex mtx;
+
+public:
+    static Singleton_V2* getInstance() {
+        if (!instance) {               // 第一次检查（无锁）
+            std::lock_guard<std::mutex> lock(mtx);
+            if (!instance) {           // 第二次检查（有锁）
+                instance = new Singleton_V2();
+                // ⚠️ C++11 之前：编译器可能重排序
+                // new 的三步：分配内存 → 构造对象 → 赋值指针
+                // 可能变成：分配内存 → 赋值指针 → 构造对象
+                // 其他线程可能拿到未构造完成的对象！
+            }
+        }
+        return instance;
+    }
+};
+
+// ✅ 版本 3：C++11 正确的 DCLP
+class Singleton_V3 {
+    static std::atomic<Singleton_V3*> instance;
+    static std::mutex mtx;
+
+public:
+    static Singleton_V3* getInstance() {
+        auto* p = instance.load(std::memory_order_acquire);  // acquire 读
+        if (!p) {
+            std::lock_guard<std::mutex> lock(mtx);
+            p = instance.load(std::memory_order_relaxed);
+            if (!p) {
+                p = new Singleton_V3();
+                instance.store(p, std::memory_order_release);  // release 写
+            }
+        }
+        return p;
+    }
+};
+
+// ✅ 版本 4：最佳方案（Meyers' Singleton）
+class Singleton_V4 {
+public:
+    static Singleton_V4& getInstance() {
+        static Singleton_V4 instance;  // C++11 保证线程安全
+        return instance;
+    }
+};
+// 编译器自动用类似 DCLP + atomic 的方式实现
+// 最简洁、最安全、零额外代码
+```
+
+**面试高频问**：为什么 Meyers' Singleton 是线程安全的？
+
+> C++11 标准规定：**局部 static 变量的初始化是线程安全的**（§6.7）。编译器会自动插入同步机制（通常是 DCLP + atomic flag），确保只有一个线程执行初始化，其他线程等待。
+
+---
+
+### 8.10 死锁深入分析
+
+**问题描述**：死锁的成因、检测、预防。
+
+**死锁的四个必要条件**（同时满足才会死锁）：
+
+```
+1. 互斥条件：资源一次只能被一个线程持有
+2. 持有并等待：线程持有一个锁的同时等待另一个锁
+3. 不可剥夺：锁只能由持有者主动释放
+4. 循环等待：线程之间形成环形等待链
+```
+
+**经典死锁场景**：
+
+```cpp
+std::mutex mtxA, mtxB;
+
+void thread1() {
+    std::lock_guard<std::mutex> lockA(mtxA);   // 先锁 A
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    std::lock_guard<std::mutex> lockB(mtxB);   // 再锁 B → 等待 thread2 释放 B
+}
+
+void thread2() {
+    std::lock_guard<std::mutex> lockB(mtxB);   // 先锁 B
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    std::lock_guard<std::mutex> lockA(mtxA);   // 再锁 A → 等待 thread1 释放 A
+}
+// 💀 死锁！thread1 持有 A 等 B，thread2 持有 B 等 A
+```
+
+**预防策略**：
+
+```cpp
+// 策略 1：固定加锁顺序（破坏循环等待）
+void safe_thread1() {
+    std::lock_guard<std::mutex> lockA(mtxA);  // 总是先锁 A
+    std::lock_guard<std::mutex> lockB(mtxB);  // 再锁 B
+}
+
+void safe_thread2() {
+    std::lock_guard<std::mutex> lockA(mtxA);  // 也先锁 A
+    std::lock_guard<std::mutex> lockB(mtxB);  // 再锁 B
+}
+
+// 策略 2：std::lock 同时锁多个（原子地获取所有锁）
+void safe_with_std_lock() {
+    std::unique_lock<std::mutex> lockA(mtxA, std::defer_lock);
+    std::unique_lock<std::mutex> lockB(mtxB, std::defer_lock);
+    std::lock(lockA, lockB);  // 同时锁，内部用 try-and-back-off 避免死锁
+}
+
+// 策略 3：C++17 std::scoped_lock（最推荐）
+void safe_with_scoped_lock() {
+    std::scoped_lock lock(mtxA, mtxB);  // 同时锁，RAII 自动释放
+    // ... 临界区 ...
+}
+
+// 策略 4：try_lock 超时（破坏持有并等待）
+void safe_with_trylock() {
+    while (true) {
+        std::unique_lock<std::mutex> lockA(mtxA);
+        if (mtxB.try_lock()) {
+            // 两个锁都拿到了
+            // ...
+            mtxB.unlock();
+            return;
+        }
+        // 拿不到 B，释放 A，重试（避免死等）
+    }
+}
+```
+
+**层级锁（Hierarchical Lock）——编译期防死锁**：
+
+```cpp
+class HierarchicalMutex {
+    std::mutex mtx_;
+    const int level_;                          // 锁的层级
+    int previous_level_ = 0;
+    static thread_local int current_level_;    // 当前线程持有的最高层级
+
+public:
+    explicit HierarchicalMutex(int level) : level_(level) {}
+
+    void lock() {
+        if (level_ >= current_level_) {
+            throw std::logic_error("Lock hierarchy violated!");
+            // 只能从高层级往低层级锁，强制固定顺序
+        }
+        mtx_.lock();
+        previous_level_ = current_level_;
+        current_level_ = level_;
+    }
+
+    void unlock() {
+        current_level_ = previous_level_;
+        mtx_.unlock();
+    }
+};
+
+thread_local int HierarchicalMutex::current_level_ = INT_MAX;
+
+// 使用：
+HierarchicalMutex db_lock(1000);      // 数据库层级最高
+HierarchicalMutex table_lock(500);    // 表层级其次
+HierarchicalMutex row_lock(100);      // 行层级最低
+
+void safe_operation() {
+    db_lock.lock();      // ✅ 1000 < INT_MAX
+    table_lock.lock();   // ✅ 500 < 1000
+    row_lock.lock();     // ✅ 100 < 500
+    // ...
+    row_lock.unlock();
+    table_lock.unlock();
+    db_lock.unlock();
+}
+
+void unsafe_operation() {
+    row_lock.lock();     // ✅ 100 < INT_MAX
+    table_lock.lock();   // ❌ 500 >= 100, 抛异常！
+}
+```
+
+---
+
+### 8.11 锁的 RAII 包装器对比
+
+**问题描述**：`lock_guard`、`unique_lock`、`scoped_lock` 怎么选？
+
+| 特性 | `lock_guard` | `unique_lock` | `scoped_lock` (C++17) |
+|------|-------------|---------------|----------------------|
+| 自动加/解锁 | ✅ | ✅ | ✅ |
+| 延迟加锁 | ❌ | ✅ `defer_lock` | ❌ |
+| 提前解锁 | ❌ | ✅ `unlock()` | ❌ |
+| 配合条件变量 | ❌ | ✅ | ❌ |
+| 多锁同时锁 | ❌ | 配合 `std::lock` | ✅ 直接支持 |
+| 可移动 | ❌ | ✅ | ❌ |
+| 开销 | 最小 | 稍大（状态标记） | 最小 |
+
+**选择指南**：
+
+```cpp
+// 简单加锁解锁 → lock_guard
+{
+    std::lock_guard<std::mutex> lock(mtx);
+    // ...
+}
+
+// 需要灵活控制（延迟/提前/配合条件变量）→ unique_lock
+{
+    std::unique_lock<std::mutex> lock(mtx, std::defer_lock);
+    // ... 一些准备工作 ...
+    lock.lock();
+    // ...
+    lock.unlock();  // 提前释放
+    // ... 后续不需要锁的工作 ...
+}
+
+// 同时锁多个互斥量 → scoped_lock
+{
+    std::scoped_lock lock(mtxA, mtxB, mtxC);
+    // ...
+}
+```
+
+---
+
+### 8.12 锁机制常见面试题汇总
+
+**Q1：`std::mutex` 能跨进程使用吗？**
+> 不能。`std::mutex` 是进程内的同步原语。跨进程需要用操作系统提供的命名互斥量（Windows: `CreateMutex`，POSIX: `pthread_mutex` + 共享内存 + `PTHREAD_PROCESS_SHARED`）。
+
+**Q2：一个线程能对 `std::mutex` 加锁两次吗？**
+> 不能，**未定义行为**（通常死锁）。需要用 `std::recursive_mutex`。
+
+**Q3：`std::mutex` 的 `lock()` 性能开销有多大？**
+> 无竞争时：约 10-25ns（仅一个原子 CAS 操作）。有竞争时：微秒到毫秒级（涉及内核态切换和线程调度）。
+
+**Q4：自旋锁适合保护 I/O 操作吗？**
+> **绝对不适合**。I/O 操作耗时不可预测（毫秒级），自旋锁会让等待线程白白空转消耗 CPU。应该用互斥锁。
+
+**Q5：`volatile` 能代替锁吗？**
+> **不能**。`volatile` 只防止编译器优化（不从寄存器读），不提供原子性和内存序保证。多线程同步必须用 `std::atomic` 或锁。C++ 中 `volatile` 和并发无关。
+
+**Q6：如何检测程序中的死锁？**
+> - **运行时**：`gdb` 附加到卡住的进程，`thread apply all bt` 看所有线程调用栈
+> - **工具**：Helgrind（Valgrind）、ThreadSanitizer
+> - **代码层面**：使用层级锁、固定加锁顺序、`try_lock` 超时
+
+**Q7：条件变量为什么必须配合 `unique_lock` 而不能用 `lock_guard`？**
+> 因为 `condition_variable::wait()` 需要**原子地释放锁并进入等待**，被唤醒后再重新加锁。这要求锁可以手动 `unlock/lock`，而 `lock_guard` 不支持。
+
+**Q8：`std::lock` 内部如何避免死锁？**
+> 使用 **try-and-back-off** 策略：尝试依次锁所有 mutex，如果某个 `try_lock` 失败，释放已获取的所有锁，换一个顺序重试。不是简单的固定顺序，而是动态调整避免活锁。
+
+**Q9：读写锁一定比互斥锁快吗？**
+> 不一定。读写锁内部维护读者计数（原子操作），本身比 mutex 更重。只有**读操作占比很高（>90%）且临界区有一定大小**时，读写锁才有优势。否则普通 mutex 更快。
+
+**Q10：什么是锁护送（Lock Convoy）？**
+> 多个线程竞争同一个锁，当持锁线程被抢占（时间片用完），其他线程全部阻塞等待。持锁线程恢复后解锁，所有等待线程被唤醒但只有一个能获得锁，其余再次阻塞。这种"集体唤醒→集体阻塞"的模式严重浪费 CPU。解决方案：减小临界区、使用自旋锁（短临界区）、或使用无锁算法。
+
+---
+
 ## 总结
 
 ### 关键概念速查
@@ -1027,6 +1896,14 @@ void log(const std::string& msg) {
 | **ABA 问题** | CAS 的经典陷阱 |
 | **无锁编程** | 避免锁，但实现复杂 |
 | **伪共享** | 缓存行失效导致性能下降 |
+| **自旋锁** | 忙等循环，适合极短临界区 |
+| **读写锁** | 读共享写独占，适合读多写少 |
+| **递归锁** | 允许同线程重入，但应尽量避免 |
+| **Futex** | 用户态快速互斥，无竞争时零系统调用 |
+| **乐观锁/悲观锁** | 两种并发控制思想 |
+| **分段锁** | 按 hash 分桶，提升并发度 |
+| **DCLP** | 双重检查锁定，单例优化模式 |
+| **锁护送** | 集体唤醒→集体阻塞的性能陷阱 |
 
 ### 关键记忆点
 
@@ -1038,6 +1915,12 @@ void log(const std::string& msg) {
 6. **无锁不意味着高性能**，必须实际测试
 7. **伪共享**：用对齐避免缓存行竞争
 8. **无锁编程困难**：优先考虑锁，确有需要再用无锁
+9. **自旋锁 vs 互斥锁**：临界区 < 上下文切换时间用自旋，否则用互斥
+10. **读写锁**：读占比 > 90% 时才值得，否则普通 mutex 更快
+11. **Futex**：无竞争时仅一次 CAS，有竞争才陷入内核
+12. **锁粒度**：先粗后细，用测试验证瓶颈后再优化
+13. **DCLP**：C++11 用 `atomic` 或直接用 Meyers' Singleton
+14. **避免递归锁**：拆分公共接口和内部实现才是正解
 
 ### 进阶方向
 
@@ -1045,7 +1928,7 @@ void log(const std::string& msg) {
 - **内存回收**：Hazard Pointers、RCU
 - **硬件知识**：CPU 缓存、MESI 协议
 - **形式化验证**：证明无锁算法正确性
-- **高级同步原语**：读写锁、信号量
+- **高级同步原语**：读写锁、信号量、屏障
 
 ### 最佳实践
 
@@ -1054,3 +1937,6 @@ void log(const std::string& msg) {
 3. **大量测试**，无锁代码容易出错
 4. **使用工具**：TSan、Helgrind
 5. **考虑维护成本**，无锁代码难以理解和维护
+6. **优先 `scoped_lock`**（C++17）锁多个互斥量
+7. **避免递归锁**，重构代码拆分加锁层和逻辑层
+8. **锁粒度不要过早优化**，先正确再快速

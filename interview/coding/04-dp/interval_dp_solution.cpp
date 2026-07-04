@@ -13,7 +13,11 @@ namespace IntervalDP {
 
 // ==================== 参考答案实现 ====================
 
-// 题目1: 最长回文子串 - 中心扩展法
+/**
+ * 题目1: 最长回文子串 - 中心扩展法
+ * 时间复杂度: O(n²) - 每个中心最多扩展 O(n)
+ * 空间复杂度: O(1) - 仅用常数变量
+ */
 std::string longestPalindromeSolution(const std::string& s) {
     if (s.empty()) return "";
 
@@ -38,7 +42,11 @@ std::string longestPalindromeSolution(const std::string& s) {
     return s.substr(start, maxLen);
 }
 
-// 题目2: 回文子串数目 - 中心扩展法
+/**
+ * 题目2: 回文子串数目 - 中心扩展法
+ * 时间复杂度: O(n²) - 每个中心最多扩展 O(n)
+ * 空间复杂度: O(1) - 仅用常数变量
+ */
 int countSubstringsSolution(const std::string& s) {
     int count = 0;
 
@@ -58,7 +66,11 @@ int countSubstringsSolution(const std::string& s) {
     return count;
 }
 
-// 题目3: 戳气球
+/**
+ * 题目3: 戳气球 - 区间 DP
+ * 时间复杂度: O(n³) - 枚举区间和分割点
+ * 空间复杂度: O(n²) - 二维 DP 数组
+ */
 int maxCoinsSolution(std::vector<int>& nums) {
     int n = static_cast<int>(nums.size());
 
@@ -82,7 +94,11 @@ int maxCoinsSolution(std::vector<int>& nums) {
     return dp[0][n + 1];
 }
 
-// 题目4: 最低票价
+/**
+ * 题目4: 最低票价 - 线性 DP
+ * 时间复杂度: O(maxDay) - 遍历到最后一天
+ * 空间复杂度: O(maxDay) - 一维 DP 数组
+ */
 int mincostTicketsSolution(std::vector<int>& days, std::vector<int>& costs) {
     int lastDay = days.back();
     std::vector<bool> isTravel(lastDay + 1, false);
@@ -105,7 +121,11 @@ int mincostTicketsSolution(std::vector<int>& days, std::vector<int>& costs) {
     return dp[lastDay];
 }
 
-// 题目5: 石子合并
+/**
+ * 题目5: 石子合并 - 区间 DP
+ * 时间复杂度: O(n³) - 枚举区间和分割点
+ * 空间复杂度: O(n²) - 二维 DP 数组
+ */
 int mergeStonesSolution(std::vector<int>& stones) {
     int n = static_cast<int>(stones.size());
 
@@ -130,7 +150,11 @@ int mergeStonesSolution(std::vector<int>& stones) {
     return dp[0][n - 1];
 }
 
-// 题目6: 合并石头的最低成本（每次合并 K 堆）
+/**
+ * 题目6: 合并石头的最低成本（每次合并 K 堆） - 区间 DP
+ * 时间复杂度: O(n³ / k) - 枚举区间，分割点步长为 k-1
+ * 空间复杂度: O(n²) - 二维 DP 数组
+ */
 int mergeKStonesSolution(std::vector<int>& stones, int k) {
     int n = static_cast<int>(stones.size());
     if ((n - 1) % (k - 1) != 0) return -1;
@@ -160,7 +184,11 @@ int mergeKStonesSolution(std::vector<int>& stones, int k) {
     return dp[0][n - 1];
 }
 
-// 题目7: 多边形三角剖分的最低得分
+/**
+ * 题目7: 多边形三角剖分的最低得分 - 区间 DP
+ * 时间复杂度: O(n³) - 枚举区间和分割点
+ * 空间复杂度: O(n²) - 二维 DP 数组
+ */
 int minScoreTriangulationSolution(std::vector<int>& values) {
     int n = static_cast<int>(values.size());
     std::vector<std::vector<int>> dp(n, std::vector<int>(n, 0));
@@ -180,7 +208,11 @@ int minScoreTriangulationSolution(std::vector<int>& values) {
     return dp[0][n - 1];
 }
 
-// 题目8: 矩阵链乘法
+/**
+ * 题目8: 矩阵链乘法 - 区间 DP
+ * 时间复杂度: O(n³) - 枚举区间和分割点
+ * 空间复杂度: O(n²) - 二维 DP 数组
+ */
 int matrixChainMultiplicationSolution(std::vector<int>& p) {
     int n = static_cast<int>(p.size()) - 1;
     std::vector<std::vector<int>> dp(n, std::vector<int>(n, 0));

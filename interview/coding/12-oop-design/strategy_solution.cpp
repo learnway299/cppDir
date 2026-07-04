@@ -16,6 +16,12 @@ namespace Solution {
 
 // ==================== 经典策略模式 ====================
 
+/**
+ * 题目1: PaymentStrategy - 经典策略模式
+ * setStrategy: O(1) - 指针赋值
+ * checkout/pay: O(1) - 委托调用
+ * 空间复杂度: O(1) - 单个策略指针
+ */
 class PaymentStrategy {
 public:
     virtual ~PaymentStrategy() = default;
@@ -95,6 +101,12 @@ private:
 
 // ==================== 函数对象策略 ====================
 
+/**
+ * 题目2: Sorter - 函数对象策略
+ * setStrategy: O(1) - function赋值
+ * sort: O(n log n) - std::sort
+ * 空间复杂度: O(1) - 一个function对象
+ */
 template <typename T>
 class Sorter {
 public:
@@ -122,6 +134,12 @@ struct SortStrategies {
 
 // ==================== 模板策略 ====================
 
+/**
+ * 题目3: Logger<Formatter> - 模板策略
+ * format/info/warn/error: O(m) - m为消息长度
+ * 空间复杂度: O(1) - 编译期策略选择，无运行时开销
+ * 优势: 零运行时开销，内联优化
+ */
 struct PlainTextFormatter {
     static std::string format(const std::string& level, const std::string& message) {
         return "[" + level + "] " + message;
@@ -163,6 +181,13 @@ public:
 
 // ==================== 策略与工厂结合 ====================
 
+/**
+ * 题目4: CompressionStrategy - 策略与工厂结合
+ * compress (NoCompression): O(n) - 数据拷贝
+ * compress (RLE): O(n) - 线性扫描压缩
+ * decompress (RLE): O(m) - m为压缩数据大小
+ * 空间复杂度: O(n) - 输出数据
+ */
 class CompressionStrategy {
 public:
     virtual ~CompressionStrategy() = default;

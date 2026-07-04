@@ -29,6 +29,11 @@ namespace Solution {
 
 // ==================== 基础 SharedPtr ====================
 
+/**
+ * 题目1: SharedPtr - 共享所有权智能指针（基础版）
+ * 构造/析构/拷贝: O(1) - 指针操作 + 引用计数更新
+ * 空间复杂度: O(1) - 指针 + 引用计数指针
+ */
 template <typename T>
 class SharedPtr {
 public:
@@ -116,6 +121,12 @@ private:
 
 // ==================== 线程安全的 SharedPtr ====================
 
+/**
+ * 题目2: SharedPtrAtomic - 线程安全的SharedPtr
+ * 所有操作: O(1) - 原子操作通常为常数时间
+ * 空间复杂度: O(1) - 指针 + 原子引用计数指针
+ * 注: 引用计数的增减是原子的，但对象访问不是
+ */
 template <typename T>
 class SharedPtrAtomic {
 public:
@@ -191,6 +202,11 @@ private:
 
 // ==================== 控制块 ====================
 
+/**
+ * 题目3: ControlBlock - 控制块结构
+ * 所有操作: O(1) - 原子计数操作
+ * 空间复杂度: O(1) - 指针 + 两个原子计数器
+ */
 template <typename T>
 struct ControlBlock {
     T* ptr;
@@ -230,6 +246,12 @@ struct ControlBlock {
     }
 };
 
+/**
+ * 题目4: SharedPtrWithControlBlock - 使用控制块的SharedPtr
+ * 所有操作: O(1) - 原子操作
+ * 空间复杂度: O(1) - 控制块指针
+ * 优势: 支持weak_ptr，可追踪强弱引用计数
+ */
 template <typename T>
 class SharedPtrWithControlBlock {
 public:
@@ -296,6 +318,12 @@ private:
 
 // ==================== make_shared ====================
 
+/**
+ * 题目5: makeShared - 工厂函数
+ * 时间复杂度: O(1) - 一次分配 + 构造
+ * 空间复杂度: O(1) - 栈上创建SharedPtr
+ * 优势: 相比new+构造减少一次内存分配
+ */
 template <typename T, typename... Args>
 SharedPtr<T> makeShared(Args&&... args) {
     return SharedPtr<T>(new T(std::forward<Args>(args)...));

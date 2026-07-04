@@ -12,6 +12,12 @@ namespace RateLimiterImpl {
 namespace Solution {
 
 // 固定窗口限流
+/**
+ * FixedWindowRateLimiter - 固定窗口限流
+ * allow: 时间O(1) - 计数器操作
+ * 空间复杂度: O(1) - 常数空间
+ * 特点: 简单实现，但有临界突发问题
+ */
 class FixedWindowRateLimiter {
 public:
     FixedWindowRateLimiter(int limit, int windowMs)
@@ -44,6 +50,12 @@ private:
 };
 
 // 滑动窗口限流
+/**
+ * SlidingWindowRateLimiter - 滑动窗口限流
+ * allow: 时间O(n)均摊 - 清理过期时间戳
+ * 空间复杂度: O(n) - 存储时间戳队列
+ * 特点: 解决临界突发，更精确限流
+ */
 class SlidingWindowRateLimiter {
 public:
     SlidingWindowRateLimiter(int limit, int windowMs)
@@ -77,6 +89,12 @@ private:
 };
 
 // 令牌桶限流
+/**
+ * TokenBucketRateLimiter - 令牌桶限流
+ * allow: 时间O(1) - 令牌计算
+ * 空间复杂度: O(1) - 常数空间
+ * 特点: 允许突发流量，平滑限流
+ */
 class TokenBucketRateLimiter {
 public:
     TokenBucketRateLimiter(int capacity, double refillPerSec)
@@ -110,6 +128,12 @@ private:
 };
 
 // 漏桶限流
+/**
+ * LeakyBucketRateLimiter - 漏桶限流
+ * allow: 时间O(1) - 水量计算
+ * 空间复杂度: O(1) - 常数空间
+ * 特点: 恒定速率输出，流量整形
+ */
 class LeakyBucketRateLimiter {
 public:
     LeakyBucketRateLimiter(int capacity, double leakPerSec)

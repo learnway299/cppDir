@@ -14,6 +14,12 @@ namespace TrappingRainImpl {
 namespace Solution {
 
 // ==================== 方法1: 双指针法 ====================
+/**
+ * trap - 接雨水（双指针）
+ * 时间复杂度: O(n) - 单次遍历
+ * 空间复杂度: O(1) - 常数空间
+ * 特点: 维护leftMax/rightMax，按列计算水量
+ */
 int trap(std::vector<int>& height) {
     if (height.empty()) return 0;
 
@@ -44,6 +50,12 @@ int trap(std::vector<int>& height) {
 }
 
 // ==================== 方法2: 单调栈法 ====================
+/**
+ * trapStack - 接雨水（单调栈）
+ * 时间复杂度: O(n) - 每元素入栈出栈各一次
+ * 空间复杂度: O(n) - 栈最大深度
+ * 特点: 维护递减栈，按层计算水量
+ */
 int trapStack(std::vector<int>& height) {
     std::stack<int> st;
     int water = 0;

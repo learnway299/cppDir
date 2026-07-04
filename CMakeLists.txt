@@ -47,3 +47,8 @@ target_include_directories(Cpp_Interview PRIVATE
 
 # 链接线程库
 target_link_libraries(Cpp_Interview Threads::Threads)
+
+# Windows 下链接 dbghelp (用于 NativeCrashHandler 生成 minidump)
+if(WIN32)
+    target_link_libraries(Cpp_Interview dbghelp)
+endif()

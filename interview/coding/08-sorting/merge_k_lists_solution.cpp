@@ -16,6 +16,11 @@ namespace MergeKLists {
 
 // ==================== 参考答案实现 ====================
 
+/**
+ * 题目1: 合并 K 个升序链表 - 最小堆
+ * 时间复杂度: O(n log k) - n 为总节点数，k 为链表数
+ * 空间复杂度: O(k) - 堆大小
+ */
 ListNode* mergeKListsSolution(std::vector<ListNode*>& lists) {
     auto cmp = [](ListNode* a, ListNode* b) {
         return a->val > b->val;
@@ -45,6 +50,11 @@ ListNode* mergeKListsSolution(std::vector<ListNode*>& lists) {
     return dummy.next;
 }
 
+/**
+ * 题目2: 合并两个有序数组 - 逆向双指针
+ * 时间复杂度: O(m + n)
+ * 空间复杂度: O(1) - 原地合并
+ */
 void mergeSolution(std::vector<int>& nums1, int m, std::vector<int>& nums2, int n) {
     int i = m - 1, j = n - 1, k = m + n - 1;
 
@@ -61,6 +71,11 @@ void mergeSolution(std::vector<int>& nums1, int m, std::vector<int>& nums2, int 
     }
 }
 
+/**
+ * 题目3: 合并 K 个有序数组 - 最小堆
+ * 时间复杂度: O(n log k) - n 为总元素数，k 为数组数
+ * 空间复杂度: O(k) - 堆大小
+ */
 std::vector<int> mergeKArraysSolution(std::vector<std::vector<int>>& arrays) {
     auto cmp = [](const std::tuple<int, int, int>& a, const std::tuple<int, int, int>& b) {
         return std::get<0>(a) > std::get<0>(b);
@@ -89,6 +104,11 @@ std::vector<int> mergeKArraysSolution(std::vector<std::vector<int>>& arrays) {
     return result;
 }
 
+/**
+ * 题目4: 合并区间 - 排序 + 线性扫描
+ * 时间复杂度: O(n log n) - 排序主导
+ * 空间复杂度: O(log n) - 排序栈空间
+ */
 std::vector<std::vector<int>> mergeIntervalsSolution(std::vector<std::vector<int>>& intervals) {
     if (intervals.empty()) return {};
 
@@ -108,6 +128,11 @@ std::vector<std::vector<int>> mergeIntervalsSolution(std::vector<std::vector<int
     return result;
 }
 
+/**
+ * 题目5: 插入区间 - 线性扫描
+ * 时间复杂度: O(n)
+ * 空间复杂度: O(1) - 不计输出空间
+ */
 std::vector<std::vector<int>> insertSolution(std::vector<std::vector<int>>& intervals,
                                               std::vector<int>& newInterval) {
     std::vector<std::vector<int>> result;
@@ -135,10 +160,20 @@ std::vector<std::vector<int>> insertSolution(std::vector<std::vector<int>>& inte
     return result;
 }
 
+/**
+ * 题目6: 外部排序 - K 路归并
+ * 时间复杂度: O(n log k)
+ * 空间复杂度: O(k) - 堆大小
+ */
 std::vector<int> externalSortSolution(std::vector<std::vector<int>>& chunks) {
     return mergeKArraysSolution(chunks);
 }
 
+/**
+ * 题目7: 第 K 小的距离对 - 二分查找
+ * 时间复杂度: O(n log n + n log W) - W 为最大距离
+ * 空间复杂度: O(log n) - 排序栈空间
+ */
 int smallestDistancePairSolution(std::vector<int>& nums, int k) {
     std::sort(nums.begin(), nums.end());
     int n = static_cast<int>(nums.size());
@@ -165,6 +200,11 @@ int smallestDistancePairSolution(std::vector<int>& nums, int k) {
     return left;
 }
 
+/**
+ * 题目8: 乘法表中第 K 小的数 - 二分查找
+ * 时间复杂度: O(m * log(m * n))
+ * 空间复杂度: O(1)
+ */
 int findKthNumberSolution(int m, int n, int k) {
     int left = 1, right = m * n;
 
@@ -186,6 +226,11 @@ int findKthNumberSolution(int m, int n, int k) {
     return left;
 }
 
+/**
+ * 题目9: 有序矩阵中第 K 小的元素 - 二分查找
+ * 时间复杂度: O(n log(max - min))
+ * 空间复杂度: O(1)
+ */
 int kthSmallestInMatrixSolution(std::vector<std::vector<int>>& matrix, int k) {
     int n = static_cast<int>(matrix.size());
     int left = matrix[0][0], right = matrix[n - 1][n - 1];
@@ -210,6 +255,11 @@ int kthSmallestInMatrixSolution(std::vector<std::vector<int>>& matrix, int k) {
     return left;
 }
 
+/**
+ * 题目10: 最小区间 - K 路归并 + 最小堆
+ * 时间复杂度: O(n log k) - n 为总元素数
+ * 空间复杂度: O(k) - 堆大小
+ */
 std::vector<int> smallestRangeSolution(std::vector<std::vector<int>>& nums) {
     int k = static_cast<int>(nums.size());
 
@@ -250,6 +300,11 @@ std::vector<int> smallestRangeSolution(std::vector<std::vector<int>>& nums) {
     return {rangeStart, rangeEnd};
 }
 
+/**
+ * 题目11: 丑数 III - 二分查找 + 容斥原理
+ * 时间复杂度: O(log(2 * 10^9))
+ * 空间复杂度: O(1)
+ */
 int nthUglyNumber3Solution(int n, int a, int b, int c) {
     auto gcd = [](long x, long y) -> long {
         while (y) {

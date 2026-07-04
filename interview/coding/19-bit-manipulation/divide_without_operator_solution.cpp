@@ -12,7 +12,12 @@ namespace DivideWithoutOperatorImpl {
 namespace Solution {
 
 // ==================== 位运算实现除法 ====================
-// 通过倍增法，每次尝试减去 divisor * 2^k
+/**
+ * divide - 不用除法实现除法（倍增法）
+ * 时间复杂度: O(log²n) - 外层O(logn)*内层O(logn)
+ * 空间复杂度: O(1) - 常数空间
+ * 特点: 倍增找最大2^k使得divisor*2^k<=dividend
+ */
 int divide(int dividend, int divisor) {
     // 处理溢出情况
     if (dividend == INT_MIN && divisor == -1) return INT_MAX;

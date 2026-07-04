@@ -14,7 +14,12 @@ namespace TopKFrequentImpl {
 namespace Solution {
 
 // ==================== 前K个高频元素 ====================
-
+/**
+ * topKFrequent - 前K个高频元素
+ * 时间复杂度: O(nlogk) - 统计O(n) + 堆维护O(nlogk)
+ * 空间复杂度: O(n+k) - 哈希表O(n) + 堆O(k)
+ * 特点: 最小堆维护前K大，保持堆大小为k
+ */
 std::vector<int> topKFrequent(std::vector<int>& nums, int k) {
     std::unordered_map<int, int> freq;
     for (int n : nums) freq[n]++;
@@ -39,7 +44,12 @@ std::vector<int> topKFrequent(std::vector<int>& nums, int k) {
 }
 
 // ==================== 前K个高频单词 ====================
-
+/**
+ * topKFrequentWords - 前K个高频单词
+ * 时间复杂度: O(nlogk) - 统计O(n) + 堆维护O(nlogk)
+ * 空间复杂度: O(n+k) - 哈希表O(n) + 堆O(k)
+ * 特点: 最小堆 + 自定义比较器（频率+字典序）
+ */
 std::vector<std::string> topKFrequentWords(std::vector<std::string>& words, int k) {
     std::unordered_map<std::string, int> freq;
     for (const std::string& w : words) freq[w]++;

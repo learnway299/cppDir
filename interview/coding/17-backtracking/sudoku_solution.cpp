@@ -40,10 +40,22 @@ static bool solve(std::vector<std::vector<char>>& board) {
 
 // ==================== 参考答案实现 ====================
 
+/**
+ * solveSudoku - 解数独
+ * 时间复杂度: O(9^m) - m为空格数，每格最多尝试9个数
+ * 空间复杂度: O(m) - 递归栈深度
+ * 特点: 回溯填充，三重约束（行/列/宫格）
+ */
 void solveSudokuSolution(std::vector<std::vector<char>>& board) {
     solve(board);
 }
 
+/**
+ * isValidSudoku - 验证数独有效性
+ * 时间复杂度: O(81) = O(1) - 固定9x9
+ * 空间复杂度: O(27) = O(1) - 位掩码检测
+ * 特点: 位运算优化冲突检测
+ */
 bool isValidSudokuSolution(std::vector<std::vector<char>>& board) {
     std::vector<int> rows(9, 0), cols(9, 0), boxes(9, 0);
 

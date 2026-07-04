@@ -14,6 +14,12 @@ namespace Solution {
 
 // ==================== Circle ====================
 
+/**
+ * 题目1: Shape<Derived> - CRTP静态多态
+ * name/area: O(1) - 编译期绑定，无虚函数开销
+ * 空间复杂度: O(1) - 无vtable
+ * 特点: 零运行时开销的多态
+ */
 class Circle : public Shape<Circle> {
 public:
     explicit Circle(double radius) : radius_(radius) {}
@@ -48,6 +54,12 @@ private:
 
 // ==================== Config ====================
 
+/**
+ * 题目2: Serializable<Derived> - CRTP接口约束
+ * serialize/deserialize: O(n) - 数据序列化
+ * 空间复杂度: O(n) - 序列化结果
+ * 特点: 编译期接口检查
+ */
 class Config : public Serializable<Config> {
 public:
     Config() : port_(8080), host_("localhost") {}
@@ -74,6 +86,13 @@ private:
 
 // ==================== ObjectCounter ====================
 
+/**
+ * 题目3: ObjectCounter<Derived> - CRTP对象计数器
+ * 构造/析构: O(1) - 静态计数器增减
+ * getCount/getCreated: O(1) - 读取静态变量
+ * 空间复杂度: O(1) - 每个类型两个静态计数器
+ * 特点: 每个派生类独立计数
+ */
 template <typename Derived>
 class ObjectCounter {
 public:
@@ -133,6 +152,12 @@ private:
 
 // ==================== Mixin 模式 ====================
 
+/**
+ * 题目4: Mixin模式 - CRTP组合
+ * print/compare/hash: O(1)~O(n) - 取决于派生类实现
+ * 空间复杂度: O(1) - 无额外存储
+ * 特点: 多重继承实现功能组合，无虚函数
+ */
 template <typename Derived>
 class Printable {
 public:
@@ -195,6 +220,13 @@ private:
 
 // ==================== 表达式模板 ====================
 
+/**
+ * 题目5: VecExpression - 表达式模板
+ * operator[]: O(1) - 惰性求值
+ * Vec构造（从表达式）: O(n) - 一次遍历求值
+ * 空间复杂度: O(1) - 表达式树不分配临时向量
+ * 特点: 避免临时对象，优化链式运算
+ */
 template <typename E>
 class VecExpression {
 public:

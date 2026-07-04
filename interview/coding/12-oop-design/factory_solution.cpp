@@ -43,6 +43,12 @@ private:
 
 // ==================== 简单工厂 ====================
 
+/**
+ * 题目1: SimpleFactory - 简单工厂
+ * create: O(1) - switch分支或哈希查找
+ * 空间复杂度: O(1) - 无状态
+ * 特点: 集中创建逻辑，易于扩展
+ */
 class SimpleFactory {
 public:
     enum class ProductType { A, B, C };
@@ -70,6 +76,13 @@ public:
 
 // ==================== 工厂方法模式 ====================
 
+/**
+ * 题目2: Factory - 工厂方法模式
+ * createProduct: O(1) - 子类实现
+ * doWork: O(1) - 创建 + 使用
+ * 空间复杂度: O(1) - 无状态
+ * 特点: 符合开闭原则，扩展新产品只需新增工厂子类
+ */
 class Factory {
 public:
     virtual ~Factory() = default;
@@ -106,6 +119,12 @@ public:
 
 // ==================== 抽象工厂模式 ====================
 
+/**
+ * 题目3: GUIFactory - 抽象工厂模式
+ * createButton/createTextBox: O(1) - 直接构造
+ * 空间复杂度: O(1) - 无状态
+ * 特点: 创建产品族，保证产品间兼容性
+ */
 class Button {
 public:
     virtual ~Button() = default;
@@ -167,6 +186,14 @@ public:
 
 // ==================== 注册式工厂 ====================
 
+/**
+ * 题目4: RegisterFactory - 注册式工厂
+ * registerType: O(1) - 哈希表插入
+ * create: O(1) - 哈希表查找
+ * hasType: O(1) - 哈希表查找
+ * 空间复杂度: O(n) - n个注册类型
+ * 特点: 运行时注册，无需修改工厂代码
+ */
 template <typename Base>
 class RegisterFactory {
 public:
@@ -210,6 +237,13 @@ private:
 
 // ==================== 带参数的工厂 ====================
 
+/**
+ * 题目5: ParameterizedFactory - 带参数的工厂
+ * registerType: O(1) - 哈希表插入
+ * create: O(1) - 哈希表查找 + 参数转发
+ * 空间复杂度: O(n) - n个注册类型
+ * 特点: 支持构造参数的类型擦除工厂
+ */
 template <typename Base, typename... Args>
 class ParameterizedFactory {
 public:

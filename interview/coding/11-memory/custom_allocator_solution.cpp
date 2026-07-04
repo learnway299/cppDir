@@ -15,6 +15,12 @@ namespace Solution {
 
 // ==================== 日志分配器 ====================
 
+/**
+ * 题目1: LoggingAllocator - 日志分配器
+ * allocate/deallocate: O(1) - malloc/free + 计数
+ * 空间复杂度: O(1) - 静态计数器
+ * 用途: 调试内存分配行为
+ */
 template <typename T>
 class LoggingAllocator {
 public:
@@ -64,6 +70,12 @@ size_t LoggingAllocator<T>::deallocCount = 0;
 
 // ==================== 栈分配器（简化版） ====================
 
+/**
+ * 题目2: StackAllocator - 栈分配器（简化版）
+ * allocate/deallocate: O(1)
+ * 空间复杂度: O(N) - 栈上缓冲区（真正实现）
+ * 优势: 避免堆分配，利用栈内存
+ */
 template <typename T, std::size_t N>
 class StackAllocator {
 public:
@@ -102,6 +114,13 @@ public:
 
 // ==================== 对齐分配器 ====================
 
+/**
+ * 题目3: AlignedAllocator - 对齐分配器
+ * allocate: O(1) - aligned_malloc
+ * deallocate: O(1) - aligned_free
+ * 空间复杂度: O(1) - 无状态
+ * 用途: SIMD、缓存行对齐等场景
+ */
 template <typename T, std::size_t Alignment = alignof(T)>
 class AlignedAllocator {
 public:
@@ -156,6 +175,13 @@ public:
 
 // ==================== 共享内存分配器 ====================
 
+/**
+ * 题目4: SharedMemoryAllocator - 共享内存分配器
+ * allocate: O(1) - 指针递增
+ * deallocate: O(1) - 空操作（Arena风格）
+ * 空间复杂度: O(1) - 引用外部共享内存
+ * 用途: 进程间共享数据
+ */
 template <typename T>
 class SharedMemoryAllocator {
 public:
@@ -212,6 +238,12 @@ private:
 
 // ==================== 统计分配器 ====================
 
+/**
+ * 题目5: StatsAllocator - 统计分配器
+ * allocate/deallocate: O(1) - malloc/free + 原子计数更新
+ * 空间复杂度: O(1) - 静态统计结构
+ * 功能: 追踪分配次数、字节数、峰值使用量
+ */
 template <typename T>
 class StatsAllocator {
 public:

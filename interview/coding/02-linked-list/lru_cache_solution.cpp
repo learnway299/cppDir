@@ -9,6 +9,12 @@
 
 namespace LRUCacheLinkedList {
 
+/**
+ * LRU 缓存 - 手动实现双向链表 + 哈希表
+ * 时间复杂度: get O(1), put O(1)
+ * 空间复杂度: O(capacity) - 存储 capacity 个键值对
+ */
+
 // ==================== 手动实现双向链表版本 ====================
 
 void LRUCacheSolution::addToHead(DLinkedNode* node) {
@@ -77,6 +83,12 @@ void LRUCacheSolution::put(int key, int value) {
         }
     }
 }
+
+/**
+ * LRU 缓存 - STL list + 哈希表
+ * 时间复杂度: get O(1), put O(1) - splice 为 O(1)
+ * 空间复杂度: O(capacity) - 存储 capacity 个键值对
+ */
 
 // ==================== STL list 版本 ====================
 

@@ -15,7 +15,12 @@ namespace UglyNumberImpl {
 namespace Solution {
 
 // ==================== 判断丑数 ====================
-
+/**
+ * isUgly - 判断是否为丑数
+ * 时间复杂度: O(logn) - 不断除以2/3/5
+ * 空间复杂度: O(1) - 常数空间
+ * 特点: 丑数只包含2/3/5因子
+ */
 bool isUgly(int n) {
     if (n <= 0) return false;
     while (n % 2 == 0) n /= 2;
@@ -25,7 +30,12 @@ bool isUgly(int n) {
 }
 
 // ==================== 第n个丑数 - 三指针法 ====================
-
+/**
+ * nthUglyNumber - 第n个丑数（三指针法）
+ * 时间复杂度: O(n) - 生成n个丑数
+ * 空间复杂度: O(n) - 存储n个丑数
+ * 特点: DP思想，三指针分别乘2/3/5取最小
+ */
 int nthUglyNumber(int n) {
     std::vector<int> ugly(n);
     ugly[0] = 1;
@@ -46,7 +56,12 @@ int nthUglyNumber(int n) {
 }
 
 // ==================== 第n个丑数 - 最小堆法 ====================
-
+/**
+ * nthUglyNumberHeap - 第n个丑数（最小堆法）
+ * 时间复杂度: O(nlogn) - 堆操作n次
+ * 空间复杂度: O(n) - 堆+去重集合
+ * 特点: 最小堆保证顺序，set去重
+ */
 int nthUglyNumberHeap(int n) {
     std::priority_queue<long, std::vector<long>, std::greater<long>> minHeap;
     std::unordered_set<long> seen;

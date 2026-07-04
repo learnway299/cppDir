@@ -5,6 +5,8 @@
 set(INTERVIEW_UTIL
     ${CMAKE_SOURCE_DIR}/util/Util.h
     ${CMAKE_SOURCE_DIR}/util/Util.cpp
+    ${CMAKE_SOURCE_DIR}/util/NativeCrashHandler.h
+    ${CMAKE_SOURCE_DIR}/util/NativeCrashHandler.cpp
 )
 
 # 测试入口
@@ -15,6 +17,7 @@ set(INTERVIEW_TEST_RUNNER
 
 # 01-basic
 file(GLOB INTERVIEW_01_BASIC
+    CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/01-basic/*.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/01-basic/*.cpp"
 )

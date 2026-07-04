@@ -30,6 +30,12 @@ static void backtrack(std::vector<std::string>& result, std::string& path,
 
 // ==================== 参考答案实现 ====================
 
+/**
+ * generateParenthesis - 生成有效括号
+ * 时间复杂度: O(4^n/√n) - 第n个卡特兰数
+ * 空间复杂度: O(n) - 递归栈 + 当前路径
+ * 特点: 回溯剪枝，左括号≤n且右括号≤左括号
+ */
 std::vector<std::string> generateParenthesisSolution(int n) {
     std::vector<std::string> result;
     std::string path;
@@ -37,6 +43,12 @@ std::vector<std::string> generateParenthesisSolution(int n) {
     return result;
 }
 
+/**
+ * isValid - 验证括号有效性
+ * 时间复杂度: O(n) - 单次遍历
+ * 空间复杂度: O(n) - 栈最大深度
+ * 特点: 栈匹配，支持多种括号类型
+ */
 bool isValidSolution(const std::string& s) {
     std::stack<char> st;
     for (char c : s) {

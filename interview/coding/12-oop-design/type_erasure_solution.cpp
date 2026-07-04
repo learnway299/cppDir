@@ -14,6 +14,13 @@ namespace Solution {
 
 // ==================== Printable ====================
 
+/**
+ * 题目1: Printable - 基础类型擦除
+ * 构造: O(1) - 堆分配Model
+ * 拷贝: O(n) - 深拷贝
+ * print: O(1) - 虚函数调用
+ * 空间复杂度: O(1) - unique_ptr<Concept>
+ */
 class Printable {
 public:
     template <typename T>
@@ -81,6 +88,13 @@ struct Image {
 
 // ==================== Function ====================
 
+/**
+ * 题目2: Function<R(Args...)> - 可调用对象类型擦除
+ * 构造: O(1) - 堆分配Model
+ * operator(): O(1) - 虚函数调用 + 函数调用
+ * 拷贝: O(n) - 深拷贝捕获状态
+ * 空间复杂度: O(1) - unique_ptr<Concept>
+ */
 template <typename Signature>
 class Function;
 
@@ -144,6 +158,13 @@ private:
 
 // ==================== Any ====================
 
+/**
+ * 题目3: Any - 任意类型容器
+ * 构造/赋值: O(1) - 堆分配
+ * get<T>: O(1) - 类型检查 + 转换
+ * 拷贝: O(n) - 深拷贝
+ * 空间复杂度: O(1) - unique_ptr<Concept>
+ */
 class Any {
 public:
     Any() = default;
@@ -242,6 +263,14 @@ T any_cast(const Any& a) {
 
 // ==================== AnyWithSBO ====================
 
+/**
+ * 题目4: AnyWithSBO - 小缓冲优化Any
+ * 构造（小对象）: O(1) - 栈上原地构造
+ * 构造（大对象）: O(1) - 堆分配
+ * 移动: O(1) - 指针/缓冲区转移
+ * 空间复杂度: O(1) - 32字节内联缓冲区
+ * 特点: 避免小对象堆分配
+ */
 class AnyWithSBO {
 public:
     AnyWithSBO() : vtable_(nullptr) {}

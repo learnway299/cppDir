@@ -93,7 +93,11 @@ static bool isSameTree(TreeNode* p, TreeNode* q) {
 
 // ==================== 参考答案实现 ====================
 
-// 题目1: 二叉树的序列化与反序列化 - DFS版本
+/**
+ * 题目1: 二叉树的序列化与反序列化 - DFS 前序遍历
+ * 时间复杂度: O(n) - 访问每个节点一次
+ * 空间复杂度: O(n) - 字符串存储 + 递归栈
+ */
 std::string CodecSolution::serialize(TreeNode* root) {
     std::string result;
     serializeHelper(root, result);
@@ -105,7 +109,11 @@ TreeNode* CodecSolution::deserialize(std::string data) {
     return deserializeHelper(iss);
 }
 
-// 题目2: 二叉搜索树的序列化与反序列化
+/**
+ * 题目2: 二叉搜索树的序列化与反序列化 - 前序遍历 + BST性质
+ * 时间复杂度: O(n) - 序列化/反序列化各遍历一次
+ * 空间复杂度: O(n) - 字符串存储 + 递归栈
+ */
 std::string CodecBSTSolution::serialize(TreeNode* root) {
     std::string result;
     serializeBSTHelper(root, result);
@@ -125,7 +133,11 @@ TreeNode* CodecBSTSolution::deserialize(std::string data) {
     return deserializeBSTHelper(values, idx, INT_MIN, INT_MAX);
 }
 
-// 题目3: 寻找重复的子树
+/**
+ * 题目3: 寻找重复的子树 - 序列化 + 哈希表
+ * 时间复杂度: O(n²) - 每个节点序列化 O(n)
+ * 空间复杂度: O(n²) - 哈希表存储序列化字符串
+ */
 std::vector<TreeNode*> findDuplicateSubtreesSolution(TreeNode* root) {
     std::unordered_map<std::string, int> count;
     std::vector<TreeNode*> result;
@@ -133,7 +145,11 @@ std::vector<TreeNode*> findDuplicateSubtreesSolution(TreeNode* root) {
     return result;
 }
 
-// 题目4: 验证二叉树的前序序列化
+/**
+ * 题目4: 验证二叉树的前序序列化 - 槽位计数
+ * 时间复杂度: O(n) - 遍历字符串一次
+ * 空间复杂度: O(1) - 仅用常数变量
+ */
 bool isValidSerializationSolution(std::string preorder) {
     int slots = 1;
     std::stringstream ss(preorder);
@@ -146,14 +162,22 @@ bool isValidSerializationSolution(std::string preorder) {
     return slots == 0;
 }
 
-// 题目5: 从字符串生成二叉树
+/**
+ * 题目5: 从字符串生成二叉树 - 递归解析
+ * 时间复杂度: O(n) - 遍历字符串一次
+ * 空间复杂度: O(h) - 递归栈深度
+ */
 TreeNode* str2treeSolution(std::string s) {
     if (s.empty()) return nullptr;
     int idx = 0;
     return str2treeHelper(s, idx);
 }
 
-// 题目6: 根据二叉树创建字符串
+/**
+ * 题目6: 根据二叉树创建字符串 - 前序遍历递归
+ * 时间复杂度: O(n) - 访问每个节点一次
+ * 空间复杂度: O(n) - 字符串存储 + 递归栈
+ */
 std::string tree2strSolution(TreeNode* root) {
     if (!root) return "";
     std::string result = std::to_string(root->val);

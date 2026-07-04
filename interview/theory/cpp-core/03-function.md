@@ -1167,6 +1167,260 @@ void processEfficient(F transformer);  // 可内联，零开销
 
 ---
 
+### 8.5 类型擦除 (Type Erasure) 深入
+
+**问题描述**：类型擦除是一种设计技术，允许在运行时处理不同类型，而无需在编译时知道具体类型。`std::function`、`std::any`、`std::variant` 都使用了这种技术。
+
+#### 8.5.1 什么是类型擦除？
+
+**核心思想**：通过多态基类 + 派生类模板，将编译期的类型信息"擦除"，转换为运行期的统一接口。
+
+```cpp
+#include <iostream>
+#include <memory>
+
+// 问题：如何存储任意类型的可调用对象？
+// auto 的限制：编译期确定类型，不能存储不同类型
+auto f1 = [](int x) { return x * 2; };
+auto f2 = [](int x) { return x + 10; };
+// f1 和 f2 的类型不同，无法放入同一容器
+
+// 类型擦除的解决方案
+class AnyCallable {
+    // 基类：定义统一接口（虚函数）
+    struct Base {
+        virtual int call(int) = 0;
+        virtual ~Base() = default;
+    };
+
+    // 派生类模板：存储具体类型
+    template<typename F>
+    struct Derived : Base {
+        F func;
+        Derived(F f) : func(std::move(f)) {}
+        int call(int x) override { return func(x); }
+    };
+
+    std::unique_ptr<Base> ptr;
+
+public:
+    // 构造函数模板：接受任意可调用对象
+    template<typename F>
+    AnyCallable(F f) : ptr(std::make_unique<Derived<F>>(std::move(f))) {}
+
+    int operator()(int x) { return ptr->call(x); }
+};
+
+void type_erasure_demo() {
+    // 现在可以存储不同类型的可调用对象
+    AnyCallable f1 = [](int x) { return x * 2; };
+    AnyCallable f2 = [](int x) { return x + 10; };
+
+    std::cout << f1(5) << std::endl;  // 10
+    std::cout << f2(5) << std::endl;  // 15
+
+    // 甚至可以放入容器
+    std::vector<AnyCallable> funcs;
+    funcs.push_back([](int x) { return x * 3; });
+    funcs.push_back([](int x) { return x - 1; });
+}
+```
+
+#### 8.5.2 类型擦除的三个核心组件
+
+```
+┌─────────────────────────────────────────────┐
+│          类型擦除的三层结构                    │
+├─────────────────────────────────────────────┤
+│  1. 接口层 (Interface)                       │
+│     - 定义统一的调用接口                       │
+│     - 用户通过这个接口操作对象                  │
+│     - 例如：std::function<R(Args...)>        │
+├─────────────────────────────────────────────┤
+│  2. 概念层 (Concept/Base)                    │
+│     - 抽象基类，定义虚函数                     │
+│     - 运行时多态的基础                         │
+│     - 例如：CallableBase                     │
+├─────────────────────────────────────────────┤
+│  3. 模型层 (Model/Derived)                   │
+│     - 派生类模板，存储具体类型                  │
+│     - 实现虚函数，调用实际对象                  │
+│     - 例如：CallableImpl<F>                  │
+└─────────────────────────────────────────────┘
+```
+
+#### 8.5.3 std::function 的完整实现示意
+
+```cpp
+#include <memory>
+#include <utility>
+
+template<typename Signature>
+class Function;  // 前向声明
+
+template<typename R, typename... Args>
+class Function<R(Args...)> {
+    // Concept 层：抽象基类
+    struct Concept {
+        virtual R invoke(Args...) = 0;
+        virtual std::unique_ptr<Concept> clone() const = 0;
+        virtual ~Concept() = default;
+    };
+
+    // Model 层：存储具体可调用对象
+    template<typename F>
+    struct Model : Concept {
+        F func_;
+
+        Model(F f) : func_(std::move(f)) {}
+
+        R invoke(Args... args) override {
+            return func_(std::forward<Args>(args)...);
+        }
+
+        std::unique_ptr<Concept> clone() const override {
+            return std::make_unique<Model>(func_);
+        }
+    };
+
+    std::unique_ptr<Concept> concept_;
+
+public:
+    // 默认构造：空 function
+    Function() = default;
+
+    // 从可调用对象构造
+    template<typename F>
+    Function(F f) : concept_(std::make_unique<Model<F>>(std::move(f))) {}
+
+    // 拷贝构造
+    Function(const Function& other)
+        : concept_(other.concept_ ? other.concept_->clone() : nullptr) {}
+
+    // 移动构造
+    Function(Function&&) noexcept = default;
+
+    // 拷贝赋值
+    Function& operator=(const Function& other) {
+        concept_ = other.concept_ ? other.concept_->clone() : nullptr;
+        return *this;
+    }
+
+    // 移动赋值
+    Function& operator=(Function&&) noexcept = default;
+
+    // 调用操作符
+    R operator()(Args... args) {
+        if (!concept_) throw std::bad_function_call();
+        return concept_->invoke(std::forward<Args>(args)...);
+    }
+
+    // 检查是否为空
+    explicit operator bool() const { return concept_ != nullptr; }
+};
+
+void custom_function_demo() {
+    Function<int(int, int)> add = [](int a, int b) { return a + b; };
+    Function<int(int, int)> mul = [](int a, int b) { return a * b; };
+
+    std::cout << add(3, 4) << std::endl;  // 7
+    std::cout << mul(3, 4) << std::endl;  // 12
+
+    // 拷贝
+    Function<int(int, int)> add2 = add;
+    std::cout << add2(5, 6) << std::endl;  // 11
+}
+```
+
+#### 8.5.4 类型擦除 vs 模板
+
+| 特性 | 模板 (Generic) | 类型擦除 (Type Erasure) |
+|------|---------------|------------------------|
+| 类型信息 | 编译期保留 | 运行时擦除 |
+| 性能 | 可内联，零开销 | 虚函数调用开销 |
+| 代码膨胀 | 每种类型生成一份代码 | 代码共享 |
+| 异构容器 | ❌ 不支持 | ✅ 支持 |
+| 动态多态 | ❌ 不支持 | ✅ 支持 |
+
+```cpp
+// 模板：编译期确定，不能存储不同类型
+template<typename F>
+void process(F func) {
+    func(42);  // 可内联
+}
+
+// 类型擦除：运行期统一，可存储不同类型
+void process(std::function<void(int)> func) {
+    func(42);  // 虚函数调用
+}
+
+// 异构容器只能用类型擦除
+std::vector<std::function<void()>> callbacks;
+callbacks.push_back([]() { std::cout << "A\n"; });
+callbacks.push_back([]() { std::cout << "B\n"; });
+```
+
+#### 8.5.5 其他类型擦除的例子
+
+```cpp
+// 1. std::any：存储任意类型的值
+#include <any>
+std::any a = 42;
+a = std::string("hello");
+a = 3.14;
+
+// 2. std::variant：类型安全的联合体（编译期类型擦除）
+#include <variant>
+std::variant<int, double, std::string> v;
+v = 42;
+v = "hello";
+
+// 3. 自定义类型擦除：多态容器
+class Animal {
+    struct Concept {
+        virtual void speak() const = 0;
+        virtual ~Concept() = default;
+    };
+
+    template<typename T>
+    struct Model : Concept {
+        T obj;
+        Model(T o) : obj(std::move(o)) {}
+        void speak() const override { obj.speak(); }
+    };
+
+    std::unique_ptr<Concept> ptr;
+
+public:
+    template<typename T>
+    Animal(T obj) : ptr(std::make_unique<Model<T>>(std::move(obj))) {}
+
+    void speak() const { ptr->speak(); }
+};
+
+// 使用：不需要继承！
+struct Dog { void speak() const { std::cout << "Woof!\n"; } };
+struct Cat { void speak() const { std::cout << "Meow!\n"; } };
+
+std::vector<Animal> animals;
+animals.emplace_back(Dog{});
+animals.emplace_back(Cat{});
+for (const auto& a : animals) a.speak();
+```
+
+#### 8.5.6 类型擦除总结
+
+| 问题 | 答案 |
+|------|------|
+| **什么是类型擦除** | 将编译期类型信息"擦除"，转换为运行期统一接口 |
+| **核心实现机制** | 多态基类 + 派生类模板 + 虚函数 |
+| **代表性应用** | `std::function`, `std::any`, 自定义多态容器 |
+| **优点** | 支持异构容器、动态多态、解耦 |
+| **缺点** | 堆分配、虚函数调用开销、无法内联 |
+| **何时使用** | 需要存储/传递不同类型对象，且类型在运行时才确定 |
+
+---
+
 ## 9. 闭包 (Closure)
 
 ### 9.1 定义
@@ -1830,3 +2084,35 @@ void cleanup() { /* 在 main 之后执行 */ }
 
 ---
 
+
+---
+
+## 补充高频问答（参数传递）
+
+### Q10: 函数传参时，指针和引用在性能上有明显差别吗？
+
+**答案：**
+- 通常没有明显差别。
+- `T*` 与 `T&` 底层都接近“传地址”，主要差异在语义：
+  - `T*` 可以为空，也可以改为指向别处。
+  - `T&` 不能为空，且绑定后不重绑定。
+
+### Q11: 传指针参数时，函数内外的“指针变量地址”一致吗？
+
+**答案：**
+- 默认按值传参时，不一致。
+- 函数参数会拷贝一份指针变量；两者“存的地址值”初始相同，但变量本身不是同一个。
+
+```cpp
+void foo(int* p) {
+    // p 是外部指针变量的一份拷贝
+}
+```
+
+如果要在函数内修改“外部指针变量本身”，应传“指针的引用”：
+
+```cpp
+void resetToNull(int*& p) {
+    p = nullptr;  // 会修改调用者里的指针变量
+}
+```
