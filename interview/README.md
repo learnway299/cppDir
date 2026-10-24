@@ -27,10 +27,14 @@ interview/
 │   │   ├── README.md
 │   │   ├── 01-process.md
 │   │   └── ...
-│   ├── network/             # 计算机网络 (10 个主题)
+│   ├── network/             # 计算机网络 (10 + 8 主题)
 │   │   ├── README.md
-│   │   ├── 01-network-model.md
-│   │   └── ...
+│   │   ├── fundamentals/    # 协议栈基础 (10 个主题)
+│   │   │   ├── 01-network-model.md
+│   │   │   └── ...
+│   │   └── web-protocols-interview/  # HTTP/HTTPS/WebSocket 面试专项 (8 个主题)
+│   │       ├── 01-http-fundamentals.md
+│   │       └── ...
 │   ├── graphics/            # 图形与视觉 (8 个主题)
 │   │   ├── README.md
 │   │   ├── 01-graphics-fundamentals.md
@@ -47,9 +51,21 @@ interview/
 │   │   ├── README.md
 │   │   ├── 01-git.md
 │   │   └── ...
-│   └── chromium-internals/  # Chromium 内核深入 (8 个主题)
+│   ├── chromium-internals/  # Chromium 内核深入 (8 个主题)
+│   │   ├── README.md
+│   │   ├── 01-architecture.md
+│   │   └── ...
+│   ├── ai-coding/           # AI 编程考察 (9 个主题)
+│   │   ├── README.md
+│   │   ├── 01-ai-fundamentals.md
+│   │   └── ...
+│   ├── wxwidgets/           # wxWidgets 框架考察 (11 个主题)
+│   │   ├── README.md
+│   │   ├── 01-history-and-versions.md
+│   │   └── ...
+│   └── cef/                 # CEF 框架考察 (12 个主题)
 │       ├── README.md
-│       ├── 01-architecture.md
+│       ├── 01-history-and-versions.md
 │       └── ...
 └── coding/                   # 编程实战部分
     ├── README.md
@@ -126,13 +142,14 @@ interview/
 | 同步与通信 | 同步原语、IPC/RPC 机制 |
 | 内核 | Linux 内核基础、CEF 容器进程模型 |
 
-#### 计算机网络 (10 个主题)
+#### 计算机网络 (10 + 8 个主题)
 
-| 主题 | 内容 |
-|------|------|
-| 协议栈 | OSI/TCP-IP 模型、链路层、网络层、传输层、应用层 |
-| 编程实践 | Socket 编程、网络安全、性能优化 |
-| 应用场景 | 浏览器导航流程、心跳保活机制 |
+| 子模块 | 主题 | 内容 |
+|--------|------|------|
+| fundamentals/ | 协议栈 | OSI/TCP-IP 模型、链路层、网络层、传输层、应用层 |
+| fundamentals/ | 编程实践 | Socket 编程、网络安全、性能优化 |
+| fundamentals/ | 应用场景 | 浏览器导航流程、心跳保活机制 |
+| web-protocols-interview/ | Web 协议专项 | HTTP 版本演进、HTTPS/TLS、WebSocket、对比选型、面试 Q&A、用户环境排查 |
 
 #### 图形与视觉 (8 个主题)
 
@@ -172,6 +189,30 @@ interview/
 | IPC 通信 | Mojo 机制、消息管道、共享内存、数据管道 |
 | 内存管理 | PartitionAlloc、Oilpan (Blink GC)、内存压力处理 |
 | 性能优化 | 渲染/JS/内存/网络优化、DevTools、Trace Event |
+
+#### AI 编程考察 (9 个主题)
+
+| 层级 | 主题 | 内容 |
+|------|------|------|
+| 基础 | 01-02 | LLM/RAG/Agent 概念、编程 Agent 客户端与服务端架构 |
+| 进阶 | 03-06 | 幻觉等术语与缓解、Context 工程、开源工具链、主流产品对比 |
+| 深度 | 07-09 | 质量安全与评测、理论面试题、实战场景考察 |
+
+#### wxWidgets 框架考察 (11 个主题)
+
+| 层级 | 主题 | 内容 |
+|------|------|------|
+| 基础 | 01-04 | 历史版本、原生控件架构、wxApp 循环、窗口控件树 |
+| 进阶 | 05-08 | 事件 Bind、Sizer 布局、DC/XRC、线程与对话框 |
+| 深度 | 09-11 | 跨平台构建、理论题、实战场景 |
+
+#### CEF 框架考察 (12 个主题)
+
+| 层级 | 主题 | 内容 |
+|------|------|------|
+| 基础 | 01-04 | 历史与 Chromium 版本、多进程、启动关闭、App/Client/Handler |
+| 进阶 | 05-08 | 窗口集成、JS 桥、IPC、离屏渲染 |
+| 深度 | 09-12 | 性能内存、安全沙箱、理论题、实战场景 |
 
 ### 编程部分 (Coding)
 
@@ -259,6 +300,25 @@ interview/
 - [ ] CMake target-based 写法与依赖传播
 - [ ] CMake 第三方依赖、Qt/MSVC 集成与安装导出
 
+#### AI 编程
+- [ ] LLM / RAG / Agent 基础与选型（Prompt vs RAG vs Fine-tune）
+- [ ] Coding Agent 架构（客户端、Runtime、工具/MCP、索引）
+- [ ] 幻觉、注入、目标漂移等术语与缓解
+- [ ] Context/Rules、开源工具链、Copilot/Cursor/Claude/Codex 对比
+- [ ] AI PR 验收、安全合规、理论题与实战场景
+
+#### wxWidgets
+- [ ] 与 Qt/MFC/Duilib 定位差异（原生控件包装）
+- [ ] wxApp 生命周期、事件表 vs Bind、Sizer 布局
+- [ ] UI 线程与 CallAfter、父子所有权
+- [ ] 2.x→3.x / HiDPI / 跨平台构建要点
+
+#### CEF
+- [ ] 与 Electron/WebView2 差异、Chromium 版本跟随
+- [ ] CefExecuteProcess、多进程、有序关闭
+- [ ] CefApp/Client/Handler、JS↔C++ 桥与 IPC
+- [ ] 嵌窗排障、OSR、沙箱与升级策略
+
 #### 手写代码
 - [ ] LRU Cache、智能指针、线程池
 - [ ] 生产者消费者、读写锁
@@ -277,6 +337,8 @@ interview/
 
 ## 更新日志
 
+- 2026-10: 新增 wxWidgets (11) 与 CEF (12) 框架考察模块
+- 2026-09: 新增 AI 编程考察模块 (9 个主题)
 - 2026-03: 新增 Duilib 框架模块 (12 个主题)
 - 2026-02: 新增 Chromium 内核深入模块 (8 个主题)
 - 2026-01: 新增调试、操作系统、网络、图形、前端容器 5 大模块

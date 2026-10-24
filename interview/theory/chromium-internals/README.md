@@ -63,7 +63,7 @@ Chromium 是 Chrome、Edge、CEF、Electron、Qt WebEngine 等产品的核心引
     ↕
 frontend-container/（怎么把引擎嵌入应用）
     ↕
-network/09-browser-navigation.md（网络层导航流程）
+network/fundamentals/09-browser-navigation.md（网络层导航流程）
     ↕
 operating-system/08-cef-container.md（进程模型）
 ```

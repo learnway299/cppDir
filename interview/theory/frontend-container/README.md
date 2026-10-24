@@ -18,7 +18,7 @@
 
 | 文件 | 主题 | 关键内容 |
 |------|------|----------|
-| [04-cef-deep-dive.md](04-cef-deep-dive.md) | CEF 深入剖析 | 多进程模型、CefClient、Handler 体系 |
+| [04-cef-deep-dive.md](04-cef-deep-dive.md) | CEF 深入剖析 | 多进程模型、CefClient、Handler 体系；完整专项见 [../cef/](../cef/) |
 | [05-electron.md](05-electron.md) | Electron | Main/Renderer 进程、contextBridge、预加载脚本 |
 | [06-webview2.md](06-webview2.md) | WebView2 | Edge 内核、COM 接口、Windows 集成 |
 | [07-qt-webengine.md](07-qt-webengine.md) | Qt WebEngine | QWebChannel、信号槽桥接、Qt 生态整合 |
